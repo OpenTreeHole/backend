@@ -17,8 +17,10 @@ Including another URLconf
 from django.urls import path
 
 from api import api
+from rest_framework.authtoken import views
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
-    path("", api.index)
+    path("", api.index),
+    path("login", api.login),
 ]
