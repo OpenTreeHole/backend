@@ -16,11 +16,13 @@ Including another URLconf
 # from django.contrib import admin
 from django.urls import path
 
-from api import api
+from api.api import *
 from rest_framework.authtoken import views
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
-    path("", api.index),
-    path("login", api.login),
+    path("", index),
+    path("login", login),
+    path("register", register),
+    path("verify/<str:method>", verify),
 ]

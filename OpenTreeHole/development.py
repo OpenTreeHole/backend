@@ -4,8 +4,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
+# 无需配置 ALLOWED_HOSTS
 ALLOWED_HOSTS = []
 
+# 开发环境使用 sqlite 数据库
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -13,6 +15,15 @@ DATABASES = {
     }
 }
 
+# 开发环境使用本地内存作为缓存
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+
+# 开发环境使用内置模板支持一些开发工具
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

@@ -1,5 +1,17 @@
-from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from rest_framework.authtoken.models import Token
+
+
+# 自动在创建用户后创建其 Token 和用户资料数据
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_token_and_profile(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
+        Profile.objects.create(user=instance)
 
 
 class Division(models.Model):
@@ -27,6 +39,7 @@ class Hole(models.Model):
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
     deleted = models.BooleanField(default=False)
+
     # key_floors 首条和末条回帖，动态生成
 
     def __str__(self):
@@ -74,6 +87,7 @@ class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     favorites = models.ManyToManyField(Hole, blank=True)
     permission = models.JSONField(null=True)
+
     # permission = {
     #     "admin": "$time",           # 管理员权限：到期时间
     #     "silent": {                 # 禁言     ：到期时间

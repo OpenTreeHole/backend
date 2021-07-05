@@ -1,5 +1,6 @@
 import os
 import sys
+
 from .secret import *
 
 if os.environ.get("ENV") == "development":
@@ -9,7 +10,6 @@ elif os.environ.get("ENV") == "production":
 else:
     print("未配置ENV环境变量！请将其配置为 development 或 production")
     sys.exit()
-
 
 # Application definition
 
@@ -36,9 +36,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "api.urls"
 
-
 WSGI_APPLICATION = "OpenTreeHole.wsgi.application"
-
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -49,6 +47,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": MIN_PASSWORD_LENGTH,
+        },
     },
     {
         "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
@@ -88,3 +89,5 @@ REST_FRAMEWORK = {
     ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
