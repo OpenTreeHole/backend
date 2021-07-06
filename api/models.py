@@ -39,6 +39,7 @@ class Hole(models.Model):
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
     deleted = models.BooleanField(default=False)
+    mapping = models.JSONField(help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
 
     # key_floors 首条和末条回帖，动态生成
 
@@ -50,6 +51,7 @@ class Floor(models.Model):
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
     content = models.TextField()
     anonyname = models.CharField(max_length=16)
+    user = models.ForeignKey(User, models.CASCADE)
     reply_to = models.IntegerField(null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
@@ -62,13 +64,13 @@ class Floor(models.Model):
         return "树洞#{}, 楼层#{}: {}".format(self.hole.pk, self.pk, self.content[:50])
 
 
-class Mapping(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    anonyname = models.CharField(max_length=16)
-    hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return "#{}: {} -> {}".format(self.hole.pk, self.user.pk, self.anonyname)
+# class Mapping(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     anonyname = models.CharField(max_length=16)
+#     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
+#
+#     def __str__(self):
+#         return "#{}: {} -> {}".format(self.hole.pk, self.user.pk, self.anonyname)
 
 
 class Report(models.Model):
