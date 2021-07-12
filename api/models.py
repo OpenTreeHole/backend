@@ -34,10 +34,10 @@ class Tag(models.Model):
 class Hole(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True, db_index=True)
-    count = models.IntegerField(db_index=True, default=0, help_text="楼层数")
     tags = models.ManyToManyField(Tag, blank=True)
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
+    reply = models.IntegerField(db_index=True, default=0, help_text="楼层数")
     deleted = models.BooleanField(default=False)
     mapping = models.JSONField(help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
 
@@ -56,7 +56,9 @@ class Floor(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)
+    like_data = models.JSONField(null=True)
     deleted = models.BooleanField(default=False)
+    history = models.JSONField(null=True)
     delete_reason = models.TextField(null=True)
     folded = models.JSONField(null=True)
 
@@ -64,22 +66,14 @@ class Floor(models.Model):
         return "树洞#{}, 楼层#{}: {}".format(self.hole.pk, self.pk, self.content[:50])
 
 
-# class Mapping(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     anonyname = models.CharField(max_length=16)
-#     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
-#
-#     def __str__(self):
-#         return "#{}: {} -> {}".format(self.hole.pk, self.user.pk, self.anonyname)
-
-
 class Report(models.Model):
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
     floor = models.ForeignKey(Floor, on_delete=models.CASCADE)
     reason = models.TextField()
     time_created = models.DateTimeField(auto_now_add=True)
-    dealed = models.BooleanField(default=False)
-    dealed_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    time_updated = models.DateTimeField(auto_now=True)
+    dealed = models.BooleanField(default=False, db_index=True)
+    dealed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return "帖子#{}，{}".format(self.hole.pk, self.reason)
@@ -87,6 +81,7 @@ class Report(models.Model):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, blank=True)
     permission = models.JSONField(null=True)
 
