@@ -39,7 +39,7 @@ class Hole(models.Model):
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
     reply = models.IntegerField(db_index=True, default=-1, help_text="楼层数")  # 如果只有首条帖子的话认为回复数为零
     deleted = models.BooleanField(default=False)
-    mapping = models.JSONField(help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
+    mapping = models.JSONField(default=dict, help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
 
     # key_floors 首条和末条回帖，动态生成
 
@@ -56,11 +56,11 @@ class Floor(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)
-    like_data = models.JSONField(null=True)
+    like_data = models.JSONField(default=list)
     deleted = models.BooleanField(default=False)
-    history = models.JSONField(null=True)
+    history = models.JSONField(default=list)
     delete_reason = models.TextField(null=True)
-    folded = models.JSONField(null=True)
+    folded = models.JSONField(default=list)
 
     def __str__(self):
         return "树洞#{}, 楼层#{}: {}".format(self.hole.pk, self.pk, self.content[:50])
@@ -79,18 +79,18 @@ class Report(models.Model):
         return "帖子#{}，{}".format(self.hole.pk, self.reason)
 
 
+def default_permission():
+    return {
+        "admin": "1970-01-01T00:00:00",  # 管理员权限：到期时间
+        "silent": {}  # 禁言 分区ID：到期时间
+    }
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, blank=True)
-    permission = models.JSONField(null=True)
-
-    # permission = {
-    #     "admin": "$time",           # 管理员权限：到期时间
-    #     "silent": {                 # 禁言     ：到期时间
-    #         "$division_id": "$time" # 分区ID   ：到期时间
-    #     }
-    # }
+    permission = models.JSONField(default=default_permission)
 
     def __str__(self):
         return "用户数据#{}".format(self.user.pk)
