@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+from time import sleep
+
 from django.core.cache import cache
 from rest_framework.test import APITestCase
 
@@ -9,7 +12,19 @@ def basic_setup(self):
     token = Token.objects.get(user=user)
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-    Division.objects.create(name='a division')
+    division = Division.objects.create(name='树洞')
+    for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
+        Tag.objects.create(name=tag_name, temperature=5)
+    for i in range(10):
+        hole = Hole.objects.create(division=division, reply=0, mapping={1: 'Jack'})
+        tag_names = ['tag A1', 'tag A2'] if i % 2 == 0 else ['tag B1', 'tag B2']
+        tags = Tag.objects.filter(name__in=tag_names)
+        hole.tags.set(tags)
+        for j in range(2):
+            Floor.objects.create(
+                hole=hole, anonyname='Jack', user=user,
+                content='Hole#{}; Floor No.{}'.format(i, j)
+            )
 
 
 class IndexTests(APITestCase):
@@ -135,31 +150,35 @@ class HoleTests(APITestCase):
     def setUp(self):
         basic_setup(self)
 
-    def add_a_hole(self):
+    def test_post(self):
         r = self.client.post('/holes', {
             'content': self.content,
             'division_id': 1,
-            'tags': ['tag1', 'tag2']
+            'tags': ['tag1', 'tag2', 'tag3']
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data['message'], '发表成功！')
-        self.assertTrue(Hole.objects.filter(pk=1).exists())
-        self.assertTrue(Floor.objects.filter(pk=1).exists())
+        floor = Floor.objects.get(content=self.content)
+        hole = floor.hole
+        self.assertEqual(hole.tags.count(), 3)
 
-    def add_a_floor(self):
-        r = self.client.post('/floors', {
-            'content': self.content,
-            'hole_id': 1,
-            'reply_to': 1,
+    def test_get_by_time(self):
+        sleep(1)
+        r = self.client.get('/holes', {
+            'start_time': datetime.now(timezone.utc).isoformat(),
+            'length': 5,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.data['message'], '发表成功！')
-        self.assertEqual(Hole.objects.all().count(), 1)
-        self.assertEqual(Floor.objects.all().count(), 2)
+        self.assertEqual(len(r.data), 5)
 
-    def test(self):
-        self.add_a_hole()
-        self.add_a_floor()
+    def test_get_by_tag(self):
+        r = self.client.get('/holes', {
+            'start_time': datetime.now(timezone.utc).isoformat(),
+            'length': 5,
+            'tag': 'tag A1'
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.data), 5)
 
 
 class FloorTests(APITestCase):
@@ -167,4 +186,16 @@ class FloorTests(APITestCase):
 
     def setUp(self):
         basic_setup(self)
-        pass
+
+    def test_post(self):
+        hole = Hole.objects.get(pk=1)
+        first_floor = hole.floor_set.order_by('id')[0]
+        r = self.client.post('/floors', {
+            'content': self.content,
+            'hole_id': 1,
+            'reply_to': first_floor.pk,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data['message'], '发表成功！')
+        floor = Floor.objects.get(content=self.content)
+        self.assertEqual(floor.reply_to, first_floor.pk)

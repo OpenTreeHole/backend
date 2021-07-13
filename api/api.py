@@ -6,11 +6,12 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_datetime
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import *
+from api.serializers import *
 from api.utils import mail
 
 
@@ -151,11 +152,14 @@ class HolesApi(APIView):
                 return Response({'message': '标签名不能超过{}个字符'.format(settings.MAX_TAG_LENGTH)}, 400)
         # 校验分区
         division_id = request.data.get('division_id')
-        if not Division.objects.filter(pk=division_id).exists():
+        if not division_id:
+            division, created = Division.objects.get_or_create(name='树洞')
+            division_id = division.pk
+        elif not Division.objects.filter(pk=division_id).exists():
             return Response({'message': '分区不存在'}, 400)
 
         # 实例化 Hole
-        hole = Hole(division_id=division_id, mapping={})
+        hole = Hole(division_id=division_id)
         hole.save()
         # 创建 tag 并添加至 hole
         for tag_name in tags:
@@ -167,6 +171,21 @@ class HolesApi(APIView):
         hole.save()
 
         return add_a_floor(request, hole)
+
+    def get(self, request):
+        start_time = request.query_params.get('start_time')
+        length = int(request.query_params.get('length'))
+        tag_name = request.query_params.get('tag')
+
+        if tag_name:
+            tag = get_object_or_404(Tag, name=tag_name)
+            query_set = tag.hole_set.all()
+        else:
+            query_set = Hole.objects.all()
+
+        holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
+        serializer = HoleSerializer(holes, many=True, context={"user": request.user})
+        return Response(serializer.data)
 
 
 class FloorsApi(APIView):
