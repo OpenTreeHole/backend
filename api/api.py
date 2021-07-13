@@ -1,17 +1,16 @@
 import os
-from random import randint
+import random
 
-from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from api.models import *
 from api.utils import mail
 
 
@@ -57,7 +56,7 @@ def verify(request, **kwargs):
             return Response({"message": "该用户已注册！"}, 400)
         # 正确无误，发送验证邮件
         else:
-            verification = randint(100000, 999999)
+            verification = random.randint(100000, 999999)
             cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
             # 开发环境不发送邮件
             if os.environ.get('ENV') == 'development':
@@ -97,3 +96,81 @@ def register(request):
     else:
         User.objects.create_user(username=email, password=password)
         return Response({"message": "注册成功！"})
+
+
+def add_a_floor(request, hole):
+    """
+    增加一条回复帖
+    Args:
+        request:
+        hole:       hole对象
+
+    Returns:        Response
+
+    """
+    # 校验 content
+    content = request.data.get('content')
+    if not content:
+        return Response({'message': '内容不能为空'}, 400)
+    content = content.strip()
+    if not content:
+        return Response({'message': '内容不能为空'}, 400)
+    # 校验 reply_to
+    reply_to = request.data.get('reply_to')
+
+    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
+    anonyname = hole.mapping.get(request.user.pk)
+    if not anonyname:
+        while True:
+            anonyname = random.choice(settings.NAME_LIST)
+            if anonyname in hole.mapping.values():
+                pass
+            else:
+                hole.mapping[request.user.pk] = anonyname
+                break
+    # 创建 floor 并增加 hole 的楼层数
+    Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user, reply_to=reply_to)
+    hole.reply = hole.reply + 1
+    hole.save()
+    return Response({'message': '发表成功！'})
+
+
+class HolesApi(APIView):
+    def post(self, request):
+        # 校验标签
+        tags = request.data.get('tags')
+        if not tags:
+            tags = [{'name': '默认'}]
+        if len(tags) > settings.MAX_TAGS:
+            return Response({'message': '标签不能多于{}个'.format(settings.MAX_TAGS)}, 400)
+        for tag_name in tags:
+            tag_name = tag_name.strip()
+            if not tag_name:
+                return Response({'message': '标签名不能为空'}, 400)
+            if len(tag_name) > settings.MAX_TAG_LENGTH:
+                return Response({'message': '标签名不能超过{}个字符'.format(settings.MAX_TAG_LENGTH)}, 400)
+        # 校验分区
+        division_id = request.data.get('division_id')
+        if not Division.objects.filter(pk=division_id).exists():
+            return Response({'message': '分区不存在'}, 400)
+
+        # 实例化 Hole
+        hole = Hole(division_id=division_id, mapping={})
+        hole.save()
+        # 创建 tag 并添加至 hole
+        for tag_name in tags:
+            tag, created = Tag.objects.get_or_create(name=tag_name)
+            tag.temperature = tag.temperature + 1
+            tag.save()
+            hole.tags.add(tag)
+        # 保存 hole
+        hole.save()
+
+        return add_a_floor(request, hole)
+
+
+class FloorsApi(APIView):
+    def post(self, request):
+        hole_id = request.data.get('hole_id')
+        hole = get_object_or_404(Hole, pk=hole_id)
+        return add_a_floor(request, hole)

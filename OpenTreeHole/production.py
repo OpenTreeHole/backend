@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from .secret import *
+from .config import *
 
 # 就是外层的 OpenTreeHole
 BASE_DIR = Path(__file__).resolve().parent.parent

@@ -1,7 +1,7 @@
 import os
 import sys
 
-from .secret import *
+from .config import *
 
 if os.environ.get("ENV") == "development":
     from OpenTreeHole.development import *

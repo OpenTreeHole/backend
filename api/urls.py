@@ -25,4 +25,6 @@ urlpatterns = [
     path("login", login),
     path("register", register),
     path("verify/<str:method>", verify),
+    path("holes", HolesApi.as_view()),
+    path('floors', FloorsApi.as_view())
 ]

@@ -1,4 +1,4 @@
-secret.py
+config.py
 Pipfile.lock
 try.py
 db.sqlite3

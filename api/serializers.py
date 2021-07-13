@@ -12,8 +12,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source='user')
-
     class Meta:
         model = Profile
         fields = ['user_id', 'favorites', 'permission']
@@ -51,7 +49,6 @@ class FloorSerializer(serializers.ModelSerializer):
 
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id')
-    division_id = serializers.IntegerField(source='division')
     tags = TagSerializer(many=True)
 
     class Meta:
@@ -73,7 +70,6 @@ class HoleSerializer(serializers.ModelSerializer):
 
 class ReportSerializer(serializers.ModelSerializer):
     report_id = serializers.IntegerField(source='id')
-    hole_id = serializers.IntegerField(source='hole')
     floor = FloorSerializer()
 
     class Meta:

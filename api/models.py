@@ -18,8 +18,8 @@ class Division(models.Model):
     name = models.CharField(max_length=32, unique=True)
     description = models.TextField(null=True)
 
-    # def __str__(self):
-    #     return self.name
+    def __str__(self):
+        return self.name
 
 
 class Tag(models.Model):
@@ -37,14 +37,14 @@ class Hole(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
-    reply = models.IntegerField(db_index=True, default=0, help_text="楼层数")
+    reply = models.IntegerField(db_index=True, default=-1, help_text="楼层数")  # 如果只有首条帖子的话认为回复数为零
     deleted = models.BooleanField(default=False)
     mapping = models.JSONField(help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
 
     # key_floors 首条和末条回帖，动态生成
 
-    def __str__(self):
-        return "树洞#{}:{}".format(self.pk, self.floor_set.order_by("pk")[0].content[:50])
+    # def __str__(self):
+    #     return "树洞#{}:{}".format(self.pk, self.floor_set.order_by("pk")[0].content[:50])
 
 
 class Floor(models.Model):
