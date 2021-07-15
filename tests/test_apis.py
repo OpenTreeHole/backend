@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from time import sleep
+import time
 
 from django.core.cache import cache
 from rest_framework.test import APITestCase
@@ -154,16 +154,18 @@ class HoleTests(APITestCase):
         r = self.client.post('/holes', {
             'content': self.content,
             'division_id': 1,
-            'tags': ['tag1', 'tag2', 'tag3']
+            'tag_names': ['tag1', 'tag2', 'tag3']
         })
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=self.content)
         hole = floor.hole
         self.assertEqual(hole.tags.count(), 3)
+        for tag in hole.tags.all():
+            self.assertEqual(tag.temperature, 1)
 
     def test_get_by_time(self):
-        sleep(1)
+        time.sleep(1)
         r = self.client.get('/holes', {
             'start_time': datetime.now(timezone.utc).isoformat(),
             'length': 5,
@@ -184,6 +186,19 @@ class HoleTests(APITestCase):
         r = self.client.get('/holes/1')
         self.assertEqual(r.status_code, 200)
 
+    def test_put(self):
+        r = self.client.put('/holes/1', {
+            'view': 2,
+            'tag_names': ['tag A1', 'tag B1']
+        })
+        self.assertEqual(r.status_code, 200)
+        hole = Hole.objects.get(pk=1)
+        self.assertEqual(hole.view, 2)
+        tag_names = set()
+        for tag in hole.tags.all():
+            tag_names.add(tag.name)
+        self.assertEqual(tag_names, {'tag A1', 'tag B1'})
+
 
 class FloorTests(APITestCase):
     content = 'This is a content'
@@ -199,7 +214,7 @@ class FloorTests(APITestCase):
             'hole_id': 1,
             'reply_to': first_floor.pk,
         })
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=self.content)
         self.assertEqual(floor.reply_to, first_floor.pk)

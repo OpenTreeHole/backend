@@ -1,17 +1,10 @@
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.signals import post_save
+from django.db.models import F
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-
-
-# 自动在创建用户后创建其 Token 和用户资料数据
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_token_and_profile(sender, instance=None, created=False, **kwargs):
-    if created:
-        Token.objects.create(user=instance)
-        Profile.objects.create(user=instance)
 
 
 class Division(models.Model):
@@ -108,3 +101,19 @@ class Message(models.Model):
 
     def __str__(self):
         return "{} -> {}: {}".format(self.from_user.pk, self.to_user.pk, self.content)
+
+
+# 自动在创建用户后创建其 Token 和用户资料数据
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_token_and_profile(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
+        Profile.objects.create(user=instance)
+
+
+@receiver(m2m_changed, sender=Hole.tags.through)
+def modify_tag_temperature(sender, reverse, action, pk_set, **kwargs):
+    if reverse is False and action == 'post_add':
+        Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') + 1)
+    elif reverse is False and action == 'post_remove':
+        Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') - 1)

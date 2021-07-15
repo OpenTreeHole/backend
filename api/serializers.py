@@ -27,6 +27,7 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['name', 'temperature']
+        validators = []
 
 
 class FloorSerializer(serializers.ModelSerializer):
@@ -48,12 +49,36 @@ class FloorSerializer(serializers.ModelSerializer):
 
 
 class HoleSerializer(serializers.ModelSerializer):
-    hole_id = serializers.IntegerField(source='id')
-    tags = TagSerializer(many=True)
+    hole_id = serializers.IntegerField(source='id', read_only=True)
+    division_id = serializers.IntegerField(required=False)
+    tags = TagSerializer(many=True, read_only=True)
+    tag_names = serializers.ListField(required=False, write_only=True)
 
     class Meta:
         model = Hole
-        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'view', 'reply']
+        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply']
+
+    def validate_tag_names(self, tag_names):
+        if not tag_names:
+            tag_names = ['默认']
+        if len(tag_names) > settings.MAX_TAGS:
+            raise serializers.ValidationError('标签不能多于{}个'.format(settings.MAX_TAGS), 400)
+        for tag_name in tag_names:
+            tag_name = tag_name.strip()
+            if not tag_name:
+                raise serializers.ValidationError('标签名不能为空', 400)
+            if len(tag_name) > settings.MAX_TAG_LENGTH:
+                raise serializers.ValidationError('标签名不能超过{}个字符'.format(settings.MAX_TAG_LENGTH), 400)
+        return tag_names
+
+    def validate_division_id(self, division_id):
+        if not division_id:
+            division, created = Division.objects.get_or_create(name='树洞')
+            return division.pk
+        elif not Division.objects.filter(pk=division_id).exists():
+            raise serializers.ValidationError('分区不存在', 400)
+        else:
+            return division_id
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

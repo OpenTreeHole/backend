@@ -100,7 +100,7 @@ def register(request):
         return Response({"message": "注册成功！"})
 
 
-def add_a_floor(request, hole):
+def add_a_floor(request, hole, type):
     """
     增加一条回复帖
     Args:
@@ -131,53 +131,38 @@ def add_a_floor(request, hole):
                 hole.mapping[request.user.pk] = anonyname
                 break
     # 创建 floor 并增加 hole 的楼层数
-    Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user, reply_to=reply_to)
+    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user, reply_to=reply_to)
     hole.reply = hole.reply + 1
     hole.save()
-    return Response({'message': '发表成功！'})
+    return hole if type == 'hole' else floor
 
 
 class HolesApi(APIView):
     def post(self, request):
-        # 校验标签
-        tags = request.data.get('tags')
-        if not tags:
-            tags = [{'name': '默认'}]
-        if len(tags) > settings.MAX_TAGS:
-            return Response({'message': '标签不能多于{}个'.format(settings.MAX_TAGS)}, 400)
-        for tag_name in tags:
-            tag_name = tag_name.strip()
-            if not tag_name:
-                return Response({'message': '标签名不能为空'}, 400)
-            if len(tag_name) > settings.MAX_TAG_LENGTH:
-                return Response({'message': '标签名不能超过{}个字符'.format(settings.MAX_TAG_LENGTH)}, 400)
-        # 校验分区
-        division_id = request.data.get('division_id')
-        if not division_id:
-            division, created = Division.objects.get_or_create(name='树洞')
-            division_id = division.pk
-        elif not Division.objects.filter(pk=division_id).exists():
-            return Response({'message': '分区不存在'}, 400)
+        serializer = HoleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tag_names = serializer.validated_data.get('tag_names')
+        division_id = serializer.validated_data.get('division_id')
 
         # 实例化 Hole
         hole = Hole(division_id=division_id)
         hole.save()
         # 创建 tag 并添加至 hole
-        for tag_name in tags:
+        for tag_name in tag_names:
             tag, created = Tag.objects.get_or_create(name=tag_name)
-            tag.temperature = tag.temperature + 1
-            tag.save()
             hole.tags.add(tag)
         # 保存 hole
         hole.save()
 
-        return add_a_floor(request, hole)
+        serializer = HoleSerializer(add_a_floor(request, hole, type='hole'), context={"user": request.user})
+        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     def get(self, request, **kwargs):
         # 获取单个
         hole_id = kwargs.get('hole_id')
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
+            Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)
             serializer = HoleSerializer(hole, context={"user": request.user})
             return Response(serializer.data)
 
@@ -196,9 +181,30 @@ class HolesApi(APIView):
         serializer = HoleSerializer(holes, many=True, context={"user": request.user})
         return Response(serializer.data)
 
+    def put(self, request, **kwargs):
+        hole_id = kwargs.get('hole_id')
+        hole = get_object_or_404(Hole, pk=hole_id)
+        serializer = HoleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tag_names = serializer.validated_data.get('tag_names')
+        view = serializer.validated_data.get('view')
+
+        if tag_names:
+            hole.tags.clear()
+            for tag_name in tag_names:
+                tag, created = Tag.objects.get_or_create(name=tag_name)
+                hole.tags.add(tag)
+        if view:
+            hole.view = view
+            
+        hole.save()
+        serializer = HoleSerializer(hole, context={"user": request.user})
+        return Response(serializer.data)
+
 
 class FloorsApi(APIView):
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        return add_a_floor(request, hole)
+        serializer = FloorSerializer(add_a_floor(request, hole, type='floor'), context={"user": request.user})
+        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
