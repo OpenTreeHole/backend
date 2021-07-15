@@ -31,7 +31,6 @@ class Hole(models.Model):
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
     reply = models.IntegerField(db_index=True, default=-1, help_text="楼层数")  # 如果只有首条帖子的话认为回复数为零
-    deleted = models.BooleanField(default=False)
     mapping = models.JSONField(default=dict, help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
 
     # key_floors 首条和末条回帖，动态生成
