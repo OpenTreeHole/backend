@@ -180,6 +180,10 @@ class HoleTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.data), 5)
 
+    def test_get_one(self):
+        r = self.client.get('/holes/1')
+        self.assertEqual(r.status_code, 200)
+
 
 class FloorTests(APITestCase):
     content = 'This is a content'

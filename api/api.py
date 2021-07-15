@@ -11,6 +11,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.models import *
 from api.serializers import *
 from api.utils import mail
 
@@ -172,7 +173,15 @@ class HolesApi(APIView):
 
         return add_a_floor(request, hole)
 
-    def get(self, request):
+    def get(self, request, **kwargs):
+        # 获取单个
+        hole_id = kwargs.get('hole_id')
+        if hole_id:
+            hole = get_object_or_404(Hole, pk=hole_id)
+            serializer = HoleSerializer(hole, context={"user": request.user})
+            return Response(serializer.data)
+
+        # 获取多个
         start_time = request.query_params.get('start_time')
         length = int(request.query_params.get('length'))
         tag_name = request.query_params.get('tag')
