@@ -40,20 +40,25 @@ class Hole(models.Model):
 
 
 class Floor(models.Model):
+    """
+    history:
+        'content': floor.content,                               # 原内容
+        'altered_by': request.user.pk,                          # 修改者 id
+        'altered_time': datetime.now(timezone.utc).isoformat()  # 修改时间
+    """
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
     content = models.TextField()
-    shadow_text = models.TextField(help_text='去除markdown关键字的文本，方便搜索')
+    shadow_text = models.TextField()  # 去除markdown关键字的文本，方便搜索
     anonyname = models.CharField(max_length=16)
     user = models.ForeignKey(User, models.CASCADE)
     reply_to = models.IntegerField(null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)
-    like_data = models.JSONField(default=list)
-    deleted = models.BooleanField(default=False)
-    history = models.JSONField(default=list)
-    delete_reason = models.TextField(null=True)
-    folded = models.JSONField(default=list)
+    like_data = models.JSONField(default=list)  # 点赞记录，主键列表
+    deleted = models.BooleanField(default=False)  # 仅作为前端是否显示删除按钮的依据
+    history = models.JSONField(default=list)  # 修改记录，字典列表
+    folded = models.JSONField(default=list)  # 折叠原因，字符串列表（原因由前端提供）
 
     def __str__(self):
         return "树洞#{}, 楼层#{}: {}".format(self.hole.pk, self.pk, self.content[:50])
