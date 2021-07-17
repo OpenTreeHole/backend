@@ -245,3 +245,20 @@ class FloorTests(APITestCase):
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 0)
+
+    def put(self):
+        r = self.client.put('/floors', {
+            'floor_id': 1,
+            'content': 'Modified',
+            'like': True,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['content'], 'Modified')
+        self.assertEqual(r.json()['like'], 1)
+        floor = Floor.objects.get(pk=1)
+        self.assertEqual(floor.content, 'Modified')
+        self.assertEqual(floor.like, 1)
+
+    # def delete(self):
+    #     r = self.client.delete('/floors', {'floor_id': 1})
+    #
