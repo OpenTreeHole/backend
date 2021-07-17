@@ -37,7 +37,7 @@ class FloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'content', 'anonyname', 'reply_to', 'time_updated', 'time_created', 'deleted', 'folded', 'like']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'reply_to', 'time_updated', 'time_created', 'deleted', 'folded', 'like']
         read_only_fields = ['floor_id', 'anonyname']
 
     def validate_content(self, content):
@@ -52,7 +52,7 @@ class FloorSerializer(serializers.ModelSerializer):
         if not user:
             print('[E] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
         else:
-            data['is_me'] = True if instance.user == user.pk else False
+            data['is_me'] = True if instance.user == user else False
             data['liked'] = True if user.pk in instance.like_data else False
         return data
 
