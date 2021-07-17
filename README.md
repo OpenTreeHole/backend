@@ -10,8 +10,6 @@
    cd backend
    pipenv install
    pipenv shell
-   python manage.py migrate auth       # 迁移数据库，这两条必须，否则会报错
-   python manage.py migrate authtoken
    python manage.py migrate 
 
 1. 设置环境变量 `ENV`

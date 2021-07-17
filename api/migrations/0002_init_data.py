@@ -16,8 +16,8 @@ def init_division(apps, schema_editor):
     Division.objects.create(name='跳蚤市场', description='二手交易及广告')
 
 
-def init_admin(apps, schema_editor):
-    User.objects.create_user(username='admin', password=make_password('random password'))
+# def init_admin(apps, schema_editor):
+#     User.objects.create_user(username='admin', password=make_password('random password'))
 
 
 class Migration(migrations.Migration):
@@ -27,5 +27,5 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(init_division),
-        migrations.RunPython(init_admin),
+        # migrations.RunPython(init_admin),
     ]
