@@ -10,7 +10,7 @@ def basic_setup(self):
     token = Token.objects.get(user=user)
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
-    division = Division.objects.create(name='树洞')
+    division, created = Division.objects.get_or_create(name='树洞')
     for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
         Tag.objects.create(name=tag_name, temperature=5)
     for i in range(10):
@@ -246,19 +246,32 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 0)
 
-    def put(self):
+    def test_put(self):
+        original_content = Floor.objects.get(pk=1).content
         r = self.client.put('/floors', {
             'floor_id': 1,
             'content': 'Modified',
             'like': True,
+            'folded': ['folded1', 'folded2']
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['content'], 'Modified')
         self.assertEqual(r.json()['like'], 1)
+        self.assertEqual(r.json()['liked'], True)
         floor = Floor.objects.get(pk=1)
         self.assertEqual(floor.content, 'Modified')
         self.assertEqual(floor.like, 1)
+        self.assertIn(1, floor.like_data)
+        self.assertEqual(floor.history[0]['altered_by'], 1)
+        self.assertEqual(floor.history[0]['content'], original_content)
+        self.assertEqual(floor.folded, ['folded1', 'folded2'])
 
-    # def delete(self):
-    #     r = self.client.delete('/floors', {'floor_id': 1})
-    #
+    def test_delete(self):
+        original_content = Floor.objects.get(pk=2).content
+        r = self.client.delete('/floors', {'floor_id': 2})
+        floor = Floor.objects.get(pk=2)
+        self.assertEqual(r.status_code, 204)
+        # self.assertEqual(r.json()['content'], '该内容已被作者删除')
+        self.assertEqual(Floor.objects.get(pk=2).deleted, True)
+        self.assertEqual(floor.history[0]['altered_by'], 1)
+        self.assertEqual(floor.history[0]['content'], original_content)

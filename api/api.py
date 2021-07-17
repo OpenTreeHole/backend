@@ -1,6 +1,7 @@
 import os
 import random
 import re
+from datetime import datetime, timezone
 
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
@@ -232,17 +233,39 @@ class FloorsApi(APIView):
         floor_id = request.data.get('floor_id')
         content = request.data.get('content')
         like = request.data.get('like')
+        folded = request.data.get('folded')
         floor = get_object_or_404(Floor, pk=floor_id)
         if content:
             content = content.strip()
             if not content:
                 return Response({'message': '内容不能为空！'}, 400)
+            floor.history.append({
+                'content': floor.content,
+                'altered_by': request.user.pk,
+                'altered_time': datetime.now(timezone.utc).isoformat()
+            })
             floor.content = content
         if like:
+            floor.like_data.append(request.user.pk)
             floor.like += 1
+        if folded:
+            floor.folded = folded
+
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)
 
     def delete(self, request):
-        pass
+        floor_id = request.data.get('floor_id')
+        delete_reason = request.data.get('delete_reason')
+        floor = get_object_or_404(Floor, pk=floor_id)
+        floor.history.append({
+            'content': floor.content,
+            'altered_by': request.user.pk,
+            'altered_time': datetime.now(timezone.utc).isoformat()
+        })
+        # floor.content =
+        floor.deleted = True
+        floor.save()
+        serializer = FloorSerializer(floor, context={"user": request.user})
+        return Response(serializer.data, 204)
