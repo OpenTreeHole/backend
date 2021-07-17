@@ -211,6 +211,38 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(add_a_floor(request, hole, type='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
-    # def get(self, request):
-    #     search = request.query_params.get('search')
-    #     if search:
+    def get(self, request):
+        hole_id = int(request.query_params.get('hole_id'))
+        search = request.query_params.get('s')
+        query_set = Floor.objects.filter(hole_id=hole_id)
+        if search:
+            query_set = query_set.filter(shadow_text__icontains=search).order_by('-pk')
+        else:
+            start_floor = int(request.query_params.get('start_floor'))
+            start_floor = start_floor if start_floor else 0
+            length = int(request.query_params.get('length'))
+            if length:
+                query_set = query_set[start_floor: start_floor + length]
+            else:
+                query_set = query_set[start_floor:]
+        serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
+        return Response(serializer.data)
+
+    def put(self, request):
+        floor_id = request.data.get('floor_id')
+        content = request.data.get('content')
+        like = request.data.get('like')
+        floor = get_object_or_404(Floor, pk=floor_id)
+        if content:
+            content = content.strip()
+            if not content:
+                return Response({'message': '内容不能为空！'}, 400)
+            floor.content = content
+        if like:
+            floor.like += 1
+        floor.save()
+        serializer = FloorSerializer(floor, context={"user": request.user})
+        return Response(serializer.data)
+
+    def delete(self, request):
+        pass

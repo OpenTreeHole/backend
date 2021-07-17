@@ -1,9 +1,7 @@
 from datetime import datetime, timezone
 import time
-
 from django.core.cache import cache
 from rest_framework.test import APITestCase
-
 from api.models import *
 
 
@@ -20,10 +18,11 @@ def basic_setup(self):
         tag_names = ['tag A1', 'tag A2'] if i % 2 == 0 else ['tag B1', 'tag B2']
         tags = Tag.objects.filter(name__in=tag_names)
         hole.tags.set(tags)
-        for j in range(2):
+        for j in range(10):
             Floor.objects.create(
                 hole=hole, anonyname='Jack', user=user,
-                content='Hole#{}; Floor No.{}'.format(i, j)
+                content='**Hole#{}; Floor No.{}**'.format(i + 1, j + 1),
+                shadow_text='Hole#{}; Floor No.{}'.format(i + 1, j + 1),
             )
 
 
@@ -156,7 +155,6 @@ class HoleTests(APITestCase):
             'division_id': 1,
             'tag_names': ['tag1', 'tag2', 'tag3']
         })
-        print(r.data)
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=self.content)
@@ -219,3 +217,31 @@ class FloorTests(APITestCase):
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=self.content)
         self.assertEqual(floor.reply_to, first_floor.pk)
+
+    def test_get(self):
+        r = self.client.get('/floors', {
+            'hole_id': 1,
+            'start_floor': 3,
+            'length': 5,
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 5)
+        self.assertEqual(r.json()[0]['hole_id'], 1)
+        self.assertEqual(r.json()[0]['is_me'], True)
+
+    def test_search(self):
+        r = self.client.get('/floors', {
+            'hole_id': 1,
+            's': 'no.2'
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 1)
+        self.assertEqual('**Hole#1; Floor No.2**', r.json()[0]['content'])
+
+    def test_wrong_search(self):
+        r = self.client.get('/floors', {
+            'hole_id': 1,
+            's': '*'
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 0)
