@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
+from django.conf import settings
 
-from api.models import *
+from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,11 +33,18 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class FloorSerializer(serializers.ModelSerializer):
-    floor_id = serializers.IntegerField(source='id')
+    floor_id = serializers.IntegerField(source='id', read_only=True)
 
     class Meta:
         model = Floor
         fields = ['floor_id', 'content', 'anonyname', 'reply_to', 'time_updated', 'time_created', 'deleted', 'folded', 'like']
+        read_only_fields = ['floor_id', 'anonyname']
+
+    def validate_content(self, content):
+        content = content.strip()
+        if not content:
+            raise serializers.ValidationError('内容不能为空')
+        return content
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

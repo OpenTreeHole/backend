@@ -156,6 +156,7 @@ class HoleTests(APITestCase):
             'division_id': 1,
             'tag_names': ['tag1', 'tag2', 'tag3']
         })
+        print(r.data)
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=self.content)

@@ -42,6 +42,7 @@ class Hole(models.Model):
 class Floor(models.Model):
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
     content = models.TextField()
+    shadow_text = models.TextField(help_text='去除markdown关键字的文本，方便搜索')
     anonyname = models.CharField(max_length=16)
     user = models.ForeignKey(User, models.CASCADE)
     reply_to = models.IntegerField(null=True)

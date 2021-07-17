@@ -1,18 +1,22 @@
 import os
 import random
+import re
 
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
-from django.utils.dateparse import parse_datetime
+from django.contrib.auth.models import User
+from django.conf import settings
+from django.db.models import F
+from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import *
-from api.serializers import *
+from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
+from api.serializers import UserSerializer, ProfileSerializer, DivisionSerializer, TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.utils import mail
 
 
@@ -106,19 +110,17 @@ def add_a_floor(request, hole, type):
     Args:
         request:
         hole:       hole对象
+        type:       指定返回值为 floor 或 hole
 
-    Returns:        Response
+    Returns:        floor or hole
 
     """
     # 校验 content
-    content = request.data.get('content')
-    if not content:
-        return Response({'message': '内容不能为空'}, 400)
-    content = content.strip()
-    if not content:
-        return Response({'message': '内容不能为空'}, 400)
-    # 校验 reply_to
-    reply_to = request.data.get('reply_to')
+    serializer = FloorSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    content = serializer.validated_data.get('content')
+    reply_to = serializer.validated_data.get('reply_to')
+    shadow_text = re.sub(r'([\s#*_!>`$|:,\-\[\]-]|\d+\.|\(.+?\)|<.+?>)', '', content)
 
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(request.user.pk)
@@ -131,7 +133,7 @@ def add_a_floor(request, hole, type):
                 hole.mapping[request.user.pk] = anonyname
                 break
     # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user, reply_to=reply_to)
+    floor = Floor.objects.create(hole=hole, content=content, shadow_text=shadow_text, anonyname=anonyname, user=request.user, reply_to=reply_to)
     hole.reply = hole.reply + 1
     hole.save()
     return hole if type == 'hole' else floor
@@ -196,7 +198,7 @@ class HolesApi(APIView):
                 hole.tags.add(tag)
         if view:
             hole.view = view
-            
+
         hole.save()
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response(serializer.data)
@@ -208,3 +210,7 @@ class FloorsApi(APIView):
         hole = get_object_or_404(Hole, pk=hole_id)
         serializer = FloorSerializer(add_a_floor(request, hole, type='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
+
+    # def get(self, request):
+    #     search = request.query_params.get('search')
+    #     if search:
