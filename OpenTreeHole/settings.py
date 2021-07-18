@@ -91,3 +91,5 @@ REST_FRAMEWORK = {
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
