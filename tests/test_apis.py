@@ -238,6 +238,7 @@ class FloorTests(APITestCase):
     def setUp(self):
         basic_setup(self)
         self.user = User.objects.get(username=USERNAME)
+        self.admin = User.objects.get(username='admin')
 
     def test_post(self):
         hole = Hole.objects.get(pk=1)
@@ -309,10 +310,17 @@ class FloorTests(APITestCase):
         r = self.client.delete('/floors/2')
         floor = Floor.objects.get(pk=2)
         self.assertEqual(r.status_code, 204)
-        # self.assertEqual(r.json()['content'], '该内容已被作者删除')
+        self.assertEqual(r.data['content'], '该内容已被作者删除')
         self.assertEqual(Floor.objects.get(pk=2).deleted, True)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
+        # 测试管理员删除
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.delete('/floors/2')
+        self.assertEqual(r.data['content'], '该内容因违反社区规范被删除')
+        r = self.client.delete('/floors/2', {'delete_reason': 'reason'})
+        self.assertEqual(r.data['content'], 'reason')
+        self.client.force_authenticate(user=self.user)
 
 
 class PermissionTests(APITestCase):

@@ -287,7 +287,10 @@ class FloorsApi(APIView):
             'altered_by': request.user.pk,
             'altered_time': datetime.now(timezone.utc).isoformat()
         })
-        # floor.content =
+        if request.user == floor.user:  # 作者删除
+            floor.content = '该内容已被作者删除'
+        else:  # 管理员删除
+            floor.content = delete_reason if delete_reason else '该内容因违反社区规范被删除'
         floor.deleted = True
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
