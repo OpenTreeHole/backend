@@ -18,6 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost
 from api.serializers import UserSerializer, ProfileSerializer, DivisionSerializer, TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.utils import mail
 
@@ -146,14 +147,14 @@ def add_a_floor(request, hole, type):
 
 
 class HolesApi(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OnlyAdminCanModify]
 
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         tag_names = serializer.validated_data.get('tag_names')
         division_id = serializer.validated_data.get('division_id')
-
+        self.check_object_permissions(request, division_id)
         # 实例化 Hole
         hole = Hole(division_id=division_id)
         hole.save()
@@ -211,16 +212,17 @@ class HolesApi(APIView):
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response(serializer.data)
 
-    def delete(self, request):
+    def delete(self, request, **kwargs):
         return Response(None, 204)
 
 
 class FloorsApi(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OwnerOrAdminCanModify]
 
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
+        self.check_object_permissions(request, hole.division_id)
         serializer = FloorSerializer(add_a_floor(request, hole, type='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
@@ -247,6 +249,7 @@ class FloorsApi(APIView):
         like = request.data.get('like')
         folded = request.data.get('folded')
         floor = get_object_or_404(Floor, pk=floor_id)
+        self.check_object_permissions(request, floor)
         if content:
             content = content.strip()
             if not content:
@@ -271,6 +274,7 @@ class FloorsApi(APIView):
         floor_id = kwargs.get('floor_id')
         delete_reason = request.data.get('delete_reason')
         floor = get_object_or_404(Floor, pk=floor_id)
+        self.check_object_permissions(request, floor)
         floor.history.append({
             'content': floor.content,
             'altered_by': request.user.pk,

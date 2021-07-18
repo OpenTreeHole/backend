@@ -10,10 +10,15 @@ EMAIL = 'test@test.com'
 
 
 def basic_setup(self):
-    User.objects.create_user('admin')
+    admin = User.objects.create_user('admin')
+    admin.profile.permission['admin'] = '9999-01-01T00:00:00+00:00'
+    admin.profile.save()
+
     user = User.objects.create_user(username=USERNAME, password=PASSWORD)
-    token = Token.objects.get(user=user)
-    self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+    User.objects.create_user('system user')
+
+    self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
     division, created = Division.objects.get_or_create(name='树洞')
     for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
@@ -29,6 +34,12 @@ def basic_setup(self):
                 content='**Hole#{}; Floor No.{}**'.format(i + 1, j + 1),
                 shadow_text='Hole#{}; Floor No.{}'.format(i + 1, j + 1),
             )
+    return {
+        'admin': admin,
+        'admin_token': Token.objects.get(user=admin).key,
+        'user': user,
+        'user_token': Token.objects.get(user=user).key
+    }
 
 
 class IndexTests(APITestCase):
@@ -165,6 +176,8 @@ class HoleTests(APITestCase):
 
     def setUp(self):
         basic_setup(self)
+        self.admin = User.objects.get(username='admin')
+        self.user = User.objects.get(username=USERNAME)
 
     def test_post(self):
         r = self.client.post('/holes', {
@@ -203,10 +216,12 @@ class HoleTests(APITestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_put(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.put('/holes/1', {
             'view': 2,
             'tag_names': ['tag A1', 'tag B1']
         })
+        self.client.force_authenticate(user=self.user)
         self.assertEqual(r.status_code, 200)
         hole = Hole.objects.get(pk=1)
         self.assertEqual(hole.view, 2)
@@ -296,18 +311,13 @@ class FloorTests(APITestCase):
 
 class PermissionTests(APITestCase):
     def setUp(self):
-        admin = User.objects.create_user('admin')
-        admin.profile.permission['admin'] = '9999-01-01T00:00:00+00:00'
-        admin.profile.save()
-        self.admin = admin
-        self.admin_token = Token.objects.get(user=admin).key
+        r = basic_setup(self)
+        self.user = r.get('user')
+        self.user_token = r.get('user_token')
+        self.admin = r.get('admin')
+        self.admin_token = r.get('admin_token')
 
-        user = User.objects.create_user('user')
-        self.user = user
-        self.user_token = Token.objects.get(user=user).key
-        # self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
-
-    def test_authentication(self):
+    def test_not_authenticated(self):
         self.client.credentials(HTTP_AUTHORIZATION='')
         for method in ['get', 'post', 'put', 'delete']:
             for url in ['/holes', '/floors']:
@@ -316,4 +326,34 @@ class PermissionTests(APITestCase):
                 r = loc['r']
                 self.assertEqual(r.status_code, 401)
 
-    # def test_permission(self):
+    def test_another_user(self):
+        another_user = User.objects.create_user('another user')
+        another_user_token = Token.objects.get(user=another_user).key
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + another_user_token)
+
+        r = self.client.put('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.put('/floors/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.delete('/floors/1')
+        self.assertEqual(r.status_code, 403)
+
+    def test_admin(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token)
+
+        r = self.client.put('/holes/1')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 204)
+
+        r = self.client.put('/floors/1')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.delete('/floors/1')
+        self.assertEqual(r.status_code, 204)

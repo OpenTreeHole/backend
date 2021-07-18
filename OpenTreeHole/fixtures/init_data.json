@@ -30,7 +30,7 @@
       "password": "pbkdf2_sha256$260000$gyqE7Et2UErHicyzBjutnq$E7IODRVRwdIJtN8w2DpfKvXSP0CkaOr2z9Fu9dUbrOo=",
       "last_login": null,
       "is_superuser": false,
-      "username": "admin",
+      "username": "system user",
       "first_name": "",
       "last_name": "",
       "email": "",
