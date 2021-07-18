@@ -13,6 +13,7 @@ from django.conf import settings
 from django.db.models import F
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -145,6 +146,8 @@ def add_a_floor(request, hole, type):
 
 
 class HolesApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -208,8 +211,13 @@ class HolesApi(APIView):
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response(serializer.data)
 
+    def delete(self, request):
+        return Response(None, 204)
+
 
 class FloorsApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)

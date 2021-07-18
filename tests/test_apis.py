@@ -5,11 +5,13 @@ from rest_framework.test import APITestCase
 from api.models import *
 
 USERNAME = 'my username'
+PASSWORD = 'my password'
+EMAIL = 'test@test.com'
 
 
 def basic_setup(self):
     User.objects.create_user('admin')
-    user = User.objects.create_user(USERNAME)
+    user = User.objects.create_user(username=USERNAME, password=PASSWORD)
     token = Token.objects.get(user=user)
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
@@ -34,11 +36,12 @@ class IndexTests(APITestCase):
 
     def test_get(self):
         r = self.client.get("/")
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data, {"message": "Hello world!"})
 
 
 class LoginTests(APITestCase):
-    email = "test@test.com"
+    email = EMAIL
     password = "iasjludfnbasvdfljnhk"
     wrong_password = "saasor;lkjjhgny"
 
@@ -69,7 +72,7 @@ class LoginTests(APITestCase):
 
 
 class RegisterTests(APITestCase):
-    email = "test@test.com"
+    email = EMAIL
     another_email = 'another@test.com'
     wrong_email = "test@foo.com"
     password = "fsdvkhjng"
@@ -290,3 +293,28 @@ class FloorTests(APITestCase):
         self.assertEqual(Floor.objects.get(pk=2).deleted, True)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
+
+
+class PermissionTests(APITestCase):
+    def setUp(self):
+        admin = User.objects.create_user('admin')
+        admin.profile.permission['admin'] = '9999-01-01T00:00:00+00:00'
+        admin.profile.save()
+        self.admin = admin
+        self.admin_token = Token.objects.get(user=admin).key
+
+        user = User.objects.create_user('user')
+        self.user = user
+        self.user_token = Token.objects.get(user=user).key
+        # self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+
+    def test_authentication(self):
+        self.client.credentials(HTTP_AUTHORIZATION='')
+        for method in ['get', 'post', 'put', 'delete']:
+            for url in ['/holes', '/floors']:
+                loc = locals()
+                exec('r = self.client.{method}("{url}")'.format(method=method, url=url), globals(), loc)
+                r = loc['r']
+                self.assertEqual(r.status_code, 401)
+
+    # def test_permission(self):
