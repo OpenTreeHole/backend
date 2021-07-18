@@ -266,8 +266,7 @@ class FloorTests(APITestCase):
 
     def test_put(self):
         original_content = Floor.objects.get(pk=1).content
-        r = self.client.put('/floors', {
-            'floor_id': 1,
+        r = self.client.put('/floors/1', {
             'content': 'Modified',
             'like': True,
             'folded': ['folded1', 'folded2']
@@ -286,7 +285,7 @@ class FloorTests(APITestCase):
 
     def test_delete(self):
         original_content = Floor.objects.get(pk=2).content
-        r = self.client.delete('/floors', {'floor_id': 2})
+        r = self.client.delete('/floors/2')
         floor = Floor.objects.get(pk=2)
         self.assertEqual(r.status_code, 204)
         # self.assertEqual(r.json()['content'], '该内容已被作者删除')

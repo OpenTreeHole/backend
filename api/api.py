@@ -241,8 +241,8 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
 
-    def put(self, request):
-        floor_id = request.data.get('floor_id')
+    def put(self, request, **kwargs):
+        floor_id = kwargs.get('floor_id')
         content = request.data.get('content')
         like = request.data.get('like')
         folded = request.data.get('folded')
@@ -267,8 +267,8 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)
 
-    def delete(self, request):
-        floor_id = request.data.get('floor_id')
+    def delete(self, request, **kwargs):
+        floor_id = kwargs.get('floor_id')
         delete_reason = request.data.get('delete_reason')
         floor = get_object_or_404(Floor, pk=floor_id)
         floor.history.append({
