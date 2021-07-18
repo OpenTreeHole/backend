@@ -79,8 +79,8 @@ class Report(models.Model):
 
 def default_permission():
     return {
-        "admin": "1970-01-01T00:00:00",  # 管理员权限：到期时间
-        "silent": {}  # 禁言 分区ID：到期时间
+        'admin': '1970-01-01T00:00:00+00:00',  # 管理员权限：到期时间
+        'silent': {}  # 禁言 分区ID：到期时间
     }
 
 
