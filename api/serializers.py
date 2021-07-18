@@ -59,7 +59,7 @@ class FloorSerializer(serializers.ModelSerializer):
 
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
-    division_id = serializers.IntegerField(required=False)
+    division_id = serializers.IntegerField()
     tags = TagSerializer(many=True, read_only=True)
     tag_names = serializers.ListField(required=False, write_only=True)
 

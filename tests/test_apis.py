@@ -7,11 +7,13 @@ from api.models import *
 USERNAME = 'my username'
 PASSWORD = 'my password'
 EMAIL = 'test@test.com'
+VERY_LONG_TIME = '9999-01-01T00:00:00+00:00'
+CONTENT = 'This is a content'
 
 
 def basic_setup(self):
     admin = User.objects.create_user('admin')
-    admin.profile.permission['admin'] = '9999-01-01T00:00:00+00:00'
+    admin.profile.permission['admin'] = VERY_LONG_TIME
     admin.profile.save()
 
     user = User.objects.create_user(username=USERNAME, password=PASSWORD)
@@ -232,7 +234,6 @@ class HoleTests(APITestCase):
 
 
 class FloorTests(APITestCase):
-    content = 'This is a content'
 
     def setUp(self):
         basic_setup(self)
@@ -242,13 +243,13 @@ class FloorTests(APITestCase):
         hole = Hole.objects.get(pk=1)
         first_floor = hole.floor_set.order_by('id')[0]
         r = self.client.post('/floors', {
-            'content': self.content,
+            'content': CONTENT,
             'hole_id': 1,
             'reply_to': first_floor.pk,
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
-        floor = Floor.objects.get(content=self.content)
+        floor = Floor.objects.get(content=CONTENT)
         self.assertEqual(floor.reply_to, first_floor.pk)
 
     def test_get(self):
@@ -261,6 +262,11 @@ class FloorTests(APITestCase):
         self.assertEqual(len(r.json()), 5)
         self.assertEqual(r.json()[0]['hole_id'], 1)
         self.assertEqual(r.json()[0]['is_me'], True)
+
+    def test_get_one(self):
+        r = self.client.get('/floors/1')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['floor_id'], 1)
 
     def test_search(self):
         r = self.client.get('/floors', {
@@ -357,3 +363,22 @@ class PermissionTests(APITestCase):
 
         r = self.client.delete('/floors/1')
         self.assertEqual(r.status_code, 204)
+
+    def test_silent(self):
+        silent_user = User.objects.create_user('silented user')
+        silent_user.profile.permission['silent'][1] = VERY_LONG_TIME
+        silent_user.profile.save()
+        silented_user_token = Token.objects.get(user=silent_user).key
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + silented_user_token)
+
+        data = {
+            'content': CONTENT,
+            'division_id': 1,
+            'hole_id': 1,
+            'tag_names': ['tag'],
+        }
+        r = self.client.post('/holes', data)
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.post('/floors', data)
+        self.assertEqual(r.status_code, 403)

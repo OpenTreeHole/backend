@@ -111,13 +111,13 @@ def register(request):
         return Response({"message": "注册成功！"})
 
 
-def add_a_floor(request, hole, type):
+def add_a_floor(request, hole, category):
     """
     增加一条回复帖
     Args:
         request:
         hole:       hole对象
-        type:       指定返回值为 floor 或 hole
+        category:   指定返回值为 floor 或 hole
 
     Returns:        floor or hole
 
@@ -143,7 +143,7 @@ def add_a_floor(request, hole, type):
     floor = Floor.objects.create(hole=hole, content=content, shadow_text=shadow_text, anonyname=anonyname, user=request.user, reply_to=reply_to)
     hole.reply = hole.reply + 1
     hole.save()
-    return hole if type == 'hole' else floor
+    return hole if category == 'hole' else floor
 
 
 class HolesApi(APIView):
@@ -165,7 +165,7 @@ class HolesApi(APIView):
         # 保存 hole
         hole.save()
 
-        serializer = HoleSerializer(add_a_floor(request, hole, type='hole'), context={"user": request.user})
+        serializer = HoleSerializer(add_a_floor(request, hole, category='hole'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     def get(self, request, **kwargs):
@@ -223,18 +223,25 @@ class FloorsApi(APIView):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(add_a_floor(request, hole, type='floor'), context={"user": request.user})
+        serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
-    def get(self, request):
+    def get(self, request, **kwargs):
+        # 获取单个
+        floor_id = kwargs.get('floor_id')
+        if floor_id:
+            floor = get_object_or_404(Floor, pk=floor_id)
+            serializer = FloorSerializer(floor, context={"user": request.user})
+            return Response(serializer.data)
+        # 获取多个（给定 hole下）
         hole_id = int(request.query_params.get('hole_id'))
         search = request.query_params.get('s')
         query_set = Floor.objects.filter(hole_id=hole_id)
         if search:
             query_set = query_set.filter(shadow_text__icontains=search).order_by('-pk')
         else:
-            start_floor = int(request.query_params.get('start_floor'))
-            start_floor = start_floor if start_floor else 0
+            start_floor = request.query_params.get('start_floor')
+            start_floor = int(start_floor) if start_floor else 0
             length = int(request.query_params.get('length'))
             if length:
                 query_set = query_set[start_floor: start_floor + length]

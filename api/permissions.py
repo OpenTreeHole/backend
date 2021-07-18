@@ -25,6 +25,7 @@ def has_permission(user, category):
 
     else:
         silent = user.profile.permission['silent']
+        category = str(category)  # django的JSONField会将字典的int索引转换成str
         if not silent.get(category):  # 未设置禁言，返回 True
             return True
         else:
@@ -58,7 +59,7 @@ class OwnerOrAdminCanModify(permissions.BasePermission):
 
 class NotSilentOrAdminCanPost(permissions.BasePermission):
     """
-    在给定分区内是否具有发帖权限，传入一个hole对象
+    在给定分区内是否具有发帖权限，传入一个 division_id
     """
 
     def has_object_permission(self, request, view, division_id):

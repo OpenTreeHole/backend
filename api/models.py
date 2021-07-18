@@ -78,9 +78,14 @@ class Report(models.Model):
 
 
 def default_permission():
+    """
+    silent 字典
+        index：分区id （string） django的JSONField会将字典的int索引转换成str
+        value：禁言解除时间
+    """
     return {
         'admin': '1970-01-01T00:00:00+00:00',  # 管理员权限：到期时间
-        'silent': {}  # 禁言 分区ID：到期时间
+        'silent': {}  # 禁言
     }
 
 
