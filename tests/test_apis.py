@@ -4,9 +4,12 @@ from django.core.cache import cache
 from rest_framework.test import APITestCase
 from api.models import *
 
+USERNAME = 'my username'
+
 
 def basic_setup(self):
-    user = User.objects.create_user('a user')
+    User.objects.create_user('admin')
+    user = User.objects.create_user(USERNAME)
     token = Token.objects.get(user=user)
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
 
@@ -96,6 +99,7 @@ class RegisterTests(APITestCase):
         self.assertIsNone(cache.get(self.another_email))
 
     def register(self):
+        expected_users = User.objects.count() + 1
         # 正确注册
         r = self.client.post("/register", {
             "email": self.email,
@@ -108,6 +112,16 @@ class RegisterTests(APITestCase):
         Token.objects.get(user=user)
         Profile.objects.get(user=user)
 
+        # 重复注册
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.password,
+            'verification': self.verification
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(r.json(), {"message": "该用户已注册！"})
+        self.assertEqual(User.objects.count(), expected_users)
+
         # 未提供验证码
         r = self.client.post("/register", {
             "email": self.email,
@@ -116,27 +130,27 @@ class RegisterTests(APITestCase):
         })
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.data['message'], '验证码不能为空！')
-        self.assertEqual(User.objects.count(), 2)
+        self.assertEqual(User.objects.count(), expected_users)
 
         # 简单密码
         r = self.client.post("/register", {
-            "email": self.email,
+            "email": self.wrong_email,
             "password": self.simple_password,
             'verification': self.verification,
         })
         self.assertEqual(r.status_code, 400)
         self.assertIn('密码', r.data['message'])
-        self.assertEqual(User.objects.count(), 2)
+        self.assertEqual(User.objects.count(), expected_users)
 
         # 错误邮箱
         r = self.client.post("/register", {
-            "email": self.another_email,
+            "email": self.wrong_email,
             "password": self.password,
             'verification': self.verification,
         })
         self.assertEqual(r.status_code, 400)
         self.assertEqual('注册校验未通过！', r.data['message'])
-        self.assertEqual(User.objects.count(), 2)
+        self.assertEqual(User.objects.count(), expected_users)
 
     def test(self):
         self.register_verify()
@@ -204,6 +218,7 @@ class FloorTests(APITestCase):
 
     def setUp(self):
         basic_setup(self)
+        self.user = User.objects.get(username=USERNAME)
 
     def test_post(self):
         hole = Hole.objects.get(pk=1)
@@ -261,8 +276,8 @@ class FloorTests(APITestCase):
         floor = Floor.objects.get(pk=1)
         self.assertEqual(floor.content, 'Modified')
         self.assertEqual(floor.like, 1)
-        self.assertIn(1, floor.like_data)
-        self.assertEqual(floor.history[0]['altered_by'], 1)
+        self.assertIn(self.user.pk, floor.like_data)
+        self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
         self.assertEqual(floor.folded, ['folded1', 'folded2'])
 
@@ -273,5 +288,5 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 204)
         # self.assertEqual(r.json()['content'], '该内容已被作者删除')
         self.assertEqual(Floor.objects.get(pk=2).deleted, True)
-        self.assertEqual(floor.history[0]['altered_by'], 1)
+        self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)

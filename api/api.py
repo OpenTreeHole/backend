@@ -93,6 +93,10 @@ def register(request):
         verification = int(verification)
     except TypeError:
         return Response({"message": "验证码格式错误！"}, 400)
+    # 校验用户名是否已存在
+    if User.objects.filter(username=email).exists():
+        return Response({"message": "该用户已注册！"}, 400)
+    # 校验密码可用性
     try:
         validate_password(password)
     except ValidationError as e:
