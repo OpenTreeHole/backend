@@ -24,7 +24,7 @@ def basic_setup(self):
 
     division, created = Division.objects.get_or_create(name='树洞')
     for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
-        Tag.objects.create(name=tag_name, temperature=5)
+        Tag.objects.create(name=tag_name, temperature=0)
     for i in range(10):
         hole = Hole.objects.create(division=division, reply=0, mapping={1: 'Jack'})
         tag_names = ['tag A1', 'tag A2'] if i % 2 == 0 else ['tag B1', 'tag B2']
@@ -321,6 +321,27 @@ class FloorTests(APITestCase):
         r = self.client.delete('/floors/2', {'delete_reason': 'reason'})
         self.assertEqual(r.data['content'], 'reason')
         self.client.force_authenticate(user=self.user)
+
+
+class TagTests(APITestCase):
+    def setUp(self):
+        basic_setup(self)
+        Tag.objects.filter(name='tag B1').update(temperature=1)
+
+    def test_get(self):
+        r = self.client.get('/tags')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 4)
+        for tag in r.json():
+            self.assertEqual(tag['temperature'], 5)
+
+    def test_search(self):
+        r = self.client.get('/tags', {'s': 'b'})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 2)
+        for tag in r.json():
+            self.assertIn('B', tag['name'])
+        self.assertEqual(r.json()[1]['temperature'], 1)
 
 
 class PermissionTests(APITestCase):

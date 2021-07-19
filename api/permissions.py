@@ -2,11 +2,12 @@ from datetime import datetime, timezone
 
 from rest_framework import permissions
 from django.utils.dateparse import parse_datetime
+from rest_framework.permissions import SAFE_METHODS
 
 MODIFY_METHODS = ('PUT', 'PATCH', 'DELETE')
 
 
-def has_permission(user, category):
+def is_permitted(user, category):
     """
     判断所给用户是否具有给定权限
     Args:
@@ -40,7 +41,7 @@ class OnlyAdminCanModify(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.method in MODIFY_METHODS:
-            return has_permission(request.user, 'admin')
+            return is_permitted(request.user, 'admin')
         else:
             return True
 
@@ -52,7 +53,7 @@ class OwnerOrAdminCanModify(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         if request.method in MODIFY_METHODS:
-            return obj.user == request.user or has_permission(request.user, 'admin')
+            return obj.user == request.user or is_permitted(request.user, 'admin')
         else:
             return True
 
@@ -64,6 +65,14 @@ class NotSilentOrAdminCanPost(permissions.BasePermission):
 
     def has_object_permission(self, request, view, division_id):
         if request.method == 'POST':
-            return has_permission(request.user, division_id) or has_permission(request.user, 'admin')
+            return is_permitted(request.user, division_id) or is_permitted(request.user, 'admin')
         else:
             return True
+
+
+class IsAdminOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        else:
+            return is_permitted(request.user, 'admin')

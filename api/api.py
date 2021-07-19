@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, IsAdminOrReadOnly
 from api.serializers import UserSerializer, ProfileSerializer, DivisionSerializer, TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.utils import mail
 
@@ -149,25 +149,6 @@ def add_a_floor(request, hole, category):
 class HolesApi(APIView):
     permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OnlyAdminCanModify]
 
-    def post(self, request):
-        serializer = HoleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        tag_names = serializer.validated_data.get('tag_names')
-        division_id = serializer.validated_data.get('division_id')
-        self.check_object_permissions(request, division_id)
-        # 实例化 Hole
-        hole = Hole(division_id=division_id)
-        hole.save()
-        # 创建 tag 并添加至 hole
-        for tag_name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=tag_name)
-            hole.tags.add(tag)
-        # 保存 hole
-        hole.save()
-
-        serializer = HoleSerializer(add_a_floor(request, hole, category='hole'), context={"user": request.user})
-        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
-
     def get(self, request, **kwargs):
         # 获取单个
         hole_id = kwargs.get('hole_id')
@@ -192,6 +173,25 @@ class HolesApi(APIView):
         serializer = HoleSerializer(holes, many=True, context={"user": request.user})
         return Response(serializer.data)
 
+    def post(self, request):
+        serializer = HoleSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tag_names = serializer.validated_data.get('tag_names')
+        division_id = serializer.validated_data.get('division_id')
+        self.check_object_permissions(request, division_id)
+        # 实例化 Hole
+        hole = Hole(division_id=division_id)
+        hole.save()
+        # 创建 tag 并添加至 hole
+        for tag_name in tag_names:
+            tag, created = Tag.objects.get_or_create(name=tag_name)
+            hole.tags.add(tag)
+        # 保存 hole
+        hole.save()
+
+        serializer = HoleSerializer(add_a_floor(request, hole, category='hole'), context={"user": request.user})
+        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
+
     def put(self, request, **kwargs):
         hole_id = kwargs.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
@@ -213,18 +213,12 @@ class HolesApi(APIView):
         return Response(serializer.data)
 
     def delete(self, request, **kwargs):
+        # 主题帖不能删除
         return Response(None, 204)
 
 
 class FloorsApi(APIView):
     permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OwnerOrAdminCanModify]
-
-    def post(self, request):
-        hole_id = request.data.get('hole_id')
-        hole = get_object_or_404(Hole, pk=hole_id)
-        self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
-        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     def get(self, request, **kwargs):
         # 获取单个
@@ -249,6 +243,13 @@ class FloorsApi(APIView):
                 query_set = query_set[start_floor:]
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
+
+    def post(self, request):
+        hole_id = request.data.get('hole_id')
+        hole = get_object_or_404(Hole, pk=hole_id)
+        self.check_object_permissions(request, hole.division_id)
+        serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
+        return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
@@ -295,3 +296,15 @@ class FloorsApi(APIView):
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data, 204)
+
+
+class TagsApi(APIView):
+    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
+
+    def get(self, request):
+        search = request.query_params.get('s')
+        query_set = Tag.objects.order_by('-temperature')
+        if search:
+            query_set = query_set.filter(name__icontains=search)
+        serializer = TagSerializer(query_set, many=True)
+        return Response(serializer.data)

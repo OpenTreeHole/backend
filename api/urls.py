@@ -29,4 +29,5 @@ urlpatterns = [
     path("holes/<int:hole_id>", HolesApi.as_view()),
     path('floors', FloorsApi.as_view()),
     path('floors/<int:floor_id>', FloorsApi.as_view()),
+    path('tags', TagsApi.as_view()),
 ]
