@@ -9,7 +9,7 @@ def custom_exception_handler(exc, context):
     # to get the standard error response.
     response = exception_handler(exc, context)
 
-    # Now add the HTTP status code to the response.
+    # 默认错误消息字段改为“message”
     if response is not None and response.data.get('detail'):
         response.data['message'] = str(response.data['detail'])
         del (response.data['detail'])
