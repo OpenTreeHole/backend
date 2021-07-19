@@ -30,4 +30,5 @@ urlpatterns = [
     path('floors', FloorsApi.as_view()),
     path('floors/<int:floor_id>', FloorsApi.as_view()),
     path('tags', TagsApi.as_view()),
+    path('tags/<int:tag_id>', TagsApi.as_view()),
 ]

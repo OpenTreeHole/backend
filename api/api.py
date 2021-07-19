@@ -316,3 +316,23 @@ class TagsApi(APIView):
         tag = Tag.objects.create(name=name, temperature=0)
         serializer = TagSerializer(tag)
         return Response(serializer.data, 201)
+
+    def put(self, request, **kwargs):
+        serializer = TagSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name = serializer.validated_data.get('name')
+        temperature = serializer.validated_data.get('temperature')
+        tag_id = kwargs.get('tag_id')
+        tag = get_object_or_404(Tag, pk=tag_id)
+        if name:
+            tag.name = name
+        if temperature:
+            tag.temperature = temperature
+        serializer = TagSerializer(tag)
+        return Response(serializer.data)
+
+    def delete(self, request, **kwargs):
+        tag_id = kwargs.get('tag_id')
+        tag = get_object_or_404(Tag, pk=tag_id)
+        tag.delete()
+        return Response(None, 204)

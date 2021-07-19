@@ -26,9 +26,11 @@ class DivisionSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    tag_id = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
         model = Tag
-        fields = ['name', 'temperature']
+        fields = ['tag_id', 'name', 'temperature']
 
 
 class FloorSerializer(serializers.ModelSerializer):

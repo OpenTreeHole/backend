@@ -339,7 +339,7 @@ class TagTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 4)
         for tag in r.json():
-            if tag['name'] == 'tag A1':
+            if tag['name'] == 'tag B2':
                 self.assertEqual(tag['temperature'], 5)
 
     def test_search(self):
@@ -355,14 +355,27 @@ class TagTests(APITestCase):
         # 正确提交
         r = self.client.post('/tags', {'name': 'new tag'})
         self.assertEqual(r.status_code, 201)
-        self.assertEqual(r.json(), {
-            'name': 'new tag',
-            'temperature': 0,
-        })
+        self.assertEqual(r.json()['name'], 'new tag')
+        self.assertEqual(r.json()['temperature'], 0)
         Tag.objects.get(name='new tag')
         # 名称过长
         r = self.client.post('/tags', {'name': ' '.join(str(i) for i in range(settings.MAX_TAG_LENGTH))})
         self.assertEqual(r.status_code, 400)
+
+    def test_put(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.put('/tags/1', {'name': 'new name', 'temperature': 42})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['name'], 'new name')
+        self.assertEqual(r.json()['temperature'], 42)
+
+    def test_delete(self):
+        self.client.force_authenticate(user=self.admin)
+        pk = Tag.objects.create(name='delete').pk
+        r = self.client.delete('/tags/{}'.format(pk))
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.data, None)
+        self.assertFalse(Tag.objects.filter(pk=pk).exists())
 
 
 class PermissionTests(APITestCase):
