@@ -308,3 +308,11 @@ class TagsApi(APIView):
             query_set = query_set.filter(name__icontains=search)
         serializer = TagSerializer(query_set, many=True)
         return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TagSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name = serializer.validated_data.get('name')
+        tag = Tag.objects.create(name=name, temperature=0)
+        serializer = TagSerializer(tag)
+        return Response(serializer.data, 201)

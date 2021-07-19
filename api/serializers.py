@@ -29,7 +29,6 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ['name', 'temperature']
-        validators = []
 
 
 class FloorSerializer(serializers.ModelSerializer):

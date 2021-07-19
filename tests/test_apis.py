@@ -1,8 +1,13 @@
 from datetime import datetime, timezone
 import time
+
 from django.core.cache import cache
+from django.conf import settings
+from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
-from api.models import *
+from rest_framework.authtoken.models import Token
+
+from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
 
 USERNAME = 'my username'
 PASSWORD = 'my password'
@@ -326,6 +331,7 @@ class FloorTests(APITestCase):
 class TagTests(APITestCase):
     def setUp(self):
         basic_setup(self)
+        self.admin = User.objects.get(username='admin')
         Tag.objects.filter(name='tag B1').update(temperature=1)
 
     def test_get(self):
@@ -333,7 +339,8 @@ class TagTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 4)
         for tag in r.json():
-            self.assertEqual(tag['temperature'], 5)
+            if tag['name'] == 'tag A1':
+                self.assertEqual(tag['temperature'], 5)
 
     def test_search(self):
         r = self.client.get('/tags', {'s': 'b'})
@@ -342,6 +349,20 @@ class TagTests(APITestCase):
         for tag in r.json():
             self.assertIn('B', tag['name'])
         self.assertEqual(r.json()[1]['temperature'], 1)
+
+    def test_post(self):
+        self.client.force_authenticate(user=self.admin)
+        # 正确提交
+        r = self.client.post('/tags', {'name': 'new tag'})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json(), {
+            'name': 'new tag',
+            'temperature': 0,
+        })
+        Tag.objects.get(name='new tag')
+        # 名称过长
+        r = self.client.post('/tags', {'name': ' '.join(str(i) for i in range(settings.MAX_TAG_LENGTH))})
+        self.assertEqual(r.status_code, 400)
 
 
 class PermissionTests(APITestCase):
