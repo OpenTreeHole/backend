@@ -16,7 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['user_id', 'favorites', 'permission']
+        fields = ['user_id', 'nickname', 'favorites', 'permission']
 
 
 class DivisionSerializer(serializers.ModelSerializer):
