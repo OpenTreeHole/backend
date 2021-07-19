@@ -88,6 +88,7 @@ REST_FRAMEWORK = {
         # 'rest_framework.authentication.SessionAuthentication',
     ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
