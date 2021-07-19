@@ -466,7 +466,7 @@ class ProfileTests(APITestCase):
         def post():
             r = self.client.post('/user/favorites', {'hole_id': 1})
             self.assertEqual(r.status_code, 201)
-            self.assertEqual(r.data, None)
+            self.assertEqual(r.json(), {'message': '收藏成功'})
             self.assertEqual(User.objects.get(username=USERNAME).profile.favorites.filter(pk=1).exists(), True)
 
         def get():
@@ -477,14 +477,14 @@ class ProfileTests(APITestCase):
         def put():
             r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.data, None)
+            self.assertEqual(r.json(), {'message': '修改成功'})
             ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
             self.assertEqual([2, 3], list(ids))
 
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
             self.assertEqual(r.status_code, 204)
-            self.assertEqual(r.data, None)
+            self.assertEqual(r.json(), {'message': '删除成功'})
             ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
             self.assertNotIn(2, ids)
 

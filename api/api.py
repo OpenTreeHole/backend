@@ -352,7 +352,7 @@ class FavoritesApi(APIView):
         profile = get_object_or_404(Profile, user=request.user)
         profile.favorites.add(hole)
         profile.save()
-        return Response(None, 201)
+        return Response({'message': '收藏成功'}, 201)
 
     def put(self, request):
         hole_ids = request.data.get('hole_ids')
@@ -360,7 +360,7 @@ class FavoritesApi(APIView):
         profile = get_object_or_404(Profile, user=request.user)
         profile.favorites.set(holes)
         profile.save()
-        return Response(None, 200)
+        return Response({'message': '修改成功'}, 200)
 
     def delete(self, request):
         hole_id = request.data.get('hole_id')
@@ -368,4 +368,4 @@ class FavoritesApi(APIView):
         profile = get_object_or_404(Profile, user=request.user)
         profile.favorites.remove(hole)
         profile.save()
-        return Response(None, 204)
+        return Response({'message': '删除成功'}, 204)
