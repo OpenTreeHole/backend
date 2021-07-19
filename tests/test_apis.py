@@ -484,7 +484,7 @@ class ProfileTests(APITestCase):
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
             self.assertEqual(r.status_code, 204)
-            self.assertEqual(r.json(), {'message': '删除成功'})
+            self.assertEqual(r.data, {'message': '删除成功'})
             ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
             self.assertNotIn(2, ids)
 
