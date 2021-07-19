@@ -336,3 +336,36 @@ class TagsApi(APIView):
         tag = get_object_or_404(Tag, pk=tag_id)
         tag.delete()
         return Response(None, 204)
+
+
+class FavoritesApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query_set = request.user.profile.favorites.all()
+        serializer = HoleSerializer(query_set, many=True, context={"user": request.user})
+        return Response(serializer.data)
+
+    def post(self, request):
+        hole_id = request.data.get('hole_id')
+        hole = get_object_or_404(Hole, pk=hole_id)
+        profile = get_object_or_404(Profile, user=request.user)
+        profile.favorites.add(hole)
+        profile.save()
+        return Response(None, 201)
+
+    def put(self, request):
+        hole_ids = request.data.get('hole_ids')
+        holes = Hole.objects.filter(pk__in=hole_ids)
+        profile = get_object_or_404(Profile, user=request.user)
+        profile.favorites.set(holes)
+        profile.save()
+        return Response(None, 200)
+
+    def delete(self, request):
+        hole_id = request.data.get('hole_id')
+        hole = get_object_or_404(Hole, pk=hole_id)
+        profile = get_object_or_404(Profile, user=request.user)
+        profile.favorites.remove(hole)
+        profile.save()
+        return Response(None, 204)

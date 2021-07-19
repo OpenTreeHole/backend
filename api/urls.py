@@ -31,4 +31,6 @@ urlpatterns = [
     path('floors/<int:floor_id>', FloorsApi.as_view()),
     path('tags', TagsApi.as_view()),
     path('tags/<int:tag_id>', TagsApi.as_view()),
+    path('user/favorites', FavoritesApi.as_view()),
+
 ]

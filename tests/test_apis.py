@@ -49,6 +49,86 @@ def basic_setup(self):
     }
 
 
+class PermissionTests(APITestCase):
+    def setUp(self):
+        r = basic_setup(self)
+        self.user = r.get('user')
+        self.user_token = r.get('user_token')
+        self.admin = r.get('admin')
+        self.admin_token = r.get('admin_token')
+
+    def test_not_authenticated(self):
+        self.client.credentials(HTTP_AUTHORIZATION='')
+        for method in ['get', 'post', 'put', 'delete']:
+            for url in ['/holes', '/floors', '/tags', '/user/favorites']:
+                loc = locals()
+                exec('r = self.client.{method}("{url}")'.format(method=method, url=url), globals(), loc)
+                r = loc['r']
+                self.assertEqual(r.status_code, 401)
+
+    def test_another_user(self):
+        another_user = User.objects.create_user('another user')
+        another_user_token = Token.objects.get(user=another_user).key
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + another_user_token)
+
+        r = self.client.put('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.put('/floors/1')
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.delete('/floors/1')
+        self.assertEqual(r.status_code, 403)
+
+    def test_admin(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token)
+
+        r = self.client.put('/holes/1')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 204)
+
+        r = self.client.put('/floors/1')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.delete('/floors/1')
+        self.assertEqual(r.status_code, 204)
+
+    def test_silent(self):
+        silent_user = User.objects.create_user('silented user')
+        silent_user.profile.permission['silent'][1] = VERY_LONG_TIME
+        silent_user.profile.save()
+        silented_user_token = Token.objects.get(user=silent_user).key
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + silented_user_token)
+
+        data = {
+            'content': CONTENT,
+            'division_id': 1,
+            'hole_id': 1,
+            'tag_names': ['tag'],
+        }
+        r = self.client.post('/holes', data)
+        self.assertEqual(r.status_code, 403)
+
+        r = self.client.post('/floors', data)
+        self.assertEqual(r.status_code, 403)
+
+    def test_tags(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_token)
+        r = self.client.get('/tags')
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post('/tags')
+        self.assertEqual(r.status_code, 403)
+        r = self.client.put('/tags')
+        self.assertEqual(r.status_code, 403)
+        r = self.client.delete('/tags')
+        self.assertEqual(r.status_code, 403)
+
+
 class IndexTests(APITestCase):
     """hi"""
 
@@ -378,81 +458,37 @@ class TagTests(APITestCase):
         self.assertFalse(Tag.objects.filter(pk=pk).exists())
 
 
-class PermissionTests(APITestCase):
+class ProfileTests(APITestCase):
     def setUp(self):
-        r = basic_setup(self)
-        self.user = r.get('user')
-        self.user_token = r.get('user_token')
-        self.admin = r.get('admin')
-        self.admin_token = r.get('admin_token')
+        basic_setup(self)
 
-    def test_not_authenticated(self):
-        self.client.credentials(HTTP_AUTHORIZATION='')
-        for method in ['get', 'post', 'put', 'delete']:
-            for url in ['/holes', '/floors', '/tags']:
-                loc = locals()
-                exec('r = self.client.{method}("{url}")'.format(method=method, url=url), globals(), loc)
-                r = loc['r']
-                self.assertEqual(r.status_code, 401)
+    def test_favorites(self):
+        def post():
+            r = self.client.post('/user/favorites', {'hole_id': 1})
+            self.assertEqual(r.status_code, 201)
+            self.assertEqual(r.data, None)
+            self.assertEqual(User.objects.get(username=USERNAME).profile.favorites.filter(pk=1).exists(), True)
 
-    def test_another_user(self):
-        another_user = User.objects.create_user('another user')
-        another_user_token = Token.objects.get(user=another_user).key
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + another_user_token)
+        def get():
+            r = self.client.get('/user/favorites')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(len(r.json()), 2)
 
-        r = self.client.put('/holes/1')
-        self.assertEqual(r.status_code, 403)
+        def put():
+            r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.data, None)
+            ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
+            self.assertEqual([2, 3], list(ids))
 
-        r = self.client.delete('/holes/1')
-        self.assertEqual(r.status_code, 403)
+        def delete():
+            r = self.client.delete('/user/favorites', {'hole_id': 2})
+            self.assertEqual(r.status_code, 204)
+            self.assertEqual(r.data, None)
+            ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
+            self.assertNotIn(2, ids)
 
-        r = self.client.put('/floors/1')
-        self.assertEqual(r.status_code, 403)
-
-        r = self.client.delete('/floors/1')
-        self.assertEqual(r.status_code, 403)
-
-    def test_admin(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token)
-
-        r = self.client.put('/holes/1')
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.delete('/holes/1')
-        self.assertEqual(r.status_code, 204)
-
-        r = self.client.put('/floors/1')
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.delete('/floors/1')
-        self.assertEqual(r.status_code, 204)
-
-    def test_silent(self):
-        silent_user = User.objects.create_user('silented user')
-        silent_user.profile.permission['silent'][1] = VERY_LONG_TIME
-        silent_user.profile.save()
-        silented_user_token = Token.objects.get(user=silent_user).key
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + silented_user_token)
-
-        data = {
-            'content': CONTENT,
-            'division_id': 1,
-            'hole_id': 1,
-            'tag_names': ['tag'],
-        }
-        r = self.client.post('/holes', data)
-        self.assertEqual(r.status_code, 403)
-
-        r = self.client.post('/floors', data)
-        self.assertEqual(r.status_code, 403)
-
-    def test_tags(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.user_token)
-        r = self.client.get('/tags')
-        self.assertEqual(r.status_code, 200)
-        r = self.client.post('/tags')
-        self.assertEqual(r.status_code, 403)
-        r = self.client.put('/tags')
-        self.assertEqual(r.status_code, 403)
-        r = self.client.delete('/tags')
-        self.assertEqual(r.status_code, 403)
+        post()
+        put()
+        get()
+        delete()
