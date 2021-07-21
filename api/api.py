@@ -1,7 +1,8 @@
 import os
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
+from django.utils.dateparse import parse_datetime
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
@@ -380,3 +381,57 @@ class ReportsApi(APIView):
         report = Report.objects.create(hole_id=floor.hole_id, floor_id=floor_id, reason=reason)
         serializer = ReportSerializer(report)
         return Response(serializer.data, 201)
+
+    def get(self, request, **kwargs):
+        # 获取单个
+        report_id = kwargs.get('report_id')
+        if report_id:
+            report = get_object_or_404(Report, pk=report_id)
+            serializer = ReportSerializer(report)
+            return Report(serializer.data)
+        # 获取多个
+        category = request.query_params.get('category', default='not_dealed')
+        if category == 'not_dealed':
+            queryset = Report.objects.filter(dealed=False)
+        elif category == 'dealed':
+            queryset = Report.objects.filter(dealed=True)
+        elif category == 'all':
+            queryset = Report.objects.all()
+        else:
+            return Response({'message': 'category 参数不正确'})
+        serializer = ReportSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def delete(self, request, **kwargs):
+        report_id = kwargs.get('report_id')
+        report = get_object_or_404(Report, pk=report_id)
+        floor = report.floor
+        deal = request.data.get('deal')
+
+        if deal.get('not_deal'):
+            pass
+        if deal.get('fold'):
+            floor.fold = deal.get('fold')
+        if deal.get('delete'):
+            delete_reason = deal.get('delete')
+            floor.history.append({
+                'content': floor.content,
+                'altered_by': request.user.pk,
+                'altered_time': datetime.now(timezone.utc).isoformat()
+            })
+            floor.content = delete_reason
+            floor.shadow_text = to_shadow_text(delete_reason)
+            floor.deleted = True
+        if deal.get('silent'):
+            profile = floor.user.profile
+            current_time_str = profile.permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
+            current_time = parse_datetime(current_time_str)
+            expected_time = datetime.now(timezone.utc) + timedelta(days=deal.get('silent'))
+            profile.permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
+            profile.save()
+
+        floor.save()
+        report.dealed_by = request.user
+        report.dealed = True
+        report.save()
+        return Response({'message': '举报处理成功'}, 204)

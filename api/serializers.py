@@ -51,7 +51,7 @@ class FloorSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         user = self.context.get('user')
         if not user:
-            print('[E] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
+            print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
         else:
             data['is_me'] = True if instance.user == user else False
             data['liked'] = True if user.pk in instance.like_data else False
@@ -94,7 +94,7 @@ class HoleSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         user = self.context.get('user')
         if not user:
-            print('[E] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
+            print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
         else:
             data['key_floor'] = {
                 'first_floor': FloorSerializer(instance.floor_set.order_by('id')[0], context={'user': user}).data,
