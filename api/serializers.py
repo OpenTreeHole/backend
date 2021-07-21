@@ -104,7 +104,7 @@ class HoleSerializer(serializers.ModelSerializer):
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    report_id = serializers.IntegerField(source='id')
+    report_id = serializers.IntegerField(source='id', read_only=True)
     floor = FloorSerializer()
 
     class Meta:
