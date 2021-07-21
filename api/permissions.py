@@ -70,9 +70,17 @@ class NotSilentOrAdminCanPost(permissions.BasePermission):
             return True
 
 
-class IsAdminOrReadOnly(permissions.BasePermission):
+class AdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
+            return True
+        else:
+            return is_permitted(request.user, 'admin')
+
+
+class AdminOrPostOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in ('POST', 'OPTIONS'):
             return True
         else:
             return is_permitted(request.user, 'admin')

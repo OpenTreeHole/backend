@@ -62,7 +62,7 @@ class PermissionTests(APITestCase):
     def test_not_authenticated(self):
         self.client.credentials(HTTP_AUTHORIZATION='')
         for method in ['get', 'post', 'put', 'delete']:
-            for url in ['/holes', '/floors', '/tags', '/user/favorites']:
+            for url in ['/holes', '/floors', '/tags', '/user/favorites', '/reports']:
                 loc = locals()
                 exec('r = self.client.{method}("{url}")'.format(method=method, url=url), globals(), loc)
                 r = loc['r']
@@ -128,6 +128,14 @@ class PermissionTests(APITestCase):
         r = self.client.put('/tags')
         self.assertEqual(r.status_code, 403)
         r = self.client.delete('/tags')
+        self.assertEqual(r.status_code, 403)
+
+    def test_reports(self):
+        r = self.client.get('/reports')
+        self.assertEqual(r.status_code, 403)
+        r = self.client.put('/reports')
+        self.assertEqual(r.status_code, 403)
+        r = self.client.delete('/reports')
         self.assertEqual(r.status_code, 403)
 
 

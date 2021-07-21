@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, IsAdminOrReadOnly
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly
 from api.serializers import UserSerializer, ProfileSerializer, DivisionSerializer, TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.utils import mail, to_shadow_text
 
@@ -299,7 +299,7 @@ class FloorsApi(APIView):
 
 
 class TagsApi(APIView):
-    permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
+    permission_classes = [IsAuthenticated, AdminOrReadOnly]
 
     def get(self, request):
         search = request.query_params.get('s')
@@ -372,6 +372,8 @@ class FavoritesApi(APIView):
 
 
 class ReportsApi(APIView):
+    permission_classes = [IsAuthenticated, AdminOrPostOnly]
+
     def post(self, request):
         floor_id = request.data.get('floor_id')
         reason = request.data.get('reason')
@@ -435,3 +437,6 @@ class ReportsApi(APIView):
         report.dealed = True
         report.save()
         return Response({'message': '举报处理成功'}, 204)
+
+    def put(self, request):
+        pass
