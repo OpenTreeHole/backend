@@ -388,7 +388,7 @@ class ReportsApi(APIView):
         if report_id:
             report = get_object_or_404(Report, pk=report_id)
             serializer = ReportSerializer(report)
-            return Report(serializer.data)
+            return Response(serializer.data)
         # 获取多个
         category = request.query_params.get('category', default='not_dealed')
         if category == 'not_dealed':

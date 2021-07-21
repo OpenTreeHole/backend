@@ -20,6 +20,7 @@ CONTENT = 'This is a content'
 def basic_setup(self):
     admin = User.objects.create_user('admin')
     admin.profile.permission['admin'] = VERY_LONG_TIME
+    admin.profile.nickname = 'admin nickname'
     admin.profile.save()
 
     user = User.objects.create_user(username=USERNAME, password=PASSWORD)
@@ -497,20 +498,22 @@ class ProfileTests(APITestCase):
 
 class ReportTests(APITestCase):
     def setUp(self):
-        basic_setup(self)
+        r = basic_setup(self)
+        self.admin = r['admin']
         Report.objects.create(hole_id=1, floor_id=1, reason='default', dealed=False)
         Report.objects.create(hole_id=1, floor_id=2, reason='default', dealed=False)
         Report.objects.create(hole_id=1, floor_id=3, reason='default', dealed=True)
         Report.objects.create(hole_id=1, floor_id=4, reason='default', dealed=True)
 
-    def post(self):
+    def test_post(self):
         r = self.client.post('/reports', {'floor_id': 5, 'reason': 'report floor 1'})
         self.assertEqual(r.status_code, 201)
         self.assertIsNotNone(r.json()['floor'])
         self.assertEqual(r.json()['reason'], 'report floor 1')
         self.assertTrue(Report.objects.filter(reason='report floor 1').exists())
 
-    def get(self):
+    def test_get(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.get('/reports', {'category': 'not_dealed'})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 2)
@@ -533,7 +536,13 @@ class ReportTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 4)
 
-    def delete(self):
+    def test_get_one(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.get('/reports/1')
+        self.assertEqual(r.status_code, 200)
+
+    def test_delete(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.delete('/reports/1', {
             'deal': {
                 'fold': ['fold 1', 'fold 2'],
@@ -548,8 +557,5 @@ class ReportTests(APITestCase):
         self.assertEqual(floor.content, 'test delete')
         profile = User.objects.get(username=USERNAME).profile
         self.assertTrue(parse_datetime(profile.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
-
-    def test(self):
-        self.get()
-        self.post()
-        self.delete()
+        r = self.client.get('/reports/1')
+        self.assertEqual(r.json()['dealed_by'], self.admin.profile.nickname)
