@@ -1,3 +1,4 @@
+import re
 from smtplib import SMTPException
 
 from django.core.mail import send_mail
@@ -30,3 +31,7 @@ def mail(subject, content, receivers):
         return {'message': '邮件发送错误，收件人：{}，错误信息：{}'.format(receivers, e), 'code': 502}
     else:
         return {'message': '邮件发送成功！', 'code': 200}
+
+
+def to_shadow_text(content):
+    return re.sub(r'([\s#*_!>`$|:,\-\[\]-]|\d+\.|\(.+?\)|<.+?>)', '', content)
