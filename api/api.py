@@ -255,7 +255,7 @@ class FloorsApi(APIView):
         floor_id = kwargs.get('floor_id')
         content = request.data.get('content')
         like = request.data.get('like')
-        folded = request.data.get('folded')
+        fold = request.data.get('fold')
         floor = get_object_or_404(Floor, pk=floor_id)
         self.check_object_permissions(request, floor)
         if content:
@@ -271,8 +271,8 @@ class FloorsApi(APIView):
         if like:
             floor.like_data.append(request.user.pk)
             floor.like += 1
-        if folded:
-            floor.folded = folded
+        if fold:
+            floor.fold = fold
 
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
@@ -369,3 +369,15 @@ class FavoritesApi(APIView):
         profile.favorites.remove(hole)
         profile.save()
         return Response({'message': '删除成功'}, 204)
+
+
+class ReportsApi(APIView):
+    def post(self, request):
+        floor_id = request.data.get('floor_id')
+        reason = request.data.get('reason')
+        floor = get_object_or_404(Floor, pk=floor_id)
+        if not reason or not reason.strip():
+            return Response({'message': '举报原因不能为空'}, 400)
+        report = Report.objects.create(hole_id=floor.hole_id, floor_id=floor_id, reason=reason)
+        serializer = ReportSerializer(report)
+        return Response(serializer.data, 201)

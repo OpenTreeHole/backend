@@ -376,7 +376,7 @@ class FloorTests(APITestCase):
         r = self.client.put('/floors/1', {
             'content': 'Modified',
             'like': True,
-            'folded': ['folded1', 'folded2']
+            'fold': ['fold1', 'fold2']
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['content'], 'Modified')
@@ -388,7 +388,7 @@ class FloorTests(APITestCase):
         self.assertIn(self.user.pk, floor.like_data)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
-        self.assertEqual(floor.folded, ['folded1', 'folded2'])
+        self.assertEqual(floor.fold, ['fold1', 'fold2'])
 
     def test_delete(self):
         original_content = Floor.objects.get(pk=2).content
@@ -492,3 +492,57 @@ class ProfileTests(APITestCase):
         put()
         get()
         delete()
+
+# class ReportTests(APITestCase):
+#     def setUp(self):
+#         basic_setup(self)
+#         Report.objects.create(hole_id=1, floor_id=1, reason='default', dealed=False)
+#         Report.objects.create(hole_id=1, floor_id=2, reason='default', dealed=False)
+#         Report.objects.create(hole_id=1, floor_id=3, reason='default', dealed=True)
+#         Report.objects.create(hole_id=1, floor_id=4, reason='default', dealed=True)
+#
+#     def post(self):
+#         r = self.client.post('/reports', {'floor_id': 5, 'reason': 'report floor 1'})
+#         self.assertEqual(r.status_code, 201)
+#         self.assertIsNotNone(r.json()['floor'])
+#         self.assertEqual(r.json()['reason'], 'report floor 1')
+#         self.assertTrue(Report.objects.filter(reason='report floor 1').exists())
+#
+#     def get(self):
+#         r = self.client.get('/reports', {'type': 'not_dealed'})
+#         self.assertEqual(r.status_code, 200)
+#         self.assertEqual(len(r.json()), 2)
+#         for report in r.json():
+#             self.assertTrue(report['report_id'] == 1 or report['report_id'] == 2)
+#
+#         r = self.client.get('/reports')
+#         self.assertEqual(r.status_code, 200)
+#         self.assertEqual(len(r.json()), 2)
+#         for report in r.json():
+#             self.assertTrue(report['report_id'] == 1 or report['report_id'] == 2)
+#
+#         r = self.client.get('/reports', {'type': 'dealed'})
+#         self.assertEqual(r.status_code, 200)
+#         self.assertEqual(len(r.json()), 2)
+#         for report in r.json():
+#             self.assertTrue(report['report_id'] == 3 or report['report_id'] == 4)
+#
+#         r = self.client.get('/reports', {'type': 'all'})
+#         self.assertEqual(r.status_code, 200)
+#         self.assertEqual(len(r.json()), 4)
+#
+#     def delete(self):
+#         r = self.client.delete('/reports/1', {
+#             'deal': {
+#                 'fold': ['fold 1', 'fold 2'],
+#                 'delete': 'test delete',
+#                 'silent': 3,
+#             }
+#         })
+#         self.assertEqual(r.status_code, 204)
+#         self.assertEqual(Floor.objects.get(pk=1).fold)
+#
+#     def test(self):
+#         self.get()
+#         self.post()
+#         self.delete()

@@ -32,5 +32,6 @@ urlpatterns = [
     path('tags', TagsApi.as_view()),
     path('tags/<int:tag_id>', TagsApi.as_view()),
     path('user/favorites', FavoritesApi.as_view()),
-
+    path('reports', ReportsApi.as_view()),
+    path('reports/<int:report_id>', ReportsApi.as_view()),
 ]

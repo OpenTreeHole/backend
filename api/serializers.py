@@ -38,7 +38,7 @@ class FloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'reply_to', 'time_updated', 'time_created', 'deleted', 'folded', 'like']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'reply_to', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
         read_only_fields = ['floor_id', 'anonyname']
 
     def validate_content(self, content):
