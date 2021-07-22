@@ -4,14 +4,20 @@
 
 ## 使用须知
 
-0. 克隆本仓库并使用 `pipenv` 安装依赖
+0. 克隆本仓库并安装依赖
+
    ```shell
    git clone git@github.com:OpenTreeHole/backend.git OpenTreeHole
    cd OpenTreeHole
+   # 安装 python 依赖
    pipenv install
+   # 安装系统依赖（以Debian为例）
+   sudo apt install redis-server
+   sudo apt install libmagic1
+   # 执行数据库迁移并预加载数据
    pipenv shell
    python manage.py migrate
-   python manage.py loaddata init_data  # 预加载数据
+   python manage.py loaddata init_data  
 
 1. 设置环境变量 `ENV`
 

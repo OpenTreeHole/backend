@@ -9,9 +9,12 @@ django-redis = "*"
 djangorestframework-simplejwt = "*"
 celery = "*"
 django-celery-results = "*"
+python-magic = "*"
+httpx = "*"
 
 [dev-packages]
 eventlet = "*"
+python-magic-bin = "*"
 
 [requires]
 python_version = "3.7"

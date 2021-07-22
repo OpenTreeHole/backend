@@ -15,12 +15,12 @@ Including another URLconf
 """
 # from django.contrib import admin
 from django.urls import path
-
-from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+
+from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -39,4 +39,5 @@ urlpatterns = [
     path('user/favorites', FavoritesApi.as_view()),
     path('reports', ReportsApi.as_view()),
     path('reports/<int:report_id>', ReportsApi.as_view()),
+    path('images', ImagesApi.as_view())
 ]
