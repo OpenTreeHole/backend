@@ -18,20 +18,5 @@ def custom_exception_handler(exc, context):
     return response
 
 
-def mail(subject, content, receivers):
-    try:
-        send_mail(
-            subject=subject,
-            message=content,
-            from_email=None,
-            recipient_list=receivers,
-            fail_silently=False,
-        )
-    except SMTPException as e:
-        return {'message': '邮件发送错误，收件人：{}，错误信息：{}'.format(receivers, e), 'code': 502}
-    else:
-        return {'message': '邮件发送成功！', 'code': 200}
-
-
 def to_shadow_text(content):
     return re.sub(r'([\s#*_!>`$|:,\-\[\]-]|\d+\.|\(.+?\)|<.+?>)', '', content)

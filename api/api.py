@@ -1,5 +1,6 @@
 import os
 import random
+import time
 from datetime import datetime, timezone, timedelta
 
 from django.utils.dateparse import parse_datetime
@@ -20,7 +21,8 @@ from rest_framework.views import APIView
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly
 from api.serializers import UserSerializer, ProfileSerializer, DivisionSerializer, TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
-from api.utils import mail, to_shadow_text
+from api.tasks import hello_world, mail
+from api.utils import to_shadow_text
 
 
 # 发送 csrf 令牌
@@ -30,6 +32,7 @@ from api.utils import mail, to_shadow_text
 
 @api_view(["GET"])
 def index(request):
+    hello_world.delay()
     return Response({"message": "Hello world!"})
 
 
@@ -61,25 +64,21 @@ def verify(request, **kwargs):
         if domain not in settings.EMAIL_WHITELIST:
             return Response({"message": "邮箱不在白名单内！"}, 400)
         # 检查用户是否注册
-        elif User.objects.filter(username=email):
+        if User.objects.filter(username=email):
             return Response({"message": "该用户已注册！"}, 400)
-        # 正确无误，发送验证邮件
-        else:
-            verification = random.randint(100000, 999999)
-            cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-            # 开发环境不发送邮件
-            if os.environ.get('ENV') == 'development':
-                return Response({})
-            elif os.environ.get('ENV') == 'production':
-                mail_result = mail(
-                    subject='{} 注册验证'.format(settings.SITE_NAME),
-                    content='欢迎注册 {}，您的验证码是: {}\r\n验证码的有效期为 {} 分钟\r\n如果您意外地收到了此邮件，请忽略它'
-                        .format(settings.SITE_NAME, verification, settings.VALIDATION_CODE_EXPIRE_TIME),
-                    receivers=[email]
-                )
-                return Response({'message': mail_result['message']}, mail_result['code'])
-            else:
-                return Response({}, 502)
+
+        # 设置验证码并发送验证邮件
+        verification = random.randint(100000, 999999)
+        cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+        mail.delay(
+            subject='{} 注册验证'.format(settings.SITE_NAME),
+            content='欢迎注册 {}，您的验证码是: {}\r\n验证码的有效期为 {} 分钟\r\n如果您意外地收到了此邮件，请忽略它'
+                .format(settings.SITE_NAME, verification, settings.VALIDATION_CODE_EXPIRE_TIME),
+            receivers=[email]
+        )
+        return Response({'message': '验证邮件发送成功，请查收验证码'})
+    else:
+        return Response({}, 502)
 
 
 class RegisterApi(APIView):

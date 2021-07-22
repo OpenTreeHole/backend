@@ -7,7 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = False
 
 # 此处填写你的域名
-ALLOWED_HOSTS = ["localhost"]
+ALLOWED_HOSTS = ALLOW_CONNECT_HOSTS
 
 # 生产环境使用 Mysql 数据库
 DATABASES = {
@@ -31,3 +31,6 @@ CACHES = {
         },
     },
 }
+
+# 生产环境SMTP发送邮件
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

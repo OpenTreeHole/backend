@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     'rest_framework_simplejwt',
+    'django_celery_results',
     "api.apps.ApiConfig",
 ]
 
@@ -92,6 +93,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-
 FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
+
+CELERY_RESULT_BACKEND = 'django-cache'
+CELERY_BROKER_URL = 'redis://localhost:6379'

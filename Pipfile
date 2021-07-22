@@ -7,8 +7,11 @@ name = "pypi"
 djangorestframework = "*"
 django-redis = "*"
 djangorestframework-simplejwt = "*"
+celery = "*"
+django-celery-results = "*"
 
 [dev-packages]
+eventlet = "*"
 
 [requires]
 python_version = "3.7"

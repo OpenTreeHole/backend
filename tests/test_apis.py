@@ -139,15 +139,6 @@ class PermissionTests(APITestCase):
         self.assertEqual(r.status_code, 403)
 
 
-class IndexTests(APITestCase):
-    """hi"""
-
-    def test_get(self):
-        r = self.client.get("/")
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.data, {"message": "Hello world!"})
-
-
 class LoginTests(APITestCase):
     email = EMAIL
     password = "iasjludfnbasvdfljnhk"
@@ -195,6 +186,7 @@ class RegisterTests(APITestCase):
         # 正确校验
         r = self.client.get("/verify/email", {"email": self.email})
         self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.data, {'message': '验证邮件发送成功，请查收验证码'})
         self.assertIsNotNone(cache.get(self.email))
         self.verification = cache.get(self.email)
 
