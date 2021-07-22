@@ -7,7 +7,6 @@ class IndexTests(APITestCase):
 
     def test_get(self):
         r = self.client.get("/")
-        print(r.data)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data, {"message": "Hello world!"})
 
@@ -20,6 +19,4 @@ class ImageTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         with open('tests/image.jpg', 'rb') as image:
             r = self.client.post('/images', {'image': image}, format='multipart')
-        print(r.json())
-        self.assertEqual(r.status_code, 201)
-          
+        self.assertEqual(r.status_code, 202)

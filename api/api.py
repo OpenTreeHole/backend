@@ -1,8 +1,8 @@
 import base64
 import random
+import uuid
 from datetime import datetime, timezone, timedelta
 
-import httpx
 import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from api.models import Tag, Hole, Floor, Report, Profile
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer
-from api.tasks import hello_world, mail
+from api.tasks import hello_world, mail, post_image_to_github
 from api.utils import to_shadow_text
 
 
@@ -462,43 +462,39 @@ class ReportsApi(APIView):
 
 
 class ImagesApi(APIView):
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
+
+    # parser_classes = (FileUploadParser,)
 
     def post(self, request):
+        # 校验图片
         image = request.data.get('image')
         if not image:
             return Response({'message': '内容不能为空'}, 400)
-        mime = magic.from_buffer(image.read(2048), mime=True)
-        if mime.split('/')[0] != 'image':
-            return Response({'message': '请上传图片格式'}, 400)
         if image.size > settings.MAX_IMAGE_SIZE * 1024 * 1024:
             return Response({'message': '图片大小不能超过 {} MB'.format(settings.MAX_IMAGE_SIZE)}, 400)
+        mime = magic.from_buffer(image.read(min([image.size, 2048])), mime=True)
+        image.seek(0)
+        if mime.split('/')[0] != 'image':
+            return Response({'message': '请上传图片格式'}, 400)
 
-        base64_data = base64.b64encode(image.read())  # base64编码
-        img_str = str(base64_data, 'utf-8')
-
+        # 准备数据
         date_str = datetime.now().strftime('%Y-%m-%d')
-        time_str = datetime.now().strftime('%H%M%S.%f')
+        uid = uuid.uuid1()
         file_type = mime.split('/')[1]
         github_data = settings.GITHUB_DATA
-        url = 'https://api.github.com/repos/{owner}/{repo}/contents/{date}/{time}.{type}' \
-            .format(owner=github_data['owner'], repo=github_data['repo'], date=date_str, time=time_str, type=file_type)
-
+        upload_url = 'https://api.github.com/repos/{owner}/{repo}/contents/{date}/{uid}.{type}' \
+            .format(owner=github_data['owner'], repo=github_data['repo'], date=date_str, uid=uid, type=file_type)
         headers = {
             'Authorization': 'token {}'.format(github_data['token'])
         }
-
         body = {
-            'content': img_str,
+            'content': base64.b64encode(image.read()).decode('utf-8'),
             'message': 'upload image by user {}'.format(request.user.pk),
             'branch': github_data['branch'],
         }
+        post_image_to_github.delay(url=upload_url, headers=headers, body=body)
 
-        r = httpx.put(url, headers=headers, json=body)
-
-        if r.status_code == 201:
-            url = 'https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{date}/{time}.{type}' \
-                .format(owner=github_data['owner'], repo=github_data['repo'], branch=github_data['branch'], date=date_str, time=time_str, type=file_type)
-            return Response({'url': url, 'msg': '图片上传成功!'}, 201)
-        else:
-            return Response(r.json(), status=500)
+        result_url = 'https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{date}/{uid}.{type}' \
+            .format(owner=github_data['owner'], repo=github_data['repo'], branch=github_data['branch'], date=date_str, uid=uid, type=file_type)
+        return Response({'url': result_url, 'message': '图片已上传'}, 202)
