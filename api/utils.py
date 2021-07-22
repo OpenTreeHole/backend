@@ -1,18 +1,22 @@
+import re
 from smtplib import SMTPException
 
 from django.core.mail import send_mail
+from rest_framework.views import exception_handler
 
 
-def mail(subject, content, receivers):
-    try:
-        send_mail(
-            subject=subject,
-            message=content,
-            from_email=None,
-            recipient_list=receivers,
-            fail_silently=False,
-        )
-    except SMTPException as e:
-        return {'message': '邮件发送错误，收件人：{}，错误信息：{}'.format(receivers, e), 'code': 502}
-    else:
-        return {'message': '邮件发送成功！', 'code': 200}
+def custom_exception_handler(exc, context):
+    # Call REST framework's default exception handler first,
+    # to get the standard error response.
+    response = exception_handler(exc, context)
+
+    # 默认错误消息字段改为“message”
+    if response is not None and response.data.get('detail'):
+        response.data['message'] = str(response.data['detail'])
+        del (response.data['detail'])
+
+    return response
+
+
+def to_shadow_text(content):
+    return re.sub(r'([\s#*_!>`$|:,\-\[\]-]|\d+\.|\(.+?\)|<.+?>)', '', content)

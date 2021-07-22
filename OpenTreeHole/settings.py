@@ -1,7 +1,7 @@
 import os
 import sys
 
-from .secret import *
+from .config import *
 
 if os.environ.get("ENV") == "development":
     from OpenTreeHole.development import *
@@ -21,6 +21,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    'rest_framework_simplejwt',
+    'django_celery_results',
     "api.apps.ApiConfig",
 ]
 
@@ -84,10 +86,14 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         "rest_framework.authentication.TokenAuthentication",
-        # 'rest_framework.authentication.SessionAuthentication',
     ),
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
+
+CELERY_RESULT_BACKEND = 'django-cache'
+CELERY_BROKER_URL = 'redis://localhost:6379'

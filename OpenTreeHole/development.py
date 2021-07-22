@@ -39,3 +39,6 @@ TEMPLATES = [
         },
     },
 ]
+
+# 开发环境邮件发送至控制台
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -15,14 +15,29 @@ Including another URLconf
 """
 # from django.contrib import admin
 from django.urls import path
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
-from api.api import *
-from rest_framework.authtoken import views
+from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
     path("", index),
+    path('token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path("login", login),
-    path("register", register),
+    path("register", RegisterApi.as_view()),
     path("verify/<str:method>", verify),
+    path("holes", HolesApi.as_view()),
+    path("holes/<int:hole_id>", HolesApi.as_view()),
+    path('floors', FloorsApi.as_view()),
+    path('floors/<int:floor_id>', FloorsApi.as_view()),
+    path('tags', TagsApi.as_view()),
+    path('tags/<int:tag_id>', TagsApi.as_view()),
+    path('user/favorites', FavoritesApi.as_view()),
+    path('reports', ReportsApi.as_view()),
+    path('reports/<int:report_id>', ReportsApi.as_view()),
+    path('images', ImagesApi.as_view())
 ]
