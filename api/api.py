@@ -82,33 +82,52 @@ def verify(request, **kwargs):
                 return Response({}, 502)
 
 
-@api_view(["POST"])
-def register(request):
-    email = request.data.get("email")
-    password = request.data.get("password")
-    verification = request.data.get("verification")
+class RegisterApi(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        verification = request.data.get("verification")
 
-    if not verification:
-        return Response({"message": "验证码不能为空！"}, 400)
-    # 转义表单数据（应该使用 JSON）
-    try:
-        verification = int(verification)
-    except TypeError:
-        return Response({"message": "验证码格式错误！"}, 400)
-    # 校验用户名是否已存在
-    if User.objects.filter(username=email).exists():
-        return Response({"message": "该用户已注册！"}, 400)
-    # 校验密码可用性
-    try:
-        validate_password(password)
-    except ValidationError as e:
-        return Response({'message': '\n'.join(e)}, 400)
+        if not verification:
+            return Response({"message": "验证码不能为空！"}, 400)
+        if not cache.get(email) or not cache.get(email) == verification:
+            return Response({"message": "注册校验未通过！"}, 400)
+        # 校验密码可用性
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return Response({'message': '\n'.join(e)}, 400)
+        # 校验用户名是否已存在
+        if User.objects.filter(username=email).exists():
+            return Response({"message": "该用户已注册！"}, 400)
 
-    if not cache.get(email) or not verification or not cache.get(email) == verification:
-        return Response({"message": "注册校验未通过！"}, 400)
-    else:
         User.objects.create_user(username=email, password=password)
-        return Response({"message": "注册成功！"})
+        return Response({"message": "注册成功！"}, 201)
+
+    def put(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        verification = request.data.get("verification")
+
+        # 校验验证码
+        if not verification:
+            return Response({"message": "验证码不能为空！"}, 400)
+        if not cache.get(email) or not cache.get(email) == verification:
+            return Response({"message": "注册校验未通过！"}, 400)
+        # 校验密码可用性
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            return Response({'message': '\n'.join(e)}, 400)
+        # 校验用户名是否不存在
+        users = User.objects.filter(username=email)
+        if not users:
+            return Response({"message": "该用户不存在"}, 400)
+        user = users[0]
+
+        user.set_password(password)
+        user.save()
+        return Response({"message": "已重置密码"}, 200)
 
 
 def add_a_floor(request, hole, category):

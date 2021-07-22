@@ -185,6 +185,7 @@ class RegisterTests(APITestCase):
     wrong_email = "test@foo.com"
     password = "fsdvkhjng"
     simple_password = '123456'
+    new_password = 'jwhkerbb4v5'
     verification = None
 
     def setUp(self):
@@ -217,7 +218,7 @@ class RegisterTests(APITestCase):
             "password": self.password,
             'verification': self.verification
         })
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '注册成功！')
         user = User.objects.get(username=self.email)
         Token.objects.get(user=user)
@@ -245,7 +246,7 @@ class RegisterTests(APITestCase):
 
         # 简单密码
         r = self.client.post("/register", {
-            "email": self.wrong_email,
+            "email": self.email,
             "password": self.simple_password,
             'verification': self.verification,
         })
@@ -263,9 +264,25 @@ class RegisterTests(APITestCase):
         self.assertEqual('注册校验未通过！', r.data['message'])
         self.assertEqual(User.objects.count(), expected_users)
 
+    def modify_password(self):
+        r = self.client.put("/register", {
+            "email": self.email,
+            "password": self.new_password,
+            'verification': self.verification
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {'message': '已重置密码'})
+
+        r = self.client.post('/login', {
+            'email': EMAIL,
+            'password': self.new_password,
+        })
+        self.assertEqual(r.status_code, 200)
+
     def test(self):
         self.register_verify()
         self.register()
+        self.modify_password()
 
 
 class HoleTests(APITestCase):
