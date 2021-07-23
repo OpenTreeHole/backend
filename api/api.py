@@ -20,9 +20,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, Profile
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer
-from api.tasks import hello_world, mail, post_image_to_github
+from api.tasks import hello_world, mail, post_image_to_github, send_message
 from api.utils import to_shadow_text
 
 
@@ -462,9 +462,7 @@ class ReportsApi(APIView):
 
 
 class ImagesApi(APIView):
-    # permission_classes = [IsAuthenticated]
-
-    # parser_classes = (FileUploadParser,)
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         # 校验图片
@@ -498,3 +496,31 @@ class ImagesApi(APIView):
         result_url = 'https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{date}/{uid}.{type}' \
             .format(owner=github_data['owner'], repo=github_data['repo'], branch=github_data['branch'], date=date_str, uid=uid, type=file_type)
         return Response({'url': result_url, 'message': '图片已上传'}, 202)
+
+
+class MessagesApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        from_id = request.data.get('from')
+        from_user = get_object_or_404(User, pk=from_id)
+        floor = get_object_or_404(Floor, pk=request.data.get('to'))
+        to_user = floor.user
+        to_id = to_user.pk
+
+        if request.data.get('share_email'):
+            message = '用户看到了你发布的帖子\n{floor}\n希望与你取得联系，TA的邮箱为：{email}'.format(floor=str(floor), email=from_user.username)
+            send_message.delay(from_id=from_id, to_id=to_id, message=message)
+
+        elif request.data.get('message'):
+            message = request.data.get('message').strip()
+            if not is_permitted(request.user, 'admin'):
+                return Response(None, 403)
+            if not message:
+                return Response({'message': 'message不能为空'}, 400)
+            send_message.delay(from_id=from_id, to_id=to_id, message=message)
+
+        else:
+            return Response(None, 400)
+        
+        return Response({'message': '已发送通知'}, 201)

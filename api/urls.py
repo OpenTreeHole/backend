@@ -20,7 +20,7 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi
+from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -39,5 +39,7 @@ urlpatterns = [
     path('user/favorites', FavoritesApi.as_view()),
     path('reports', ReportsApi.as_view()),
     path('reports/<int:report_id>', ReportsApi.as_view()),
-    path('images', ImagesApi.as_view())
+    path('images', ImagesApi.as_view()),
+    path('messages', MessagesApi.as_view()),
+    path('messages/<int:message_id>', MessagesApi.as_view()),
 ]

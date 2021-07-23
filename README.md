@@ -55,7 +55,12 @@
    EMAIL_USE_SSL =                  # SSL
    DEFAULT_FROM_EMAIL = ''          # 默认发件人地址
 
-3. 采用**测试导向**开发模式，首先编写单元测试（在 /tests 目录），在**新分支**上开发，确保通过测试后提交至 `dev` 分支
-   
-    
+## 开发须知
 
+0. 采用**测试导向**开发模式，首先编写单元测试（在 /tests 目录），在**新分支**上开发，确保通过测试后提交至 `dev` 分支
+
+1. 启动celery
+
+   ```shell
+   celery -A OpenTreeHole worker -l info -P eventlet
+   ```

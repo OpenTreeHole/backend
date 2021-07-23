@@ -9,6 +9,8 @@ import httpx
 from celery import shared_task
 from django.core.mail import send_mail
 
+from api.models import Message
+
 
 @shared_task
 def hello_world():
@@ -41,3 +43,9 @@ def post_image_to_github(url, headers, body):
         return '上传成功'
     else:
         return '上传失败', r.json()
+
+
+@shared_task
+def send_message(from_id, to_id, message):
+    instance = Message.objects.create(from_user_id=from_id, to_user_id=to_id, content=message)
+    return str(instance)
