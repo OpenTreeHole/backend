@@ -20,7 +20,12 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
+from api import consumers
 from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi
+
+websocket_urlpatterns = [
+    path('ws/notification', consumers.NotificationConsumer.as_asgi()),
+]
 
 urlpatterns = [
     # path("admin/", admin.site.urls),

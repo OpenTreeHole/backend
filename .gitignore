@@ -1,5 +1,5 @@
 config.py
 Pipfile.lock
-try.py
+try.*
 db.sqlite3
 .idea

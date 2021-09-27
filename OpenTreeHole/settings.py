@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     'rest_framework_simplejwt',
     'django_celery_results',
+    'channels',
     "api.apps.ApiConfig",
 ]
 
@@ -39,6 +40,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = "api.urls"
 
 WSGI_APPLICATION = "OpenTreeHole.wsgi.application"
+ASGI_APPLICATION = "OpenTreeHole.asgi.application"
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators

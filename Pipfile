@@ -11,10 +11,12 @@ celery = "*"
 django-celery-results = "*"
 python-magic = "*"
 httpx = "*"
+channels = "*"
 
 [dev-packages]
 eventlet = "*"
 python-magic-bin = "*"
+selenium = "*"
 
 [requires]
 python_version = "3.7"
