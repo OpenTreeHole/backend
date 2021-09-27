@@ -72,9 +72,8 @@ def verify(request, **kwargs):
         verification = random.randint(100000, 999999)
         cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
         mail.delay(
-            subject='{} 注册验证'.format(settings.SITE_NAME),
-            content='欢迎注册 {}，您的验证码是: {}\r\n验证码的有效期为 {} 分钟\r\n如果您意外地收到了此邮件，请忽略它'
-                .format(settings.SITE_NAME, verification, settings.VALIDATION_CODE_EXPIRE_TIME),
+            subject=f'{settings.SITE_NAME} 注册验证',
+            content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {verification}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
             receivers=[email]
         )
         return Response({'message': '验证邮件发送成功，请查收验证码'})
@@ -470,7 +469,7 @@ class ImagesApi(APIView):
         if not image:
             return Response({'message': '内容不能为空'}, 400)
         if image.size > settings.MAX_IMAGE_SIZE * 1024 * 1024:
-            return Response({'message': '图片大小不能超过 {} MB'.format(settings.MAX_IMAGE_SIZE)}, 400)
+            return Response({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB'}, 400)
         mime = magic.from_buffer(image.read(min([image.size, 2048])), mime=True)
         image.seek(0)
         if mime.split('/')[0] != 'image':
@@ -480,20 +479,18 @@ class ImagesApi(APIView):
         date_str = datetime.now().strftime('%Y-%m-%d')
         uid = uuid.uuid1()
         file_type = mime.split('/')[1]
-        upload_url = 'https://api.github.com/repos/{owner}/{repo}/contents/{date}/{uid}.{type}' \
-            .format(owner=settings.GITHUB_OWENER, repo=settings.GITHUB_REPO, date=date_str, uid=uid, type=file_type)
+        upload_url = f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{file_type}'
         headers = {
-            'Authorization': 'token {}'.format(settings.GITHUB_TOKEN)
+            'Authorization': f'token {settings.GITHUB_TOKEN}'
         }
         body = {
             'content': base64.b64encode(image.read()).decode('utf-8'),
-            'message': 'upload image by user {}'.format(request.user.pk),
+            'message': f'upload image by user {request.user.pk}',
             'branch': settings.GITHUB_BRANCH,
         }
         post_image_to_github.delay(url=upload_url, headers=headers, body=body)
 
-        result_url = 'https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{date}/{uid}.{type}' \
-            .format(owner=settings.GITHUB_OWENER, repo=settings.GITHUB_REPO, branch=settings.GITHUB_BRANCH, date=date_str, uid=uid, type=file_type)
+        result_url = f'https://cdn.jsdelivr.net/gh/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}@{settings.GITHUB_BRANCH}/{date_str}/{uid}.{file_type}'
         return Response({'url': result_url, 'message': '图片已上传'}, 202)
 
 
@@ -508,7 +505,7 @@ class MessagesApi(APIView):
         to_id = to_user.pk
 
         if request.data.get('share_email'):
-            message = '用户看到了你发布的帖子\n{floor}\n希望与你取得联系，TA的邮箱为：{email}'.format(floor=str(floor), email=from_user.username)
+            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{from_user.username}'
             send_message.delay(from_id=from_id, to_id=to_id, message=message)
 
         elif request.data.get('message'):

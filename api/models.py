@@ -35,8 +35,8 @@ class Hole(models.Model):
 
     # key_floors 首条和末条回帖，动态生成
 
-    # def __str__(self):
-    #     return "树洞#{}:{}".format(self.pk, self.floor_set.order_by("pk")[0].content[:50])
+    def __str__(self):
+        return f'树洞#{self.pk}: {self.floor_set.order_by("pk")[0].content[:50]}'
 
 
 class Floor(models.Model):
@@ -61,7 +61,7 @@ class Floor(models.Model):
     fold = models.JSONField(default=list)  # 折叠原因，字符串列表（原因由前端提供）
 
     def __str__(self):
-        return "树洞#{}, 楼层#{}: {}".format(self.hole.pk, self.pk, self.content[:50])
+        return f"树洞#{self.hole.pk}, 楼层#{self.pk}: {self.content[:50]}"
 
 
 class Report(models.Model):
@@ -74,7 +74,7 @@ class Report(models.Model):
     dealed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return "帖子#{}，{}".format(self.hole.pk, self.reason)
+        return f"帖子#{self.hole.pk}，{self.reason}"
 
 
 def default_permission():
@@ -96,7 +96,7 @@ class Profile(models.Model):
     permission = models.JSONField(default=default_permission)
 
     def __str__(self):
-        return "用户数据#{}".format(self.user.pk)
+        return f"用户数据#{self.user.pk}"
 
 
 class Message(models.Model):
@@ -110,7 +110,7 @@ class Message(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return "{} -> {}: {}".format(self.from_user.pk, self.to_user.pk, self.content)
+        return f"{self.from_user.pk} -> {self.to_user.pk}: {self.content}"
 
 
 # 自动在创建用户后创建其 Token 和用户资料数据

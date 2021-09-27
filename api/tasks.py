@@ -29,7 +29,7 @@ def mail(subject, content, receivers):
             fail_silently=False,
         )
     except SMTPException as e:
-        return '邮件发送错误，收件人：{}，错误信息：{}'.format(receivers, e)
+        return f'邮件发送错误，收件人：{receivers}，错误信息：{e}'
     else:
         return '邮件发送成功！'
 

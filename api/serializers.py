@@ -1,6 +1,6 @@
-from rest_framework import serializers
-from django.contrib.auth.models import User
 from django.conf import settings
+from django.contrib.auth.models import User
+from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
 
@@ -72,13 +72,13 @@ class HoleSerializer(serializers.ModelSerializer):
         if not tag_names:
             tag_names = ['默认']
         if len(tag_names) > settings.MAX_TAGS:
-            raise serializers.ValidationError('标签不能多于{}个'.format(settings.MAX_TAGS), 400)
+            raise serializers.ValidationError(f'标签不能多于{settings.MAX_TAGS}个', 400)
         for tag_name in tag_names:
             tag_name = tag_name.strip()
             if not tag_name:
                 raise serializers.ValidationError('标签名不能为空', 400)
             if len(tag_name) > settings.MAX_TAG_LENGTH:
-                raise serializers.ValidationError('标签名不能超过{}个字符'.format(settings.MAX_TAG_LENGTH), 400)
+                raise serializers.ValidationError(f'标签名不能超过{settings.MAX_TAG_LENGTH}个字符', 400)
         return tag_names
 
     def validate_division_id(self, division_id):
