@@ -480,21 +480,20 @@ class ImagesApi(APIView):
         date_str = datetime.now().strftime('%Y-%m-%d')
         uid = uuid.uuid1()
         file_type = mime.split('/')[1]
-        github_data = settings.GITHUB_DATA
         upload_url = 'https://api.github.com/repos/{owner}/{repo}/contents/{date}/{uid}.{type}' \
-            .format(owner=github_data['owner'], repo=github_data['repo'], date=date_str, uid=uid, type=file_type)
+            .format(owner=settings.GITHUB_OWENER, repo=settings.GITHUB_REPO, date=date_str, uid=uid, type=file_type)
         headers = {
-            'Authorization': 'token {}'.format(github_data['token'])
+            'Authorization': 'token {}'.format(settings.GITHUB_TOKEN)
         }
         body = {
             'content': base64.b64encode(image.read()).decode('utf-8'),
             'message': 'upload image by user {}'.format(request.user.pk),
-            'branch': github_data['branch'],
+            'branch': settings.GITHUB_BRANCH,
         }
         post_image_to_github.delay(url=upload_url, headers=headers, body=body)
 
         result_url = 'https://cdn.jsdelivr.net/gh/{owner}/{repo}@{branch}/{date}/{uid}.{type}' \
-            .format(owner=github_data['owner'], repo=github_data['repo'], branch=github_data['branch'], date=date_str, uid=uid, type=file_type)
+            .format(owner=settings.GITHUB_OWENER, repo=settings.GITHUB_REPO, branch=settings.GITHUB_BRANCH, date=date_str, uid=uid, type=file_type)
         return Response({'url': result_url, 'message': '图片已上传'}, 202)
 
 
@@ -522,5 +521,5 @@ class MessagesApi(APIView):
 
         else:
             return Response(None, 400)
-        
+
         return Response({'message': '已发送通知'}, 201)
