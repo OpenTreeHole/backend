@@ -24,13 +24,13 @@ worker_class = "uvicorn.workers.UvicornWorker"
 # 客户端同时最大连接数，适用于 gevent eventlet
 worker_connections = 1000
 
-# 以守护进程形式运行：后台运行
+# 以守护进程形式运行
 daemon = False
 
-loglevel = 'debug'
-pidfile = 'log/gunicorn.pid'
-accesslog = 'log/gun-access.log'
-errorlog = 'log/gun-error.log'
+# loglevel = 'debug'
+# pidfile = 'log/gunicorn.pid'
+# accesslog = 'log/gun-access.log'
+# errorlog = 'log/gun-error.log'
 
 # reload=true 自动重启
 # chdir = '/path/' 指定它的工作路径
