@@ -6,7 +6,7 @@ if os.environ.get("ENV") == "development":
 elif os.environ.get("ENV") == "production":
     from OpenTreeHole.production import *
 else:
-    print("未配置ENV环境变量！请将其配置为 development 或 production，目前在开发环境下运行！")
+    print("未配置ENV环境变量！请将其配置为 development 或 production")
     from OpenTreeHole.development import *
 
 # Application definition

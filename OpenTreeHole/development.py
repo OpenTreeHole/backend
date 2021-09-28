@@ -1,5 +1,9 @@
 from pathlib import Path
 
+from .config import *
+
+print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
+
 # 就是外层的 OpenTreeHole
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
