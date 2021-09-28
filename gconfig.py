@@ -8,7 +8,7 @@ import multiprocessing
 # worker_class = "gevent"
 
 # ip + port
-bind = "127.0.0.1:80"
+bind = "0.0.0.0:80"
 # 超时时间
 timeout = 40
 
