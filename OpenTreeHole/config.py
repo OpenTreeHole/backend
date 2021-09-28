@@ -82,4 +82,4 @@ for item in local:
     if item.startswith('_') or item == 'os':  # 内置变量名不考虑
         continue
     if item in envs:
-        exec(f'{item} = envs.get(item)')
+        exec(f'{item} = eval(envs.get(item))')
