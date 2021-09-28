@@ -118,6 +118,8 @@ class ReportSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    message_id = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
         model = Message
-        fields = ['from_user', 'to_user', 'content', 'time_created']
+        fields = ['message_id', 'content', 'has_read', 'time_created']

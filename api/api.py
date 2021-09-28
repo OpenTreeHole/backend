@@ -19,10 +19,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, Profile
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted
-from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer
-from api.tasks import hello_world, mail, post_image_to_github, send_message
+from api.models import Tag, Hole, Floor, Report, Profile, Message
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted, OwenerOrAdminCanSee
+from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
+from api.tasks import hello_world, mail, post_image_to_github
 from api.utils import to_shadow_text
 
 
@@ -495,28 +495,60 @@ class ImagesApi(APIView):
 
 
 class MessagesApi(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, OnlyAdminCanModify, OwenerOrAdminCanSee]
 
     def post(self, request):
-        from_id = request.data.get('from')
-        from_user = get_object_or_404(User, pk=from_id)
         floor = get_object_or_404(Floor, pk=request.data.get('to'))
-        to_user = floor.user
-        to_id = to_user.pk
+        to_id = floor.user.pk
 
         if request.data.get('share_email'):
-            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{from_user.username}'
-            send_message.delay(from_id=from_id, to_id=to_id, message=message)
-
+            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.username}'
         elif request.data.get('message'):
             message = request.data.get('message').strip()
             if not is_permitted(request.user, 'admin'):
                 return Response(None, 403)
             if not message:
                 return Response({'message': 'message不能为空'}, 400)
-            send_message.delay(from_id=from_id, to_id=to_id, message=message)
-
         else:
             return Response(None, 400)
 
-        return Response({'message': '已发送通知'}, 201)
+        Message.objects.create(user_id=to_id, content=message)
+        return Response({'message': f'已发送通知，内容为：{message}'}, 201)
+
+    def get(self, request, **kwargs):
+        not_read = request.query_params.get('not_read', False)
+        start_time = request.query_params.get('start_time')
+        message_id = kwargs.get('message_id')
+
+        # 获取单个
+        if message_id:
+            message = get_object_or_404(Message, pk=message_id)
+            self.check_object_permissions(request, message)
+            serializer = MessageSerializer(message)
+            return Response(serializer.data)
+        # 获取多个
+        else:
+            query_set = Message.objects.filter(user=request.user).order_by('-pk')
+            if not_read:
+                query_set = query_set.filter(has_read=False)
+            if start_time:
+                query_set = query_set.filter(time_created__gt=start_time)
+
+            serializer = MessageSerializer(query_set, many=True)
+            return Response(serializer.data)
+
+    def put(self, request, **kwargs):
+        content = request.data.get('content')
+        has_read = request.data.get('has_read')
+        message_id = kwargs.get('message_id')
+        message = get_object_or_404(Message, pk=message_id)
+
+        message.content = content
+        message.has_read = has_read
+
+        message.save()
+        serializer = MessageSerializer(message)
+        return Response(serializer.data)
+
+    def delete(self, request):
+        pass

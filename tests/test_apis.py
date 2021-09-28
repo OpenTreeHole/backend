@@ -1,12 +1,12 @@
-from datetime import datetime, timezone, timedelta
 import time
+from datetime import datetime, timezone, timedelta
 
-from django.core.cache import cache
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.utils.dateparse import parse_datetime
-from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APITestCase
 
 from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
 
@@ -24,8 +24,6 @@ def basic_setup(self):
     admin.profile.save()
 
     user = User.objects.create_user(username=USERNAME, password=PASSWORD)
-
-    User.objects.create_user('system user')
 
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
@@ -576,3 +574,55 @@ class ReportTests(APITestCase):
         self.assertTrue(parse_datetime(profile.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
         r = self.client.get('/reports/1')
         self.assertEqual(r.json()['dealed_by'], self.admin.profile.nickname)
+
+
+class MessageTests(APITestCase):
+    def setUp(self):
+        r = basic_setup(self)
+        self.user = r.get('user')
+        self.admin = r.get('admin')
+        Message.objects.create(content='content', user=self.user, has_read=True)
+        Message.objects.create(content='content', user=self.user, has_read=False)
+        Message.objects.create(content='content', user=self.user, has_read=True)
+
+    def test_post_share_email(self):
+        r = self.client.post('/messages', {
+            'to': 1,
+            'share_email': True
+        })
+        self.assertEqual(r.status_code, 201)
+        self.assertTrue(Message.objects.filter(content__contains='邮箱').exists())
+        self.assertIsNotNone(r.json()['message'])
+
+    def test_post_send_notification(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.post('/messages', {
+            'to': 1,
+            'message': 'hi'
+        })
+        self.assertEqual(r.status_code, 201)
+        self.assertTrue(Message.objects.filter(content__contains='hi').exists())
+        self.assertIsNotNone(r.json()['message'])
+
+    def test_get_one(self):
+        r = self.client.get('/messages/1')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['content'], 'content')
+
+    def test_get_many(self):
+        r = self.client.get('/messages', {
+            'not_read': True,
+            'start_time': '1970-01-01T00:00:00+00:00'
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 1)
+
+    def test_put(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.put('/messages/3', {
+            'content': 'new',
+            'has_read': True
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['content'], 'new')
+        self.assertEqual(r.json()['has_read'], True)

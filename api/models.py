@@ -100,17 +100,15 @@ class Profile(models.Model):
 
 
 class Message(models.Model):
-    from_user = models.ForeignKey(
-        User, related_name="message_from", on_delete=models.CASCADE, db_index=True
-    )
-    to_user = models.ForeignKey(
+    user = models.ForeignKey(
         User, related_name="message_to", on_delete=models.CASCADE, db_index=True
     )
     content = models.TextField()
+    has_read = models.BooleanField(default=False)
     time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.from_user.pk} -> {self.to_user.pk}: {self.content}"
+        return f"-> {self.user.pk}: {self.content}"
 
 
 # 自动在创建用户后创建其 Token 和用户资料数据

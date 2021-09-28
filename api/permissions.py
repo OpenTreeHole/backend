@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from rest_framework import permissions
 from django.utils.dateparse import parse_datetime
+from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
 MODIFY_METHODS = ('PUT', 'PATCH', 'DELETE')
@@ -84,3 +84,11 @@ class AdminOrPostOnly(permissions.BasePermission):
             return True
         else:
             return is_permitted(request.user, 'admin')
+
+
+class OwenerOrAdminCanSee(permissions.BasePermission):
+    def has_object_permission(self, request, view, instance):
+        if request.method == 'GET':
+            return instance.user == request.user or is_permitted(request.user, 'admin')
+        else:
+            return True
