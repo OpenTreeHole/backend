@@ -1,3 +1,4 @@
+#!/bin/bash
 pipenv shell
 python manage.py migrate
 python manage.py loaddata init_data
