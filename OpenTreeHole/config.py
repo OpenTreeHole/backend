@@ -84,5 +84,5 @@ for item in local:
     if item in envs:
         try:
             exec(f'{item} = eval(envs.get(item))')  # 非字符串类型使用 eval() 转换
-        except NameError:
+        except:
             exec(f'{item} = envs.get(item)')  # 否则直接为字符串
