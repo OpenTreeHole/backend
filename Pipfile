@@ -14,7 +14,7 @@ httpx = "*"
 channels = "*"
 uvicorn = { extras = ["standard"], version = "*" }
 gunicorn = "*"
-mysqlclient = "*"
+mysql-connector-python = "*"
 
 [dev-packages]
 eventlet = "*"
