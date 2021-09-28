@@ -1,12 +1,12 @@
 import os
 import sys
 
-if os.environ.get("ENV") == "development":
+if os.environ.get("HOLE_ENV") == "development":
     from OpenTreeHole.development import *
-elif os.environ.get("ENV") == "production":
+elif os.environ.get("HOLE_ENV") == "production":
     from OpenTreeHole.production import *
 else:
-    print("未配置ENV环境变量！请将其配置为 development 或 production")
+    print("未配置 HOLE_ENV 环境变量！请将其配置为 development 或 production")
     from OpenTreeHole.development import *
 
 # Application definition
