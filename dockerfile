@@ -3,7 +3,7 @@ FROM debian:buster
 MAINTAINER jsclndnz@gmail.com
 
 RUN apt update \
-    && apt install -y --no-install-recommends python3 python3-pip libmagic1 nginx \
+    && apt install -y --no-install-recommends python3 python3-pip libmagic1 \
     && apt autoremove -y \
 	&& pip3 install --no-cache-dir pipenv
 
