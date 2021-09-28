@@ -8,8 +8,8 @@ print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
-# 无需配置 ALLOWED_HOSTS
-ALLOWED_HOSTS = []
+# 允许任意 host
+ALLOWED_HOSTS = ['*']
 
 # 开发环境使用 sqlite 数据库
 DATABASES = {
