@@ -3,7 +3,9 @@
 import os
 import uuid
 
-SITE_NAME = 'Open Tree Hole'
+SITE_NAME = 'Open Tree Hole'  # 网站名称
+TZ = "Asia/Shanghai"  # 时区
+LANGUAGE = "zh-Hans"
 ALLOW_CONNECT_HOSTS = ['opentreehole.org']  # 允许连接的域名
 EMAIL_WHITELIST = ["test.com"]  # 允许注册树洞的邮箱域名
 MIN_PASSWORD_LENGTH = 8  # 允许的最短用户密码长度
@@ -53,6 +55,7 @@ DATABASE_PORT = 3306  # 数据库端口
 DATABASE_NAME = "open_tree_hole"  # 数据库名称
 DATABASE_USER = ""  # 数据库用户
 DATABASE_PASSWORD = ""  # 数据库密码
+REDIS_ADDRESS = 'redis://localhost:6379'  # redis 缓存地址
 
 # 邮件配置
 EMAIL_HOST = ''

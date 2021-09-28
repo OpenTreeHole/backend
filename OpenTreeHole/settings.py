@@ -1,15 +1,13 @@
 import os
 import sys
 
-from .config import *
-
 if os.environ.get("ENV") == "development":
     from OpenTreeHole.development import *
 elif os.environ.get("ENV") == "production":
-    from OpenTreeHole.development import *
+    from OpenTreeHole.production import *
 else:
-    print("未配置ENV环境变量！请将其配置为 development 或 production")
-    sys.exit()
+    print("未配置ENV环境变量！请将其配置为 development 或 production，目前在开发环境下运行！")
+    from OpenTreeHole.development import *
 
 # Application definition
 
@@ -66,9 +64,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = "zh-Hans"
+LANGUAGE_CODE = LANGUAGE
 
-TIME_ZONE = "Asia/Shanghai"
+TIME_ZONE = TZ
 
 USE_I18N = True
 
@@ -98,4 +96,4 @@ REST_FRAMEWORK = {
 FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
 
 CELERY_RESULT_BACKEND = 'django-cache'
-CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_BROKER_URL = REDIS_ADDRESS
