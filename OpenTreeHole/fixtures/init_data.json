@@ -22,23 +22,5 @@
       "name": "跳蚤市场",
       "description": "二手交易及广告"
     }
-  },
-  {
-    "model": "auth.user",
-    "pk": 1,
-    "fields": {
-      "password": "pbkdf2_sha256$260000$gyqE7Et2UErHicyzBjutnq$E7IODRVRwdIJtN8w2DpfKvXSP0CkaOr2z9Fu9dUbrOo=",
-      "last_login": null,
-      "is_superuser": false,
-      "username": "system user",
-      "first_name": "",
-      "last_name": "",
-      "email": "",
-      "is_staff": false,
-      "is_active": false,
-      "date_joined": "1970-01-01T00:00:00+00:00",
-      "groups": [],
-      "user_permissions": []
-    }
   }
 ]
