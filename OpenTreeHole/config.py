@@ -82,4 +82,7 @@ for item in local:
     if item.startswith('_') or item == 'os':  # 内置变量名不考虑
         continue
     if item in envs:
-        exec(f'{item} = eval(envs.get(item))')
+        try:
+            exec(f'{item} = eval(envs.get(item))')  # 非字符串类型使用 eval() 转换
+        except NameError:
+            exec(f'{item} = envs.get(item)')  # 否则直接为字符串
