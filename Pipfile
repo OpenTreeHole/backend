@@ -12,6 +12,8 @@ django-celery-results = "*"
 python-magic = "*"
 httpx = "*"
 channels = "*"
+uvicorn = { extras = ["standard"], version = "*" }
+gunicorn = "*"
 
 [dev-packages]
 eventlet = "*"
