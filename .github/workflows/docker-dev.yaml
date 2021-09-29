@@ -5,7 +5,7 @@ on:
     branches:
       - 'dev'
 env:
-  APP_NAME: open_tree_hole
+  APP_NAME: open_tree_hole_backend
 
 jobs:
   docker:
