@@ -3,7 +3,7 @@ name: docker-dev
 on:
   push:
     branches:
-      - 'dev'
+      - 'master'
 env:
   APP_NAME: open_tree_hole_backend
 
@@ -29,5 +29,5 @@ jobs:
         with:
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:dev-${{ steps.date.outputs.date }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:dev-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:${{ steps.date.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:latest
