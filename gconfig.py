@@ -29,8 +29,8 @@ daemon = False
 
 loglevel = 'debug'
 # pidfile = 'log/gunicorn.pid'
-# accesslog = 'log/gun-access.log'
-# errorlog = 'log/gun-error.log'
+accesslog = '-'
+errorlog = '-'
 
 # reload=true 自动重启
 # chdir = '/path/' 指定它的工作路径
