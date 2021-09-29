@@ -19,6 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.consumers import send_message_to_user
 from api.models import Tag, Hole, Floor, Report, Profile, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
@@ -34,6 +35,7 @@ from api.utils import to_shadow_text
 @api_view(["GET"])
 def index(request):
     hello_world.delay()
+    send_message_to_user(request.user.id, {'message': 'hi'})
     return Response({"message": "Hello world!"})
 
 

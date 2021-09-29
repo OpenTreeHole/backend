@@ -29,3 +29,10 @@ CACHES = {
 
 # 开发环境邮件发送至控制台
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# channels 通道层，使用内存
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}

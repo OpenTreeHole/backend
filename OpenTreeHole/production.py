@@ -37,3 +37,13 @@ CACHES = {
 
 # 生产环境SMTP发送邮件
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# channels 通道层，使用 redis
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_ADDRESS],
+        },
+    },
+}

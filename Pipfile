@@ -15,6 +15,7 @@ channels = "*"
 uvicorn = { extras = ["standard"], version = "*" }
 gunicorn = "*"
 mysql-connector-python = "*"
+channels-redis = "*"
 
 [dev-packages]
 eventlet = "*"

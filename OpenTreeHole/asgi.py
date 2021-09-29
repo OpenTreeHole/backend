@@ -11,9 +11,10 @@ import os
 
 from django.core.asgi import get_asgi_application
 
+from api.middleware import TokenAuthMiddleware
+
 django_asgi_app = get_asgi_application()
 
-from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 
 import api.urls
@@ -22,7 +23,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "OpenTreeHole.settings")
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AuthMiddlewareStack(
+    "websocket": TokenAuthMiddleware(
         URLRouter(
             api.urls.websocket_urlpatterns
         )
