@@ -13,7 +13,7 @@ bind = "0.0.0.0:80"
 timeout = 40
 
 # 并行工作进程数
-workers = multiprocessing.cpu_count() * 2 + 1
+workers = max(multiprocessing.cpu_count(), 4)
 # 每个进程开启的线程数
 threads = 2
 # 服务器中在pending状态的最大连接数 (建议 64-2048)
@@ -27,7 +27,7 @@ worker_connections = 1000
 # 以守护进程形式运行
 daemon = False
 
-# loglevel = 'debug'
+loglevel = 'debug'
 # pidfile = 'log/gunicorn.pid'
 # accesslog = 'log/gun-access.log'
 # errorlog = 'log/gun-error.log'
