@@ -1,4 +1,4 @@
-config.bak.py
+config.bak
 Pipfile.lock
 try.*
 db.sqlite3
