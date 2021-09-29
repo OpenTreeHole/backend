@@ -12,7 +12,7 @@
 
 2. 填写 `environment` 块下的若干环境变量，完整的列表及说明请参见 [配置文件](https://github.com/OpenTreeHole/backend/blob/master/OpenTreeHole/config.py)
 
-   注意：数组格式的变量应以引号包裹，如 ALLOW_CONNECT_HOSTS='["opentreehole.org"]'
+   注意：环境变量**不应**以引号包裹，否则会无法解析
 
 3. 运行 `docker-compose up -d`
 
