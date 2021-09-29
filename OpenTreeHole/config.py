@@ -5,7 +5,7 @@ import uuid
 
 SITE_NAME = 'Open Tree Hole'  # 网站名称
 TZ = "Asia/Shanghai"  # 时区
-LANGUAGE = "zh-Hans"
+LANGUAGE = "zh-Hans"  # 语言代码
 ALLOW_CONNECT_HOSTS = ['opentreehole.org']  # 允许连接的域名
 EMAIL_WHITELIST = ["test.com"]  # 允许注册树洞的邮箱域名
 MIN_PASSWORD_LENGTH = 8  # 允许的最短用户密码长度
@@ -59,7 +59,7 @@ REDIS_ADDRESS = 'redis://localhost:6379'  # redis 缓存地址
 
 # 邮件配置
 EMAIL_HOST = ''
-EMAIL_PORT = 587
+EMAIL_PORT = 465
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = True
@@ -68,12 +68,15 @@ DEFAULT_FROM_EMAIL = ''  # 默认发件人地址
 
 # 图片配置
 MAX_IMAGE_SIZE = 20  # 最大上传图片大小（MB）
-# 采用 Github 图床
+
+# 采用 Github 图床，具体可参考 https://gitnoteapp.com/zh/extensions/github.html
 GITHUB_OWENER = 'OpenTreeHole'
 GITHUB_TOKEN = ''
-GITHUB_REPO = ''
-GITHUB_BRANCH = ''
-SECRET_KEY = str(uuid.uuid1())  # 足够长的密码，供 Django 安全机制
+GITHUB_REPO = 'images'
+GITHUB_BRANCH = 'master'
+
+# 足够长的密码，供 Django 安全机制
+SECRET_KEY = str(uuid.uuid1())
 
 # 用环境变量中的配置覆盖
 envs = os.environ
