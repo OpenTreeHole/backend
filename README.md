@@ -6,25 +6,23 @@
 
 本项目使用 Docker 持续集成部署
 
-你需要安装 mysql 和 redis, 并创建数据库和用户
+### 使用 docker-compose 安装：
 
-执行如下命令, 以环境变量的方式进行相关配置，具体的变量名可参见  [配置文件](https://github.com/OpenTreeHole/backend/blob/master/OpenTreeHole/config.py)
-注意：数组格式的变量应以引号包裹，如 ALLOW_CONNECT_HOSTS='["opentreehole.org"]'
+1. 下载 [docker-compose.yaml](https://github.com/OpenTreeHole/backend/blob/master/docker-compose.yaml)
 
-```shell
-docker run -d \
-  --name=treehole \
-  -p 8080:80 \
-  -e environs= \ # 此处设置环境变量
-  --restart unless-stopped \
-  shi2002/open_tree_hole_backend 
-```
+2. 填写 `environment` 块下的若干环境变量，完整的列表及说明请参见 [配置文件](https://github.com/OpenTreeHole/backend/blob/master/OpenTreeHole/config.py)
 
-域名和 CORS 等配置应在 nginx 等反向代理服务器中完成，请自行配置相关项
+   注意：数组格式的变量应以引号包裹，如 ALLOW_CONNECT_HOSTS='["opentreehole.org"]'
 
-若成功，后端项目可以在 8080 端口访问
+3. 运行 `docker-compose up -d`
 
-项目初始化时会自动创建管理员账户，邮箱为 admin@opentreehole.org，密码为 admin，请尽快登录至管理后台修改管理员信息
+若成功，项目可以在 80 端口访问
+
+### 注意：
+
+- 域名和 CORS 等配置应在 nginx 等反向代理服务器中完成，请自行配置相关项
+
+- 项目初始化时会自动创建管理员账户，邮箱为 admin@opentreehole.org，密码为 admin，须尽快登录至管理后台修改管理员信息
 
 ## 开发须知
 
