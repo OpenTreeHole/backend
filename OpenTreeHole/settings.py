@@ -112,5 +112,5 @@ REST_FRAMEWORK = {
 
 FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
 
-CELERY_RESULT_BACKEND = 'django-cache'
+CELERY_RESULT_BACKEND = REDIS_ADDRESS
 CELERY_BROKER_URL = REDIS_ADDRESS

@@ -78,7 +78,7 @@ def verify(request, **kwargs):
             content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {verification}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
             receivers=[email]
         )
-        return Response({'message': '验证邮件发送成功，请查收验证码'})
+        return Response({'message': '验证邮件已发送，请查收验证码'})
     else:
         return Response({}, 502)
 
