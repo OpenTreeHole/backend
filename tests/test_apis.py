@@ -184,7 +184,7 @@ class RegisterTests(APITestCase):
         # 正确校验
         r = self.client.get("/verify/email", {"email": self.email})
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.data, {'message': '验证邮件发送成功，请查收验证码'})
+        self.assertIsNotNone(r.json()['message'])
         self.assertIsNotNone(cache.get(self.email))
         self.verification = cache.get(self.email)
 
@@ -392,7 +392,7 @@ class FloorTests(APITestCase):
         original_content = Floor.objects.get(pk=1).content
         r = self.client.put('/floors/1', {
             'content': 'Modified',
-            'like': True,
+            'like': 'add',
             'fold': ['fold1', 'fold2']
         })
         self.assertEqual(r.status_code, 200)
@@ -406,6 +406,10 @@ class FloorTests(APITestCase):
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
         self.assertEqual(floor.fold, ['fold1', 'fold2'])
+        # 取消点赞
+        r = self.client.put('/floors/1', {'like': 'cancel'})
+        self.assertEqual(r.json()['like'], 0)
+        self.assertEqual(r.json()['liked'], False)
 
     def test_delete(self):
         original_content = Floor.objects.get(pk=2).content

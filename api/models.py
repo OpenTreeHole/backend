@@ -54,7 +54,7 @@ class Floor(models.Model):
     reply_to = models.IntegerField(null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
-    like = models.IntegerField(default=0, db_index=True)
+    like = models.IntegerField(default=0, db_index=True)  # 赞同数
     like_data = models.JSONField(default=list)  # 点赞记录，主键列表
     deleted = models.BooleanField(default=False)  # 仅作为前端是否显示删除按钮的依据
     history = models.JSONField(default=list)  # 修改记录，字典列表
@@ -119,6 +119,7 @@ def create_token_and_profile(sender, instance=None, created=False, **kwargs):
         Profile.objects.create(user=instance)
 
 
+# 自动修改 tag 的热度
 @receiver(m2m_changed, sender=Hole.tags.through)
 def modify_tag_temperature(sender, reverse, action, pk_set, **kwargs):
     if reverse is False and action == 'post_add':

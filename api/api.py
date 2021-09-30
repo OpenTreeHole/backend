@@ -174,7 +174,7 @@ class HolesApi(APIView):
         hole_id = kwargs.get('hole_id')
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
-            Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)
+            Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
             serializer = HoleSerializer(hole, context={"user": request.user})
             return Response(serializer.data)
 
@@ -287,8 +287,13 @@ class FloorsApi(APIView):
             floor.content = content
             floor.shadow_text = to_shadow_text(content)
         if like:
-            floor.like_data.append(request.user.pk)
-            floor.like += 1
+            if like == 'add' and request.user.pk not in floor.like_data:
+                floor.like_data.append(request.user.pk)
+            elif like == 'cancel' and request.user.pk in floor.like_data:
+                floor.like_data.remove(request.user.pk)
+            else:
+                pass
+            floor.like = len(floor.like_data)
         if fold:
             floor.fold = fold
 
