@@ -34,7 +34,7 @@ def mail(subject, content, receivers):
 
 @shared_task
 def post_image_to_github(url, headers, body):
-    proxies = 'http://localhost:7890' if os.environ.get("ENV") == "development" else None
+    proxies = os.environ.get("HTTP_PROXY")
     with httpx.Client(proxies=proxies) as client:
         r = client.put(url, headers=headers, json=body)
     if r.status_code == 201:
