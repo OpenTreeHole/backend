@@ -35,7 +35,7 @@ from api.utils import to_shadow_text
 @api_view(["GET"])
 def index(request):
     hello_world.delay()
-    send_message_to_user(request.user.id, {'message': 'hi'})
+    send_message_to_user(request.user, {'message': 'hi'})
     return Response({"message": "Hello world!"})
 
 

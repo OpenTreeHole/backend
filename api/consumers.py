@@ -14,10 +14,10 @@ def get_unread_messages(user):
     return serializer.data
 
 
-def send_message_to_user(user_id, content):
+def send_message_to_user(user, content):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        f'user-{user_id}',  # Channels 组名称
+        f'user-{user.id}',  # Channels 组名称
         {
             "type": "notification",
             "content": content,
