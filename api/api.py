@@ -6,7 +6,6 @@ from datetime import datetime, timezone, timedelta
 import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
@@ -19,8 +18,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, Profile, Message
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted, OwenerOrAdminCanSee
+from api.models import Tag, Hole, Floor, Report, User, Message
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.tasks import hello_world, mail, post_image_to_github
 from api.utils import to_shadow_text, send_message_to_user
@@ -40,9 +39,9 @@ def index(request):
 
 @api_view(["POST"])
 def login(request):
-    username = request.data.get("email")
+    email = request.data.get("email")
     password = request.data.get("password")
-    user = get_object_or_404(User, username=username)
+    user = get_object_or_404(User, email=email)
     if check_password(password, user.password):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "message": "登录成功！"})
@@ -66,7 +65,7 @@ def verify(request, **kwargs):
         if domain not in settings.EMAIL_WHITELIST:
             return Response({"message": "邮箱不在白名单内！"}, 400)
         # 检查用户是否注册
-        if User.objects.filter(username=email):
+        if User.objects.filter(email=email):
             return Response({"message": "该用户已注册！"}, 400)
 
         # 设置验证码并发送验证邮件
@@ -98,10 +97,10 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否已存在
-        if User.objects.filter(username=email).exists():
+        if User.objects.filter(email=email).exists():
             return Response({"message": "该用户已注册！"}, 400)
 
-        User.objects.create_user(username=email, password=password)
+        User.objects.create_user(email=email, password=password)
         return Response({"message": "注册成功！"}, 201)
 
     def put(self, request):
@@ -120,7 +119,7 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否不存在
-        users = User.objects.filter(username=email)
+        users = User.objects.filter(email=email)
         if not users:
             return Response({"message": "该用户不存在"}, 400)
         user = users[0]
@@ -368,32 +367,29 @@ class FavoritesApi(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        query_set = request.user.profile.favorites.all()
+        query_set = request.user.favorites.all()
         serializer = HoleSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
 
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        profile = get_object_or_404(Profile, user=request.user)
-        profile.favorites.add(hole)
-        profile.save()
+        request.user.favorites.add(hole)
+        request.user.save()
         return Response({'message': '收藏成功'}, 201)
 
     def put(self, request):
         hole_ids = request.data.get('hole_ids')
         holes = Hole.objects.filter(pk__in=hole_ids)
-        profile = get_object_or_404(Profile, user=request.user)
-        profile.favorites.set(holes)
-        profile.save()
+        request.user.favorites.set(holes)
+        request.user.save()
         return Response({'message': '修改成功'}, 200)
 
     def delete(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        profile = get_object_or_404(Profile, user=request.user)
-        profile.favorites.remove(hole)
-        profile.save()
+        request.user.favorites.remove(hole)
+        request.user.save()
         return Response({'message': '删除成功'}, 204)
 
 
@@ -451,12 +447,12 @@ class ReportsApi(APIView):
             floor.shadow_text = to_shadow_text(delete_reason)
             floor.deleted = True
         if deal.get('silent'):
-            profile = floor.user.profile
-            current_time_str = profile.permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
+            permission = floor.user.permission
+            current_time_str = permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
             current_time = parse_datetime(current_time_str)
             expected_time = datetime.now(timezone.utc) + timedelta(days=deal.get('silent'))
-            profile.permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
-            profile.save()
+            permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
+            floor.user.save()
 
         floor.save()
         report.dealed_by = request.user
@@ -510,10 +506,10 @@ class MessagesApi(APIView):
         to_id = floor.user.pk
 
         if request.data.get('share_email'):
-            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.username}'
+            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.email}'
         elif request.data.get('message'):
             message = request.data.get('message').strip()
-            if not is_permitted(request.user, 'admin'):
+            if not request.user.is_admin:
                 return Response(None, 403)
             if not message:
                 return Response({'message': 'message不能为空'}, 400)

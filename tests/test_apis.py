@@ -2,28 +2,30 @@ import time
 from datetime import datetime, timezone, timedelta
 
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
+from api.models import Division, Tag, Hole, Floor, Report, Message
 
-USERNAME = 'my username'
+User = get_user_model()
+
+USERNAME = 'my email'
 PASSWORD = 'my password'
 EMAIL = 'test@test.com'
-VERY_LONG_TIME = '9999-01-01T00:00:00+00:00'
+VERY_LONG_TIME = settings.VERY_LONG_TIME
 CONTENT = 'This is a content'
 
 
 def basic_setup(self):
     admin = User.objects.create_user('admin')
-    admin.profile.permission['admin'] = VERY_LONG_TIME
-    admin.profile.nickname = 'admin nickname'
-    admin.profile.save()
+    admin.permission['admin'] = VERY_LONG_TIME
+    admin.nickname = 'admin nickname'
+    admin.save()
 
-    user = User.objects.create_user(username=USERNAME, password=PASSWORD)
+    user = User.objects.create_user(email=USERNAME, password=PASSWORD)
 
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
@@ -100,8 +102,8 @@ class PermissionTests(APITestCase):
 
     def test_silent(self):
         silent_user = User.objects.create_user('silented user')
-        silent_user.profile.permission['silent'][1] = VERY_LONG_TIME
-        silent_user.profile.save()
+        silent_user.permission['silent'][1] = VERY_LONG_TIME
+        silent_user.save()
         silented_user_token = Token.objects.get(user=silent_user).key
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + silented_user_token)
 
@@ -143,7 +145,7 @@ class LoginTests(APITestCase):
     wrong_password = "saasor;lkjjhgny"
 
     def setUp(self):
-        User.objects.create_user(username=self.email, password=self.password)
+        User.objects.create_user(email=self.email, password=self.password)
 
     def test_login(self):
         # 正确密码
@@ -210,9 +212,8 @@ class RegisterTests(APITestCase):
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '注册成功！')
-        user = User.objects.get(username=self.email)
+        user = User.objects.get(email=self.email)
         Token.objects.get(user=user)
-        Profile.objects.get(user=user)
 
         # 重复注册
         r = self.client.post("/register", {
@@ -280,8 +281,8 @@ class HoleTests(APITestCase):
 
     def setUp(self):
         basic_setup(self)
-        self.admin = User.objects.get(username='admin')
-        self.user = User.objects.get(username=USERNAME)
+        self.admin = User.objects.get(email='admin')
+        self.user = User.objects.get(email=USERNAME)
 
     def test_post(self):
         r = self.client.post('/holes', {
@@ -339,8 +340,8 @@ class FloorTests(APITestCase):
 
     def setUp(self):
         basic_setup(self)
-        self.user = User.objects.get(username=USERNAME)
-        self.admin = User.objects.get(username='admin')
+        self.user = User.objects.get(email=USERNAME)
+        self.admin = User.objects.get(email='admin')
 
     def test_post(self):
         hole = Hole.objects.get(pk=1)
@@ -432,7 +433,7 @@ class FloorTests(APITestCase):
 class TagTests(APITestCase):
     def setUp(self):
         basic_setup(self)
-        self.admin = User.objects.get(username='admin')
+        self.admin = User.objects.get(email='admin')
         Tag.objects.filter(name='tag B1').update(temperature=1)
 
     def test_get(self):
@@ -479,7 +480,7 @@ class TagTests(APITestCase):
         self.assertFalse(Tag.objects.filter(pk=pk).exists())
 
 
-class ProfileTests(APITestCase):
+class UserTests(APITestCase):
     def setUp(self):
         basic_setup(self)
 
@@ -488,7 +489,7 @@ class ProfileTests(APITestCase):
             r = self.client.post('/user/favorites', {'hole_id': 1})
             self.assertEqual(r.status_code, 201)
             self.assertEqual(r.json(), {'message': '收藏成功'})
-            self.assertEqual(User.objects.get(username=USERNAME).profile.favorites.filter(pk=1).exists(), True)
+            self.assertEqual(User.objects.get(email=USERNAME).favorites.filter(pk=1).exists(), True)
 
         def get():
             r = self.client.get('/user/favorites')
@@ -499,14 +500,14 @@ class ProfileTests(APITestCase):
             r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json(), {'message': '修改成功'})
-            ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
+            ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
             self.assertEqual([2, 3], list(ids))
 
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
             self.assertEqual(r.status_code, 204)
             self.assertEqual(r.data, {'message': '删除成功'})
-            ids = User.objects.get(username=USERNAME).profile.favorites.values_list('id', flat=True)
+            ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
             self.assertNotIn(2, ids)
 
         post()
@@ -574,10 +575,10 @@ class ReportTests(APITestCase):
         self.assertEqual(floor.fold, ['fold 1', 'fold 2'])
         self.assertEqual(floor.deleted, True)
         self.assertEqual(floor.content, 'test delete')
-        profile = User.objects.get(username=USERNAME).profile
-        self.assertTrue(parse_datetime(profile.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
+        user = User.objects.get(email=USERNAME)
+        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
         r = self.client.get('/reports/1')
-        self.assertEqual(r.json()['dealed_by'], self.admin.profile.nickname)
+        self.assertEqual(r.json()['dealed_by'], self.admin.nickname)
 
 
 class MessageTests(APITestCase):

@@ -1,7 +1,9 @@
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from tests.test_apis import basic_setup
+
+User = get_user_model()
 
 
 class IndexTests(APITestCase):
@@ -15,7 +17,7 @@ class IndexTests(APITestCase):
 
 class ImageTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username='username')
+        self.user = User.objects.create_user(email='email')
 
     def test_post(self):
         self.client.force_authenticate(user=self.user)
@@ -31,7 +33,7 @@ class MessageTest(APITestCase):
 
     def test_post(self):
         r = self.client.post('/messages', {
-            'from': User.objects.get(username='another user').pk,
+            'from': User.objects.get(email='another user').pk,
             'to': 1,
             'share_email': True,
         })

@@ -1,9 +1,12 @@
+from datetime import datetime, timezone
+
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.db import models
 from django.db.models import F
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
+from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
 from api.utils import send_message_to_user
@@ -52,7 +55,7 @@ class Floor(models.Model):
     content = models.TextField()
     shadow_text = models.TextField()  # 去除markdown关键字的文本，方便搜索
     anonyname = models.CharField(max_length=16)
-    user = models.ForeignKey(User, models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
@@ -73,7 +76,7 @@ class Report(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     dealed = models.BooleanField(default=False, db_index=True)
-    dealed_by = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    dealed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
         return f"帖子#{self.hole.pk}，{self.reason}"
@@ -110,15 +113,52 @@ def default_config():
     }
 
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('邮箱必须提供')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        user = self.create_user(email, password, **extra_fields)
+        user.permission['admin'] = settings.VERY_LONG_TIME
+        user.save()
+        return user
+
+
+class User(AbstractBaseUser):
+    email = models.CharField(max_length=150, unique=True)
+    joined_time = models.DateTimeField(auto_now_add=True)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, blank=True)
     permission = models.JSONField(default=default_permission)
     config = models.JSONField(default=default_config)
 
+    objects = UserManager()
+    USERNAME_FIELD = 'email'
+
+    @property
+    def is_admin(self):
+        now = datetime.now(timezone.utc)
+        expire_time = parse_datetime(self.permission['admin'])
+        return expire_time > now
+
+    def is_silenced(self, division_id):
+        now = datetime.now(timezone.utc)
+        silent = self.permission['silent']
+        division = str(division_id)  # JSON 序列化会将字典的 int 索引转换成 str
+        if not silent.get(division):  # 未设置禁言，返回 False
+            return False
+        else:
+            expire_time = parse_datetime(silent.get(division))
+            return expire_time > now
+
     def __str__(self):
-        return f"用户数据#{self.user.pk}"
+        return f"用户#{self.pk}"
 
 
 class Message(models.Model):
@@ -133,12 +173,11 @@ class Message(models.Model):
         return f"-> {self.user.pk}: {self.content}"
 
 
-# 自动在创建用户后创建其 Token 和用户资料数据
+# 自动在创建用户后创建其 Token
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_token_and_profile(sender, instance=None, created=False, **kwargs):
+def create_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-        Profile.objects.create(user=instance)
 
 
 # 自动修改 tag 的热度
@@ -160,7 +199,7 @@ def create_and_send_message(user, message):
 @receiver(post_save, sender=Floor)
 def notify_when_replied(sender, instance, created, **kwargs):
     if created and instance.reply_to:
-        if 'reply' in instance.reply_to.user.profile.config['notify']:
+        if 'reply' in instance.reply_to.user.config['notify']:
             message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
             create_and_send_message(instance.reply_to.user, message)
 
@@ -168,6 +207,6 @@ def notify_when_replied(sender, instance, created, **kwargs):
 # @receiver(post_save, sender=Floor)
 # def notify_when_favorites_updated(sender, instance, created, **kwargs):
 #     if created and instance.hole:
-#         if 'reply' in instance.reply_to.user.profile.config['notify']:
+#         if 'reply' in instance.reply_to.user.config['notify']:
 #             message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
 #             create_and_send_message(instance.user, message)

@@ -1,8 +1,10 @@
 from django.conf import settings
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from api.models import Division, Tag, Hole, Floor, Report, Profile, Message
+from api.models import Division, Tag, Hole, Floor, Report, Message
+
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -10,13 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id']
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = ['user_id', 'nickname', 'favorites', 'permission']
+        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config']
 
 
 class DivisionSerializer(serializers.ModelSerializer):
@@ -113,7 +109,7 @@ class ReportSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        data['dealed_by'] = instance.dealed_by.profile.nickname if instance.dealed_by else None
+        data['dealed_by'] = instance.dealed_by.nickname if instance.dealed_by else None
         return data
 
 

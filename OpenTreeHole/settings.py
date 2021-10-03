@@ -117,3 +117,9 @@ FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
 
 CELERY_RESULT_BACKEND = REDIS_ADDRESS
 CELERY_BROKER_URL = REDIS_ADDRESS
+
+# 自定义用户模型
+AUTH_USER_MODEL = 'api.User'
+
+# 遥远的时间
+VERY_LONG_TIME = '9999-01-01T00:00:00+00:00'
