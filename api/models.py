@@ -89,11 +89,31 @@ def default_permission():
     }
 
 
+def default_config():
+    """
+    show_folded: 对折叠内容的处理
+        fold: 折叠
+        hide: 隐藏
+        show: 展示
+
+    notify: 在以下场景时通知
+        reply: 被回复时
+        favorite: 收藏的主题帖有新帖时
+        report: 被举报时
+    另外，当用户权限发生变化或所发帖被修改时也会收到通知
+    """
+    return {
+        'show_folded': 'fold',
+        'notify': ['reply', 'favorite', 'report']
+    }
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, blank=True)
     permission = models.JSONField(default=default_permission)
+    config = models.JSONField(default=default_config)
 
     def __str__(self):
         return f"用户数据#{self.user.pk}"
