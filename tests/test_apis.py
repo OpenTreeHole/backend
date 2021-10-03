@@ -353,7 +353,7 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=CONTENT)
-        self.assertEqual(floor.reply_to, first_floor.pk)
+        self.assertEqual(floor.reply_to.pk, first_floor.pk)
 
     def test_get(self):
         r = self.client.get('/floors', {
