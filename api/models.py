@@ -6,6 +6,8 @@ from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+from api.utils import send_message_to_user
+
 
 class Division(models.Model):
     name = models.CharField(max_length=32, unique=True)
@@ -61,7 +63,7 @@ class Floor(models.Model):
     fold = models.JSONField(default=list)  # 折叠原因，字符串列表（原因由前端提供）
 
     def __str__(self):
-        return f"树洞#{self.hole.pk}, 楼层#{self.pk}: {self.content[:50]}"
+        return f"{self.content[:50]}"
 
 
 class Report(models.Model):
@@ -146,3 +148,26 @@ def modify_tag_temperature(sender, reverse, action, pk_set, **kwargs):
         Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') + 1)
     elif reverse is False and action == 'post_remove':
         Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') - 1)
+
+
+# 在数据库中创建一条消息并通过 websocket 发送给用户
+def create_and_send_message(user, message):
+    Message.objects.create(user=user, content=message)
+    send_message_to_user(user, {'message': message})
+
+
+# 收到回复后通知用户
+@receiver(post_save, sender=Floor)
+def notify_when_replied(sender, instance, created, **kwargs):
+    if created and instance.reply_to:
+        if 'reply' in instance.reply_to.user.profile.config['notify']:
+            message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
+            create_and_send_message(instance.reply_to.user, message)
+
+# 收藏的主题帖有新帖时通知用户
+# @receiver(post_save, sender=Floor)
+# def notify_when_favorites_updated(sender, instance, created, **kwargs):
+#     if created and instance.hole:
+#         if 'reply' in instance.reply_to.user.profile.config['notify']:
+#             message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
+#             create_and_send_message(instance.user, message)
