@@ -16,7 +16,7 @@ def get_user(token_key):
 def find_token(headers):
     # scope['headers'] 为二进制编码的元组列表
     for header in headers:
-        if header[0].decode() == 'authorization':
+        if header[0].decode() in ('authorization', 'sec-websocket-protocol'):
             return header[1].decode().split(' ')[-1]
 
 

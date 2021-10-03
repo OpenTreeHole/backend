@@ -19,12 +19,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.consumers import send_message_to_user
 from api.models import Tag, Hole, Floor, Report, Profile, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, is_permitted, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.tasks import hello_world, mail, post_image_to_github
-from api.utils import to_shadow_text
+from api.utils import to_shadow_text, send_message_to_user
 
 
 # 发送 csrf 令牌

@@ -1,8 +1,28 @@
 import re
-from smtplib import SMTPException
 
-from django.core.mail import send_mail
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from rest_framework.views import exception_handler
+
+
+def send_message_to_user(user, content):
+    """
+    向用户发送消息
+    Args:
+        user: 用户对象
+        content: 消息内容
+
+    Returns: None
+
+    """
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        f'user-{user.id}',  # Channels 组名称
+        {
+            "type": "notification",
+            "content": content,
+        }
+    )
 
 
 def custom_exception_handler(exc, context):

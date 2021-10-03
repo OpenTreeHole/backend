@@ -1,7 +1,7 @@
-from asgiref.sync import async_to_sync
+import json
+
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from channels.layers import get_channel_layer
 
 from api.models import Message
 from api.serializers import MessageSerializer
@@ -14,18 +14,13 @@ def get_unread_messages(user):
     return serializer.data
 
 
-def send_message_to_user(user, content):
-    channel_layer = get_channel_layer()
-    async_to_sync(channel_layer.group_send)(
-        f'user-{user.id}',  # Channels 组名称
-        {
-            "type": "notification",
-            "content": content,
-        }
-    )
-
-
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
+    async def send_json(self, content, close=False):
+        """
+        unicode 编码 json 并发给客户端
+        """
+        await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
+
     async def connect(self):
         user = self.scope["user"]
         # 仅允许已登录用户

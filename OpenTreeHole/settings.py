@@ -106,6 +106,9 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         "rest_framework.authentication.TokenAuthentication",
     ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
