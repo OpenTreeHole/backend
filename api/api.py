@@ -179,8 +179,8 @@ class HolesApi(APIView):
             return Response(serializer.data)
 
         # 获取多个
-        start_time = request.query_params.get('start_time')
-        length = int(request.query_params.get('length'))
+        start_time = request.query_params.get('start_time', datetime.now(timezone.utc).isoformat())
+        length = int(request.query_params.get('length', 10))
         tag_name = request.query_params.get('tag')
 
         if tag_name:
@@ -199,17 +199,19 @@ class HolesApi(APIView):
         tag_names = serializer.validated_data.get('tag_names')
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
+
         # 实例化 Hole
         hole = Hole(division_id=division_id)
-        hole.save()
+        hole.save()  # 在添加 tag 前要保存 hole，否则没有id
+
         # 创建 tag 并添加至 hole
         for tag_name in tag_names:
             tag, created = Tag.objects.get_or_create(name=tag_name)
             hole.tags.add(tag)
-        # 保存 hole
-        hole.save()
 
-        serializer = HoleSerializer(add_a_floor(request, hole, category='hole'), context={"user": request.user})
+        hole = add_a_floor(request, hole, category='hole')
+
+        serializer = HoleSerializer(hole, context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     def put(self, request, **kwargs):

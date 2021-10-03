@@ -36,7 +36,7 @@ class Hole(models.Model):
     # key_floors 首条和末条回帖，动态生成
 
     def __str__(self):
-        return f'树洞#{self.pk}: {self.floor_set.order_by("pk")[0].content[:50]}'
+        return f'树洞#{self.pk}'
 
 
 class Floor(models.Model):
@@ -51,7 +51,7 @@ class Floor(models.Model):
     shadow_text = models.TextField()  # 去除markdown关键字的文本，方便搜索
     anonyname = models.CharField(max_length=16)
     user = models.ForeignKey(User, models.CASCADE)
-    reply_to = models.IntegerField(null=True)
+    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)  # 赞同数
