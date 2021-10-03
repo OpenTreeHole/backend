@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config']
+        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config', 'joined_time', 'is_admin']
 
 
 class DivisionSerializer(serializers.ModelSerializer):
