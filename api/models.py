@@ -74,7 +74,7 @@ class Report(models.Model):
     dealed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def __str__(self):
-        return f"帖子#{self.hole.pk}，{self.reason}"
+        return f"{self.hole}, 帖子{self.floor}\n理由: {self.reason}"
 
 
 def default_permission():
@@ -104,7 +104,7 @@ def default_config():
     """
     return {
         'show_folded': 'fold',
-        'notify': ['reply', 'favorite', 'report']
+        'notify': ['mention', 'favorite', 'report']
     }
 
 
@@ -129,7 +129,7 @@ class User(AbstractBaseUser):
     email = models.CharField(max_length=150, unique=True)
     joined_time = models.DateTimeField(auto_now_add=True)
     nickname = models.CharField(max_length=32, blank=True)
-    favorites = models.ManyToManyField(Hole, blank=True)
+    favorites = models.ManyToManyField(Hole, related_name='favored_by', blank=True)
     permission = models.JSONField(default=default_permission)
     config = models.JSONField(default=default_config)
 
@@ -158,11 +158,13 @@ class User(AbstractBaseUser):
 
 class Message(models.Model):
     user = models.ForeignKey(
-        User, related_name="message_to", on_delete=models.CASCADE, db_index=True
+        settings.AUTH_USER_MODEL, related_name="message_to", on_delete=models.CASCADE, db_index=True
     )
-    content = models.TextField()
+    message = models.TextField()
+    code = models.CharField(max_length=30, default='')
+    data = models.JSONField(default=dict)
     has_read = models.BooleanField(default=False)
     time_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"-> {self.user.pk}: {self.content}"
+        return self.message

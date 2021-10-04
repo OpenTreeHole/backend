@@ -213,7 +213,7 @@ class RegisterTests(APITestCase):
             'verification': self.verification
         })
         self.assertEqual(r.status_code, 201)
-        self.assertEqual(r.data['message'], '注册成功！')
+        self.assertIsNotNone(r.data['message'])
         user = User.objects.get(email=self.email)
         Token.objects.get(user=user)
 
@@ -617,9 +617,9 @@ class MessageTests(APITestCase):
         r = basic_setup(self)
         self.user = r.get('user')
         self.admin = r.get('admin')
-        Message.objects.create(content='content', user=self.user, has_read=True)
-        Message.objects.create(content='content', user=self.user, has_read=False)
-        Message.objects.create(content='content', user=self.user, has_read=True)
+        Message.objects.create(message='message', user=self.user, has_read=True)
+        Message.objects.create(message='message', user=self.user, has_read=False)
+        Message.objects.create(message='message', user=self.user, has_read=True)
 
     def test_post_share_email(self):
         r = self.client.post('/messages', {
@@ -627,7 +627,7 @@ class MessageTests(APITestCase):
             'share_email': True
         })
         self.assertEqual(r.status_code, 201)
-        self.assertTrue(Message.objects.filter(content__contains='邮箱').exists())
+        self.assertTrue(Message.objects.filter(message__contains='邮箱').exists())
         self.assertIsNotNone(r.json()['message'])
 
     def test_post_send_notification(self):
@@ -637,13 +637,13 @@ class MessageTests(APITestCase):
             'message': 'hi'
         })
         self.assertEqual(r.status_code, 201)
-        self.assertTrue(Message.objects.filter(content__contains='hi').exists())
+        self.assertTrue(Message.objects.filter(message__contains='hi').exists())
         self.assertIsNotNone(r.json()['message'])
 
     def test_get_one(self):
         r = self.client.get('/messages/1')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['content'], 'content')
+        self.assertEqual(r.json()['message'], 'message')
 
     def test_get_many(self):
         r = self.client.get('/messages', {
@@ -656,9 +656,9 @@ class MessageTests(APITestCase):
     def test_put(self):
         self.client.force_authenticate(user=self.admin)
         r = self.client.put('/messages/3', {
-            'content': 'new',
+            'message': 'new',
             'has_read': True
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['content'], 'new')
+        self.assertEqual(r.json()['message'], 'new')
         self.assertEqual(r.json()['has_read'], True)

@@ -21,7 +21,8 @@ from rest_framework.views import APIView
 from api.models import Tag, Hole, Floor, Report, User, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, UserSerializer
-from api.tasks import hello_world, mail, post_image_to_github
+from api.signals import modified_by_admin
+from api.tasks import mail, post_image_to_github
 from api.utils import send_message_to_user
 
 
@@ -32,7 +33,7 @@ from api.utils import send_message_to_user
 
 @api_view(["GET"])
 def index(request):
-    hello_world.delay()
+    # hello_world.delay()
     send_message_to_user(request.user, {'message': 'hi'})
     return Response({"message": "Hello world!"})
 
@@ -86,7 +87,6 @@ class RegisterApi(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
         verification = request.data.get("verification")
-
         if not verification:
             return Response({"message": "验证码不能为空！"}, 400)
         if not cache.get(email) or not cache.get(email) == verification:
@@ -100,8 +100,9 @@ class RegisterApi(APIView):
         if User.objects.filter(email=email).exists():
             return Response({"message": "该用户已注册！"}, 400)
 
-        User.objects.create_user(email=email, password=password)
-        return Response({"message": "注册成功！"}, 201)
+        user = User.objects.create_user(email=email, password=password)
+        token = Token.objects.get(user=user).key
+        return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):
         email = request.data.get("email")
@@ -302,6 +303,8 @@ class FloorsApi(APIView):
             floor.anonyname = anonyname
 
         floor.save()
+        if request.user.is_admin and floor.user != request.user:
+            modified_by_admin.send(sender=Floor, instance=floor)
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)
 
@@ -507,8 +510,10 @@ class MessagesApi(APIView):
         to_id = floor.user.pk
 
         if request.data.get('share_email'):
+            code = 'share_email'
             message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.email}'
         elif request.data.get('message'):
+            code = 'message'
             message = request.data.get('message').strip()
             if not request.user.is_admin:
                 return Response(None, 403)
@@ -517,7 +522,7 @@ class MessagesApi(APIView):
         else:
             return Response(None, 400)
 
-        Message.objects.create(user_id=to_id, content=message)
+        Message.objects.create(user_id=to_id, message=message, code=code)
         return Response({'message': f'已发送通知，内容为：{message}'}, 201)
 
     def get(self, request, **kwargs):
@@ -543,13 +548,22 @@ class MessagesApi(APIView):
             return Response(serializer.data)
 
     def put(self, request, **kwargs):
-        content = request.data.get('content')
-        has_read = request.data.get('has_read')
         message_id = kwargs.get('message_id')
         message = get_object_or_404(Message, pk=message_id)
 
-        message.content = content
-        message.has_read = has_read
+        content = request.data.get('message')
+        has_read = request.data.get('has_read')
+        code = request.data.get('code')
+        data = request.data.get('data')
+
+        if content:
+            message.message = content.strip()
+        if has_read:
+            message.has_read = has_read
+        if code:
+            message.code = code
+        if data:
+            message.data = data
 
         message.save()
         serializer = MessageSerializer(message)
@@ -586,12 +600,16 @@ class UsersApi(APIView):
         config = serializer.validated_data.get('config')
         permission = serializer.validated_data.get('permission')
 
+        if permission and request.user.is_admin:
+            if user.permission == permission:
+                pass  # 避免没有更改权限时发出信号
+            else:
+                user.permission = permission
+                user.save(update_fields=['permission'])  # 发送权限被更改的信号
         if favorites:
             user.favorites.set(favorites)
         if config:
             user.config = config
-        if permission and request.user.is_admin:
-            user.permission = permission
         user.save()
 
         serializer = UserSerializer(user)
