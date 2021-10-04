@@ -27,10 +27,9 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         if user.is_authenticated:
             await self.accept()
             await self.channel_layer.group_add(f'user-{user.id}', self.channel_name)
-            await self.send_json({
-                'message': '未读消息',
-                'data': await get_unread_messages(user)
-            })
+            await self.send_json({'message': '未读消息'})
+            for message in await get_unread_messages(user):
+                await self.send_json(message)
         else:
             await self.close()
 
