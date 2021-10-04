@@ -275,8 +275,10 @@ class FloorsApi(APIView):
         like = request.data.get('like')
         fold = request.data.get('fold')
         mention = request.data.get('mention')
+        anonyname = request.data.get('anonyname')
         floor = get_object_or_404(Floor, pk=floor_id)
         self.check_object_permissions(request, floor)
+
         if content and content.strip():
             floor.history.append({
                 'content': floor.content,
@@ -292,10 +294,13 @@ class FloorsApi(APIView):
             else:
                 pass
             floor.like = len(floor.like_data)
-        if fold:
-            floor.fold = fold
         if mention:
             floor.mention.set(mention)
+        if fold:
+            floor.fold = fold
+        if anonyname and request.user.is_admin:
+            floor.anonyname = anonyname
+
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)

@@ -391,6 +391,16 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 0)
 
+    def test_put_anonyname(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.put('/floors/1', {
+            'anonyname': 'anonyname'
+        })
+        floor = Floor.objects.get(pk=1)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['anonyname'], 'anonyname')
+        self.assertEqual(floor.anonyname, 'anonyname')
+
     def test_put(self):
         original_content = Floor.objects.get(pk=1).content
         r = self.client.put('/floors/1', {
