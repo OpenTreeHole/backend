@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
@@ -12,18 +13,6 @@ class OnlyAdminCanModify(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in MODIFY_METHODS:
             return request.user.is_admin
-        else:
-            return True
-
-
-class OwnerOrAdminCanModify(permissions.BasePermission):
-    """
-    适用于回复帖或用户资料
-    """
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in MODIFY_METHODS:
-            return obj.user == request.user or request.user.is_admin
         else:
             return True
 
@@ -59,6 +48,20 @@ class AdminOrPostOnly(permissions.BasePermission):
 class OwenerOrAdminCanSee(permissions.BasePermission):
     def has_object_permission(self, request, view, instance):
         if request.method == 'GET':
-            return instance.user == request.user or request.user.is_admin
+            owner = instance if type(instance) == get_user_model() else instance.user
+            return owner == request.user or request.user.is_admin
+        else:
+            return True
+
+
+class OwnerOrAdminCanModify(permissions.BasePermission):
+    """
+    适用于回复帖或用户资料
+    """
+
+    def has_object_permission(self, request, view, instance):
+        if request.method in MODIFY_METHODS:
+            owner = instance if type(instance) == get_user_model() else instance.user
+            return owner == request.user or request.user.is_admin
         else:
             return True

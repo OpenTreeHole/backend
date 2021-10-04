@@ -20,12 +20,15 @@ CONTENT = 'This is a content'
 
 
 def basic_setup(self):
-    admin = User.objects.create_user('admin')
-    admin.permission['admin'] = VERY_LONG_TIME
+    admin = User.objects.create_superuser('admin')
     admin.nickname = 'admin nickname'
     admin.save()
+    global ADMIN
+    ADMIN = admin
 
     user = User.objects.create_user(email=USERNAME, password=PASSWORD)
+    global USER
+    USER = user
 
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
@@ -484,6 +487,23 @@ class TagTests(APITestCase):
 class UserTests(APITestCase):
     def setUp(self):
         basic_setup(self)
+
+    def test_get(self):
+        r = self.client.get('/users')
+        self.assertEqual(r.status_code, 200)
+
+    def test_put(self):
+        self.client.force_authenticate(user=ADMIN)
+        config = {'show_folded': 'show', 'notify': ['reply', 'favorite']}
+        permission = {'admin': '2000-01-01T00:00:00+00:00', 'silent': {}}
+        r = self.client.put('/users/2', {
+            'favorites': [1, 2],
+            'config': config,
+            'permission': permission
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['config'], config)
+        self.assertEqual(r.json()['permission'], permission)
 
     def test_favorites(self):
         def post():

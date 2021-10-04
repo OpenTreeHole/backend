@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, OwenerOrAdminCanSee
-from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
+from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, UserSerializer
 from api.tasks import hello_world, mail, post_image_to_github
 from api.utils import send_message_to_user
 
@@ -552,3 +552,42 @@ class MessagesApi(APIView):
 
     def delete(self, request):
         pass
+
+
+class UsersApi(APIView):
+    permission_classes = [IsAuthenticated, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
+
+    def get(self, request, **kwargs):
+        user_id = kwargs.get('user_id')
+        if user_id:
+            user = get_object_or_404(User, pk=user_id)
+            self.check_object_permissions(request, user)
+        else:
+            user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+    def put(self, request, **kwargs):
+        user_id = kwargs.get('user_id')
+        if user_id:
+            user = get_object_or_404(User, pk=user_id)
+            self.check_object_permissions(request, user)
+        else:
+            user = request.user
+
+        serializer = UserSerializer(data=request.data)
+        serializer.is_valid()
+        favorites = serializer.validated_data.get('favorites')
+        config = serializer.validated_data.get('config')
+        permission = serializer.validated_data.get('permission')
+
+        if favorites:
+            user.favorites.set(favorites)
+        if config:
+            user.config = config
+        if permission and request.user.is_admin:
+            user.permission = permission
+        user.save()
+
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

@@ -8,11 +8,23 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source='id')
+    user_id = serializers.IntegerField(source='id', read_only=True)
 
     class Meta:
         model = User
         fields = ['user_id', 'nickname', 'favorites', 'permission', 'config', 'joined_time', 'is_admin']
+
+    def validate_permission(self, permission):
+        for s in ['admin', 'silent']:
+            if s not in permission:
+                raise serializers.ValidationError(f'字段 {s} 不存在')
+        return permission
+
+    def validate_config(self, config):
+        for s in ['show_folded', 'notify']:
+            if s not in config:
+                raise serializers.ValidationError(f'字段 {s} 不存在')
+        return config
 
 
 class DivisionSerializer(serializers.ModelSerializer):

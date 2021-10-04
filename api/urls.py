@@ -21,7 +21,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from api import consumers
-from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi
+from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi
 
 websocket_urlpatterns = [
     path('ws/notification', consumers.NotificationConsumer.as_asgi()),
@@ -47,4 +47,6 @@ urlpatterns = [
     path('images', ImagesApi.as_view()),
     path('messages', MessagesApi.as_view()),
     path('messages/<int:message_id>', MessagesApi.as_view()),
+    path('users/<int:user_id>', UsersApi.as_view()),
+    path('users', UsersApi.as_view())
 ]
