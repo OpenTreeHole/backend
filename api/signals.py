@@ -1,11 +1,11 @@
 from django.conf import settings
 from django.db.models import F
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save, m2m_changed, pre_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from api.models import Hole, Tag, Message, Floor
-from api.utils import send_message_to_user
+from api.utils import send_message_to_user, to_shadow_text
 
 
 # 自动在创建用户后创建其 Token
@@ -22,6 +22,12 @@ def modify_tag_temperature(sender, reverse, action, pk_set, **kwargs):
         Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') + 1)
     elif reverse is False and action == 'post_remove':
         Tag.objects.filter(pk__in=pk_set).update(temperature=F('temperature') - 1)
+
+
+# 创建 shadow_text
+@receiver(pre_save, sender=Floor)
+def create_shadow_text(sender, instance, **kwargs):
+    instance.shadow_text = to_shadow_text(instance.content)
 
 
 # 在数据库中创建一条消息并通过 websocket 发送给用户

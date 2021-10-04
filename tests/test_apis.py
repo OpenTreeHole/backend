@@ -40,8 +40,7 @@ def basic_setup(self):
         for j in range(10):
             Floor.objects.create(
                 hole=hole, anonyname='Jack', user=user,
-                content='**Hole#{}; Floor No.{}**'.format(i + 1, j + 1),
-                shadow_text='Hole#{}; Floor No.{}'.format(i + 1, j + 1),
+                content='**Hole#{}; Floor No.{}**'.format(i + 1, j + 1)
             )
     return {
         'admin': admin,
@@ -351,7 +350,6 @@ class FloorTests(APITestCase):
             'hole_id': 1,
             'mention': mention,
         })
-        print(r.json())
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=CONTENT)

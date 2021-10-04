@@ -39,4 +39,4 @@ def custom_exception_handler(exc, context):
 
 
 def to_shadow_text(content):
-    return re.sub(r'([\s#*_!>`$|:,\-\[\]-]|\d+\.|\(.+?\)|<.+?>)', '', content)
+    return re.sub(r'[#!>_+*-]+ |[*`\[\]-]+|\d+\. |\(http.+?\)|<.+?>|\s', '', content)

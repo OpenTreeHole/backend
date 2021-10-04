@@ -22,7 +22,7 @@ from api.models import Tag, Hole, Floor, Report, User, Message
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer
 from api.tasks import hello_world, mail, post_image_to_github
-from api.utils import to_shadow_text, send_message_to_user
+from api.utils import send_message_to_user
 
 
 # 发送 csrf 令牌
@@ -145,7 +145,6 @@ def add_a_floor(request, hole, category):
     serializer.is_valid(raise_exception=True)
     content = serializer.validated_data.get('content')
     mention = request.data.get('mention', [])
-    shadow_text = to_shadow_text(content)
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(request.user.pk)
     if not anonyname:
@@ -157,7 +156,7 @@ def add_a_floor(request, hole, category):
                 hole.mapping[request.user.pk] = anonyname
                 break
     # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, shadow_text=shadow_text, anonyname=anonyname, user=request.user)
+    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
     floor.mention.set(mention)
     hole.reply = hole.reply + 1
     hole.save()
@@ -285,7 +284,6 @@ class FloorsApi(APIView):
                 'altered_time': datetime.now(timezone.utc).isoformat()
             })
             floor.content = content
-            floor.shadow_text = to_shadow_text(content)
         if like:
             if like == 'add' and request.user.pk not in floor.like_data:
                 floor.like_data.append(request.user.pk)
@@ -314,10 +312,8 @@ class FloorsApi(APIView):
         })
         if request.user == floor.user:  # 作者删除
             floor.content = '该内容已被作者删除'
-            floor.shadow_text = '该内容已被作者删除'
         else:  # 管理员删除
             floor.content = delete_reason if delete_reason else '该内容因违反社区规范被删除'
-            floor.shadow_text = to_shadow_text(delete_reason) if delete_reason else '该内容因违反社区规范被删除'
         floor.deleted = True
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
@@ -445,7 +441,6 @@ class ReportsApi(APIView):
                 'altered_time': datetime.now(timezone.utc).isoformat()
             })
             floor.content = delete_reason
-            floor.shadow_text = to_shadow_text(delete_reason)
             floor.deleted = True
         if deal.get('silent'):
             permission = floor.user.permission
