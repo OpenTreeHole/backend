@@ -56,7 +56,7 @@ class Floor(models.Model):
     shadow_text = models.TextField()  # 去除markdown关键字的文本，方便搜索
     anonyname = models.CharField(max_length=16)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
-    reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True)
+    mention = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='mentioned_by')
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)  # 赞同数
@@ -198,15 +198,16 @@ def create_and_send_message(user, message):
 # 收到回复后通知用户
 @receiver(post_save, sender=Floor)
 def notify_when_replied(sender, instance, created, **kwargs):
-    if created and instance.reply_to:
-        if 'reply' in instance.reply_to.user.config['notify']:
-            message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
-            create_and_send_message(instance.reply_to.user, message)
+    if created:
+        for floor in instance.mention.all():
+            if 'reply' in floor.user.config['notify']:
+                message = f'你在 {floor.hole} 的帖子 {floor} 被回复了'
+                create_and_send_message(floor.user, message)
 
 # 收藏的主题帖有新帖时通知用户
 # @receiver(post_save, sender=Floor)
 # def notify_when_favorites_updated(sender, instance, created, **kwargs):
 #     if created and instance.hole:
-#         if 'reply' in instance.reply_to.user.config['notify']:
-#             message = f'你在 {instance.reply_to.hole} 的帖子 {instance.reply_to} 被回复了'
+#         if 'reply' in instance.mention.user.config['notify']:
+#             message = f'你在 {instance.mention.hole} 的帖子 {instance.mention} 被回复了'
 #             create_and_send_message(instance.user, message)

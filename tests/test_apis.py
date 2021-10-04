@@ -345,16 +345,17 @@ class FloorTests(APITestCase):
 
     def test_post(self):
         hole = Hole.objects.get(pk=1)
-        first_floor = hole.floor_set.order_by('id')[0]
+        mention = list(hole.floor_set.order_by('id')[:2].values_list('id', flat=True))
         r = self.client.post('/floors', {
             'content': CONTENT,
             'hole_id': 1,
-            'reply_to': first_floor.pk,
+            'mention': mention,
         })
+        print(r.json())
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=CONTENT)
-        self.assertEqual(floor.reply_to.pk, first_floor.pk)
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention)
 
     def test_get(self):
         r = self.client.get('/floors', {
@@ -394,7 +395,8 @@ class FloorTests(APITestCase):
         r = self.client.put('/floors/1', {
             'content': 'Modified',
             'like': 'add',
-            'fold': ['fold1', 'fold2']
+            'fold': ['fold1', 'fold2'],
+            'mention': [1, 2, 3]
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['content'], 'Modified')
@@ -407,6 +409,7 @@ class FloorTests(APITestCase):
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
         self.assertEqual(floor.history[0]['content'], original_content)
         self.assertEqual(floor.fold, ['fold1', 'fold2'])
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), [1, 2, 3])
         # 取消点赞
         r = self.client.put('/floors/1', {'like': 'cancel'})
         self.assertEqual(r.json()['like'], 0)

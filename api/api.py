@@ -144,9 +144,8 @@ def add_a_floor(request, hole, category):
     serializer = FloorSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     content = serializer.validated_data.get('content')
-    reply_to = serializer.validated_data.get('reply_to')
+    mention = request.data.get('mention', [])
     shadow_text = to_shadow_text(content)
-
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(request.user.pk)
     if not anonyname:
@@ -158,7 +157,8 @@ def add_a_floor(request, hole, category):
                 hole.mapping[request.user.pk] = anonyname
                 break
     # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, shadow_text=shadow_text, anonyname=anonyname, user=request.user, reply_to=reply_to)
+    floor = Floor.objects.create(hole=hole, content=content, shadow_text=shadow_text, anonyname=anonyname, user=request.user)
+    floor.mention.set(mention)
     hole.reply = hole.reply + 1
     hole.save()
     return hole if category == 'hole' else floor
@@ -208,7 +208,6 @@ class HolesApi(APIView):
             hole.tags.add(tag)
 
         hole = add_a_floor(request, hole, category='hole')
-
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
@@ -276,6 +275,7 @@ class FloorsApi(APIView):
         content = request.data.get('content')
         like = request.data.get('like')
         fold = request.data.get('fold')
+        mention = request.data.get('mention')
         floor = get_object_or_404(Floor, pk=floor_id)
         self.check_object_permissions(request, floor)
         if content and content.strip():
@@ -296,7 +296,8 @@ class FloorsApi(APIView):
             floor.like = len(floor.like_data)
         if fold:
             floor.fold = fold
-
+        if mention:
+            floor.mention.set(mention)
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)
