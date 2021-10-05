@@ -26,7 +26,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-from api.utils import send_message_to_user
+from api.utils import send_websocket_message_to_user
 
 
 # 发送 csrf 令牌
@@ -37,7 +37,7 @@ from api.utils import send_message_to_user
 @api_view(["GET"])
 def index(request):
     # hello_world.delay()
-    send_message_to_user(request.user, {'message': 'hi'})
+    send_websocket_message_to_user(request.user, {'message': 'hi'})
     return Response({"message": "Hello world!"})
 
 
