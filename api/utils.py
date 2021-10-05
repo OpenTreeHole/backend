@@ -31,6 +31,7 @@ class MessageSender:
     - 最后调用message_sender.commit()批量发送队列中的消息
     """
     apns_notifications = []
+    apns_user_token_record = {}
 
     def __init__(self, user=None, message=None, data=None, code='') -> None:
         if user and message:
@@ -75,21 +76,30 @@ class MessageSender:
         # APNS
         apns_payload = APNsPayload(alert=message, sound="default", badge=1, thread_id=code, custom=payload)
         token_dict = user.push_notification_tokens['apns']
-        for apns_token in token_dict:
-            self.apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_token]))
+        for apns_device in token_dict:
+            self.apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_device]))
+            self.apns_user_token_record.update({token_dict[apns_device]: user})
 
     def commit(self):
         """
-        仅发送队列中的消息
+        发送队列中的消息
+        并清除过期token
         """
         response = apns_client.send_notification_batch(notifications=self.apns_notifications,
                                                        topic=PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
         self.apns_notifications.clear()
 
-        for device in response:
-            if response[device] == 'BadDeviceToken':
-                # TODO: remove this token
-                pass
+        # 清除过期token
+        for token in response:
+            if response[token] == 'BadDeviceToken':
+                user = self.apns_user_token_record[token]
+                for device in user.push_notification_tokens['apns']:
+                    if user.push_notification_tokens['apns'][device] == token:
+                        del user.push_notification_tokens['apns'][device]
+                        break
+                user.save(update_fields=['push_notification_tokens'])
+        self.apns_user_token_record.clear()
+
 
 def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first,
