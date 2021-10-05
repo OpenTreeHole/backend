@@ -26,7 +26,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-from api.utils import send_websocket_message_to_user
+from api.utils import MessageSender
 
 
 # 发送 csrf 令牌
@@ -37,7 +37,7 @@ from api.utils import send_websocket_message_to_user
 @api_view(["GET"])
 def index(request):
     # hello_world.delay()
-    send_websocket_message_to_user(request.user, {'message': 'hi'})
+    MessageSender(request.user, {'message': 'hi'}).commit()
     return Response({"message": "Hello world!"})
 
 
@@ -637,4 +637,4 @@ class UsersApi(APIView):
         user.push_notification_tokens[service].update({device_id: token})
         user.save(update_fields=['push_notification_tokens'])
 
-        return Response(status=status.HTTP_202_ACCEPTED)
+        return Response(status=status.HTTP_200_OK)

@@ -7,7 +7,7 @@ from django.db.models.signals import post_save, m2m_changed, pre_save
 from django.dispatch import receiver, Signal
 from rest_framework.authtoken.models import Token
 
-from api.models import Hole, Tag, Message, Floor, Report
+from api.models import Hole, Tag, Floor, Report
 from api.serializers import FloorSerializer, ReportSerializer
 from api.utils import to_shadow_text, MessageSender
 

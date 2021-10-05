@@ -15,8 +15,9 @@ from OpenTreeHole.config import PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS, PUSH_
 
 # APNS global definition
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
-apns_client = APNsClient('key.pem', use_sandbox=(environ.get("HOLE_ENV") != "production"),
-                         use_alternative_port=False)  # TODO: add certificate to this
+# NOTE: The apns_key.pem must contain both the certificate AND the private key
+apns_client = APNsClient('apns_key.pem', use_sandbox=(environ.get("HOLE_ENV") != "production"),
+                         use_alternative_port=False)
 
 
 class MessageSender:
@@ -33,6 +34,8 @@ class MessageSender:
 
     def __init__(self, user=None, message=None, data=None, code='') -> None:
         if user and message:
+            if data is None:
+                data = {}
             self.create_and_queue_or_send_message(user, message, data, code)
 
     def __send_websocket_message_to_user(self, user, content):
@@ -60,6 +63,9 @@ class MessageSender:
         如果消息需要打包发送(apns)，则加入队列
         如果不需要打包发送(websocket)，则直接发送
         """
+        if data is None:
+            data = {}
+
         instance = Message.objects.create(user=user, message=message, data=data, code=code)
         payload = MessageSerializer(instance).data
 
@@ -67,17 +73,23 @@ class MessageSender:
         self.__send_websocket_message_to_user(user, payload)
 
         # APNS
-        apns_payload = APNsPayload(alert=payload, sound="default", badge=1)  # TODO: Add interaction to Payload
-        for apns_token in user.push_notification_tokens['apns']:
-            self.apns_notifications.append(Notification(payload=apns_payload, token=apns_token))
+        apns_payload = APNsPayload(alert=message, sound="default", badge=1, thread_id=code, custom=payload)
+        token_dict = user.push_notification_tokens['apns']
+        for apns_token in token_dict:
+            self.apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_token]))
 
     def commit(self):
         """
         仅发送队列中的消息
         """
-        apns_client.send_notification_batch(notifications=self.apns_notifications,
-                                            topic=PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
+        response = apns_client.send_notification_batch(notifications=self.apns_notifications,
+                                                       topic=PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
+        self.apns_notifications.clear()
 
+        for device in response:
+            if response[device] == 'BadDeviceToken':
+                # TODO: remove this token
+                pass
 
 def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first,
