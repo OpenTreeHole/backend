@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
@@ -19,11 +20,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, AdminOrPostOnly, OwenerOrAdminCanSee
-from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, UserSerializer
+from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
+    AdminOrPostOnly, OwenerOrAdminCanSee
+from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
+    UserSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-from api.utils import send_message_to_user
+from api.utils import MessageSender
 
 
 # 发送 csrf 令牌
@@ -34,7 +37,7 @@ from api.utils import send_message_to_user
 @api_view(["GET"])
 def index(request):
     # hello_world.delay()
-    send_message_to_user(request.user, {'message': 'hi'})
+    MessageSender(request.user, {'message': 'hi'}).commit()
     return Response({"message": "Hello world!"})
 
 
@@ -614,3 +617,24 @@ class UsersApi(APIView):
 
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+    def post(self, request, **kwargs):
+        # This is (currently) used for Push notification token registration
+        user_id = kwargs.get('user_id')
+        if user_id:
+            user = get_object_or_404(User, pk=user_id)
+            self.check_object_permissions(request, user)
+        else:
+            user = request.user
+
+        if ('service' not in request.data) or (request.data['service'] != 'apns' and request.data['service'] != 'mipush') or ('token' not in request.data) or ('device_id' not in request.data):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        service = request.data['service']  # 'apns' or 'mipush'
+        token = request.data['token']
+        device_id = request.data['device_id']
+
+        user.push_notification_tokens[service].update({device_id: token})
+        user.save(update_fields=['push_notification_tokens'])
+
+        return Response(status=status.HTTP_200_OK)

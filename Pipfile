@@ -16,6 +16,7 @@ uvicorn = { extras = ["standard"], version = "*" }
 gunicorn = "*"
 mysql-connector-python = "*"
 channels-redis = "*"
+apns2 = "*"
 
 [dev-packages]
 eventlet = "*"

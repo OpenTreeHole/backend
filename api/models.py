@@ -108,6 +108,20 @@ def default_config():
     }
 
 
+def default_push_notification_tokens():
+    """
+    apns: iOS/macOS push notification
+        Dict of [device_id]: [token]
+
+    mipush: Android push notification
+        unknown (yet)
+    """
+    return {
+        'apns': {},
+        'mipush': {}
+    }
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -132,6 +146,7 @@ class User(AbstractBaseUser):
     favorites = models.ManyToManyField(Hole, related_name='favored_by', blank=True)
     permission = models.JSONField(default=default_permission)
     config = models.JSONField(default=default_config)
+    push_notification_tokens = models.JSONField(default=default_push_notification_tokens)
 
     objects = UserManager()
     USERNAME_FIELD = 'email'
