@@ -39,7 +39,6 @@
    # 执行数据库迁移并预加载数据
    pipenv shell
    python manage.py migrate
-   python manage.py loaddata init_data
    python start.py
    # 运行开发服务器
    python manage.py runserver  
