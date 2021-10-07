@@ -12,12 +12,12 @@ from api.serializers import MessageSerializer
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
 from OpenTreeHole.config import PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS, \
-    PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID, APNS_KEY, APNS_USE_ALTERNATIVE_PORT
+    PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID, APNS_KEY_PATH, APNS_USE_ALTERNATIVE_PORT
 
 # APNS global definition
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
-if APNS_KEY:
-    apns_client = APNsClient(APNS_KEY, use_sandbox=(environ.get("HOLE_ENV") != "production"),
+if APNS_KEY_PATH:
+    apns_client = APNsClient(APNS_KEY_PATH, use_sandbox=(environ.get("HOLE_ENV") != "production"),
                              use_alternative_port=APNS_USE_ALTERNATIVE_PORT)
 else:
     apns_client = None
