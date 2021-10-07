@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -53,9 +53,12 @@ def login(request):
         return Response({"message": "用户名或密码错误！"}, 401)
 
 
-# 登出功能由前端实现即可
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def logout(request):
-    pass
+    request.auth.delete()
+    token = Token.objects.create(user=request.user)
+    return Response({"token": token.key, "message": "登出成功"})
 
 
 @api_view(["GET"])

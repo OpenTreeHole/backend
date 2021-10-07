@@ -139,13 +139,13 @@ class PermissionTests(APITestCase):
         self.assertEqual(r.status_code, 403)
 
 
-class LoginTests(APITestCase):
+class LoginLogoutTests(APITestCase):
     email = EMAIL
     password = "iasjludfnbasvdfljnhk"
     wrong_password = "saasor;lkjjhgny"
 
     def setUp(self):
-        User.objects.create_user(email=self.email, password=self.password)
+        self.user = User.objects.create_user(email=self.email, password=self.password)
 
     def test_login(self):
         # 正确密码
@@ -168,6 +168,13 @@ class LoginTests(APITestCase):
             },
         )
         self.assertEqual(r.status_code, 401)
+
+    def test_logout(self):
+        token = Token.objects.get(user=self.user).key
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+        r = self.client.get('/logout')
+        self.assertEqual(r.status_code, 200)
+        self.assertNotEqual(r.json()['token'], token)
 
 
 class RegisterTests(APITestCase):

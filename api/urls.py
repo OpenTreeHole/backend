@@ -21,7 +21,7 @@ from rest_framework_simplejwt.views import (
 )
 
 from api import consumers
-from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi
+from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout
 
 websocket_urlpatterns = [
     path('ws/notification', consumers.NotificationConsumer.as_asgi()),
@@ -30,9 +30,8 @@ websocket_urlpatterns = [
 urlpatterns = [
     # path("admin/", admin.site.urls),
     path("", index),
-    path('token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path("login", login),
+    path('logout', logout),
     path("register", RegisterApi.as_view()),
     path("verify/<str:method>", verify),
     path("holes", HolesApi.as_view()),
@@ -51,4 +50,6 @@ urlpatterns = [
     path('users', UsersApi.as_view()),
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
+    path('token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]
