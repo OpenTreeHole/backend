@@ -11,13 +11,16 @@ from api.serializers import MessageSerializer
 
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
-from OpenTreeHole.config import PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS, PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID
+from OpenTreeHole.config import PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS, \
+    PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID, APNS_KEY, APNS_USE_ALTERNATIVE_PORT
 
 # APNS global definition
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
-# NOTE: The apns_key.pem must contain both the certificate AND the private key
-apns_client = APNsClient('apns_key.pem', use_sandbox=(environ.get("HOLE_ENV") != "production"),
-                         use_alternative_port=False)
+if APNS_KEY:
+    apns_client = APNsClient(APNS_KEY, use_sandbox=(environ.get("HOLE_ENV") != "production"),
+                             use_alternative_port=APNS_USE_ALTERNATIVE_PORT)
+else:
+    apns_client = None
 
 
 class MessageSender:
@@ -74,31 +77,33 @@ class MessageSender:
         self.__send_websocket_message_to_user(user, payload)
 
         # APNS
-        apns_payload = APNsPayload(alert=message, sound="default", badge=1, thread_id=code, custom=payload)
-        token_dict = user.push_notification_tokens['apns']
-        for apns_device in token_dict:
-            self.apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_device]))
-            self.apns_user_token_record.update({token_dict[apns_device]: user})
+        if apns_client:
+            apns_payload = APNsPayload(alert=message, sound="default", badge=1, thread_id=code, custom=payload)
+            token_dict = user.push_notification_tokens['apns']
+            for apns_device in token_dict:
+                self.apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_device]))
+                self.apns_user_token_record.update({token_dict[apns_device]: user})
 
     def commit(self):
         """
         发送队列中的消息
         并清除过期token
         """
-        response = apns_client.send_notification_batch(notifications=self.apns_notifications,
-                                                       topic=PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
-        self.apns_notifications.clear()
+        if apns_client:
+            response = apns_client.send_notification_batch(notifications=self.apns_notifications,
+                                                           topic=PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
+            self.apns_notifications.clear()
 
-        # 清除过期token
-        for token in response:
-            if response[token] == 'BadDeviceToken':
-                user = self.apns_user_token_record[token]
-                for device in user.push_notification_tokens['apns']:
-                    if user.push_notification_tokens['apns'][device] == token:
-                        del user.push_notification_tokens['apns'][device]
-                        break
-                user.save(update_fields=['push_notification_tokens'])
-        self.apns_user_token_record.clear()
+            # 清除过期token
+            for token in response:
+                if response[token] == 'BadDeviceToken':
+                    user = self.apns_user_token_record[token]
+                    for device in user.push_notification_tokens['apns']:
+                        if user.push_notification_tokens['apns'][device] == token:
+                            del user.push_notification_tokens['apns'][device]
+                            break
+                    user.save(update_fields=['push_notification_tokens'])
+            self.apns_user_token_record.clear()
 
 
 def custom_exception_handler(exc, context):
