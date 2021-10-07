@@ -174,7 +174,7 @@ class LoginLogoutTests(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
         r = self.client.get('/logout')
         self.assertEqual(r.status_code, 200)
-        self.assertNotEqual(r.json()['token'], token)
+        self.assertNotEqual(Token.objects.get(user=self.user).key, token)
 
 
 class RegisterTests(APITestCase):

@@ -57,8 +57,8 @@ def login(request):
 @permission_classes([IsAuthenticated])
 def logout(request):
     request.auth.delete()
-    token = Token.objects.create(user=request.user)
-    return Response({"token": token.key, "message": "登出成功"})
+    Token.objects.create(user=request.user)
+    return Response({"message": "登出成功"})
 
 
 @api_view(["GET"])
