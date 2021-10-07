@@ -114,6 +114,12 @@ GITHUB_BRANCH = 'master'
 # 足够长的密码，供 Django 安全机制
 SECRET_KEY = str(uuid.uuid1())
 
+# 推送通知
+APNS_KEY = ""  # NOTE: The APNS_KEY must contain both the certificate AND the private key
+APNS_USE_ALTERNATIVE_PORT = False
+PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = "org.opentreehole.client"
+PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = "org.opentreehole.client"
+
 # 用环境变量中的配置覆盖
 envs = os.environ
 local = locals().copy()  # 拷贝一份，否则运行时 locals() 会改变
@@ -125,6 +131,3 @@ for item in local:
             exec(f'{item} = eval(envs.get(item))')  # 非字符串类型使用 eval() 转换
         except:
             exec(f'{item} = envs.get(item)')  # 否则直接为字符串
-
-PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = "io.github.danxi-dev.dan-xi"
-PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = "io.github.danxi-dev.dan-xi"  # TODO: Subject to change
