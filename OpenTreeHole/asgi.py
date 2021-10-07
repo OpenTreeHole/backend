@@ -11,11 +11,10 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-from api.middleware import TokenAuthMiddleware
-
-django_asgi_app = get_asgi_application()
+django_asgi_app = get_asgi_application()  # 必须写在所有导入前面
 
 from channels.routing import ProtocolTypeRouter, URLRouter
+from api.middleware import TokenAuthMiddleware
 
 import api.urls
 
