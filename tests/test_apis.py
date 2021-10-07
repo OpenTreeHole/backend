@@ -23,24 +23,22 @@ def basic_setup(self):
     admin = User.objects.create_superuser('admin')
     admin.nickname = 'admin nickname'
     admin.save()
-    global ADMIN
-    ADMIN = admin
-
     user = User.objects.create_user(email=USERNAME, password=PASSWORD)
-    global USER
-    USER = user
+
+    self.admin = admin
+    self.user = user
 
     self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
     division, created = Division.objects.get_or_create(name='树洞')
     for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
         Tag.objects.create(name=tag_name, temperature=0)
-    for i in range(10):
+    for i in range(6):
         hole = Hole.objects.create(division=division, reply=0, mapping={1: 'Jack'})
         tag_names = ['tag A1', 'tag A2'] if i % 2 == 0 else ['tag B1', 'tag B2']
         tags = Tag.objects.filter(name__in=tag_names)
         hole.tags.set(tags)
-        for j in range(10):
+        for j in range(6):
             Floor.objects.create(
                 hole=hole, anonyname='Jack', user=user,
                 content='**Hole#{}; Floor No.{}**'.format(i + 1, j + 1)
@@ -278,13 +276,48 @@ class RegisterTests(APITestCase):
         self.modify_password()
 
 
+class DivisionTests(APITestCase):
+    def setUp(self):
+        self.admin = None
+        self.user = None
+        basic_setup(self)
+
+    def test_get(self):
+        r = self.client.get('/divisions/1')
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get('/divisions')
+        self.assertEqual(r.status_code, 200)
+
+    def test_put(self):
+        r = self.client.put('/divisions/1')
+        self.assertEqual(r.status_code, 403)
+
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.put('/divisions/1', {
+            'name': 'name',
+            'description': 'description',
+            'pinned': [1, 2]
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json()['name'], 'name')
+        self.assertEqual(r.json()['description'], 'description')
+        self.assertEqual(len(r.json()['pinned']), 2)
+
+    def test_order(self):
+        division = Division.objects.create(name='name', pinned=[4, 2, 5])
+        r = self.client.get(f'/divisions/{division.id}')
+        ids = list(map(lambda hole: hole['hole_id'], r.json()['pinned']))
+        self.assertEqual(ids, [4, 2, 5])
+
+
 class HoleTests(APITestCase):
     content = 'This is a content'
 
     def setUp(self):
+        self.admin = None
+        self.user = None
         basic_setup(self)
-        self.admin = User.objects.get(email='admin')
-        self.user = User.objects.get(email=USERNAME)
 
     def test_post(self):
         r = self.client.post('/holes', {
@@ -304,19 +337,19 @@ class HoleTests(APITestCase):
         time.sleep(1)
         r = self.client.get('/holes', {
             'start_time': datetime.now(timezone.utc).isoformat(),
-            'length': 5,
+            'length': 3,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.data), 5)
+        self.assertEqual(len(r.data), 3)
 
     def test_get_by_tag(self):
         r = self.client.get('/holes', {
             'start_time': datetime.now(timezone.utc).isoformat(),
-            'length': 5,
+            'length': 3,
             'tag': 'tag A1'
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.data), 5)
+        self.assertEqual(len(r.data), 3)
 
     def test_get_one(self):
         r = self.client.get('/holes/1')
@@ -341,9 +374,9 @@ class HoleTests(APITestCase):
 class FloorTests(APITestCase):
 
     def setUp(self):
+        self.admin = None
+        self.user = None
         basic_setup(self)
-        self.user = User.objects.get(email=USERNAME)
-        self.admin = User.objects.get(email='admin')
 
     def test_post(self):
         hole = Hole.objects.get(pk=1)
@@ -361,11 +394,11 @@ class FloorTests(APITestCase):
     def test_get(self):
         r = self.client.get('/floors', {
             'hole_id': 1,
-            'start_floor': 3,
-            'length': 5,
+            'start_floor': 2,
+            'length': 4,
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()), 5)
+        self.assertEqual(len(r.json()), 4)
         self.assertEqual(r.json()[0]['hole_id'], 1)
         self.assertEqual(r.json()[0]['is_me'], True)
 
@@ -446,8 +479,9 @@ class FloorTests(APITestCase):
 
 class TagTests(APITestCase):
     def setUp(self):
+        self.admin = None
+        self.user = None
         basic_setup(self)
-        self.admin = User.objects.get(email='admin')
         Tag.objects.filter(name='tag B1').update(temperature=1)
 
     def test_get(self):
@@ -456,7 +490,7 @@ class TagTests(APITestCase):
         self.assertEqual(len(r.json()), 4)
         for tag in r.json():
             if tag['name'] == 'tag B2':
-                self.assertEqual(tag['temperature'], 5)
+                self.assertEqual(tag['temperature'], 3)
 
     def test_search(self):
         r = self.client.get('/tags', {'s': 'b'})
@@ -496,6 +530,8 @@ class TagTests(APITestCase):
 
 class UserTests(APITestCase):
     def setUp(self):
+        self.admin = None
+        self.user = None
         basic_setup(self)
 
     def test_get(self):
@@ -503,7 +539,7 @@ class UserTests(APITestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_put(self):
-        self.client.force_authenticate(user=ADMIN)
+        self.client.force_authenticate(user=self.admin)
         config = {'show_folded': 'show', 'notify': ['reply', 'favorite']}
         permission = {'admin': '2000-01-01T00:00:00+00:00', 'silent': {}}
         r = self.client.put('/users/2', {
@@ -549,8 +585,9 @@ class UserTests(APITestCase):
 
 class ReportTests(APITestCase):
     def setUp(self):
-        r = basic_setup(self)
-        self.admin = r['admin']
+        self.admin = None
+        self.user = None
+        basic_setup(self)
         Report.objects.create(hole_id=1, floor_id=1, reason='default', dealed=False)
         Report.objects.create(hole_id=1, floor_id=2, reason='default', dealed=False)
         Report.objects.create(hole_id=1, floor_id=3, reason='default', dealed=True)
@@ -614,9 +651,9 @@ class ReportTests(APITestCase):
 
 class MessageTests(APITestCase):
     def setUp(self):
-        r = basic_setup(self)
-        self.user = r.get('user')
-        self.admin = r.get('admin')
+        self.admin = None
+        self.user = None
+        basic_setup(self)
         Message.objects.create(message='message', user=self.user, has_read=True)
         Message.objects.create(message='message', user=self.user, has_read=False)
         Message.objects.create(message='message', user=self.user, has_read=True)

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
@@ -30,7 +31,18 @@ class UserSerializer(serializers.ModelSerializer):
 class DivisionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Division
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'pinned']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(instance.pinned)])  # Holes 按 pinned 的顺序排序
+        holes_data = HoleSerializer(
+            Hole.objects.filter(id__in=instance.pinned).order_by(order),
+            many=True,
+            context={'user': self.context.get('user')}
+        ).data
+        data['pinned'] = holes_data
+        return data
 
 
 class TagSerializer(serializers.ModelSerializer):

@@ -10,6 +10,7 @@ from rest_framework.authtoken.models import Token
 class Division(models.Model):
     name = models.CharField(max_length=32, unique=True)
     description = models.TextField(null=True)
+    pinned = models.JSONField(default=list)
 
     def __str__(self):
         return self.name

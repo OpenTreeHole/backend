@@ -19,11 +19,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message
+from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer
+    UserSerializer, DivisionSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 from api.utils import MessageSender
@@ -131,6 +131,38 @@ class RegisterApi(APIView):
         user.set_password(password)
         user.save()
         return Response({"message": "已重置密码"}, 200)
+
+
+class DivisionsApi(APIView):
+    permission_classes = [IsAuthenticated, AdminOrReadOnly]
+
+    def get(self, request, **kwargs):
+        division_id = kwargs.get('division_id')
+        if division_id:
+            query_set = get_object_or_404(Division, id=division_id)
+        else:
+            query_set = Division.objects.all()
+
+        serializer = DivisionSerializer(query_set, many=not division_id, context={'user': request.user})
+        return Response(serializer.data)
+
+    def put(self, request, **kwargs):
+        division_id = kwargs.get('division_id')
+        division = get_object_or_404(Division, id=division_id)
+
+        name = request.data.get('name')
+        description = request.data.get('description')
+        pinned = request.data.get('pinned')
+        if name:
+            division.name = name
+        if description:
+            division.description = description
+        if pinned:
+            division.pinned = pinned
+
+        division.save()
+        serializer = DivisionSerializer(division, context={'user': request.user})
+        return Response(serializer.data)
 
 
 def add_a_floor(request, hole, category):
@@ -257,8 +289,9 @@ class FloorsApi(APIView):
             query_set = query_set.filter(shadow_text__icontains=search).order_by('-pk')
         else:
             start_floor = request.query_params.get('start_floor')
+            length = request.query_params.get('length')
             start_floor = int(start_floor) if start_floor else 0
-            length = int(request.query_params.get('length'))
+            length = int(length) if length else 10
             if length:
                 query_set = query_set[start_floor: start_floor + length]
             else:
@@ -627,7 +660,8 @@ class UsersApi(APIView):
         else:
             user = request.user
 
-        if ('service' not in request.data) or (request.data['service'] != 'apns' and request.data['service'] != 'mipush') or ('token' not in request.data) or ('device_id' not in request.data):
+        if ('service' not in request.data) or (request.data['service'] != 'apns' and request.data['service'] != 'mipush') or ('token' not in request.data) or (
+                'device_id' not in request.data):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         service = request.data['service']  # 'apns' or 'mipush'
