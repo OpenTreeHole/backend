@@ -115,7 +115,8 @@ GITHUB_BRANCH = 'master'
 SECRET_KEY = str(uuid.uuid1())
 
 # 推送通知
-APNS_KEY = ""  # NOTE: The APNS_KEY must contain both the certificate AND the private key
+# Leave APNS_KEY_PATH empty to disable APNS
+APNS_KEY_PATH = ""  # NOTE: The APNS KEY must contain both the certificate AND the private key, in PEM format
 APNS_USE_ALTERNATIVE_PORT = False
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = "org.opentreehole.client"
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = "org.opentreehole.client"
