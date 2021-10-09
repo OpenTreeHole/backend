@@ -220,9 +220,9 @@ class HolesApi(APIView):
         try:
             length = int(request.query_params.get('length', 10))
         except ValueError:
-            return Response({'message': 'length 必须为正整数'})
+            return Response({'message': 'length 必须为正整数'}, 400)
         if length <= 0:
-            return Response({'message': 'length 必须为正整数'})
+            return Response({'message': 'length 必须为正整数'}, 400)
         length = min(length, 10)  # 防止 length 过大
 
         if tag_name:
