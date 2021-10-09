@@ -19,7 +19,8 @@ DATABASES = {
         "HOST": DATABASE_HOST,
         "PORT": DATABASE_PORT,
         'OPTIONS': {
-            'auth_plugin': 'mysql_native_password'
+            'auth_plugin': 'mysql_native_password',
+            'charset': 'utf8mb4'
         }
     }
 }
