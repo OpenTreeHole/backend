@@ -215,8 +215,15 @@ class HolesApi(APIView):
 
         # 获取多个
         start_time = request.query_params.get('start_time', datetime.now(timezone.utc).isoformat())
-        length = int(request.query_params.get('length', 10))
         tag_name = request.query_params.get('tag')
+
+        try:
+            length = int(request.query_params.get('length', 10))
+        except ValueError:
+            return Response({'message': 'length 必须为正整数'})
+        if length <= 0:
+            return Response({'message': 'length 必须为正整数'})
+        length = min(length, 10)  # 防止 length 过大
 
         if tag_name:
             tag = get_object_or_404(Tag, name=tag_name)
