@@ -114,11 +114,14 @@ class HoleSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         user = self.context.get('user')
+        prefetch_length = self.context.get('prefetch_length')
         if not user:
             print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
+        elif not prefetch_length:
+            prefetch_length = 1
         else:
-            data['key_floor'] = {
-                'first_floor': FloorSerializer(instance.floor_set.order_by('id')[0], context={'user': user}).data,
+            data['floors'] = {
+                'prefetch': FloorSerializer(instance.floor_set.order_by('id')[0:prefetch_length], context={'user': user}, many=True).data,
                 'last_floor': FloorSerializer(instance.floor_set.order_by('-id')[0], context={'user': user}).data,
             }
         return data

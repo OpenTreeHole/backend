@@ -207,10 +207,12 @@ class HolesApi(APIView):
     def get(self, request, **kwargs):
         # 获取单个
         hole_id = kwargs.get('hole_id')
+        prefetch_length = int(request.query_params.get('prefetch_length', 10))
+
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
             Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
-            serializer = HoleSerializer(hole, context={"user": request.user})
+            serializer = HoleSerializer(hole, context={"user": request.user, "prefetch_length": prefetch_length})
             return Response(serializer.data)
 
         # 获取多个
@@ -225,7 +227,7 @@ class HolesApi(APIView):
             query_set = Hole.objects.all()
 
         holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
-        serializer = HoleSerializer(holes, many=True, context={"user": request.user})
+        serializer = HoleSerializer(holes, many=True, context={"user": request.user, "prefetch_length": prefetch_length})
         return Response(serializer.data)
 
     def post(self, request):
@@ -270,7 +272,7 @@ class HolesApi(APIView):
 
     def delete(self, request, **kwargs):
         # 主题帖不能删除
-        return Response(None, 204)
+        return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class FloorsApi(APIView):
