@@ -205,37 +205,32 @@ class HolesApi(APIView):
     permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OnlyAdminCanModify]
 
     def get(self, request, **kwargs):
+        # 校验数据
+        serializer = HoleSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        length = serializer.validated_data.get('length')
+        prefetch_length = serializer.validated_data.get('prefetch_length')
+        start_time = serializer.validated_data.get('start_time')
+
         # 获取单个
         hole_id = kwargs.get('hole_id')
-        prefetch_length = int(request.query_params.get('prefetch_length', 10))
-
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
             Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
             serializer = HoleSerializer(hole, context={"user": request.user, "prefetch_length": prefetch_length})
             return Response(serializer.data)
-
         # 获取多个
-        start_time = request.query_params.get('start_time', datetime.now(timezone.utc).isoformat())
-        tag_name = request.query_params.get('tag')
-
-        try:
-            length = int(request.query_params.get('length', 10))
-        except ValueError:
-            return Response({'message': 'length 必须为正整数'}, 400)
-        if length <= 0:
-            return Response({'message': 'length 必须为正整数'}, 400)
-        length = min(length, 10)  # 防止 length 过大
-
-        if tag_name:
-            tag = get_object_or_404(Tag, name=tag_name)
-            query_set = tag.hole_set.all()
         else:
-            query_set = Hole.objects.all()
+            tag_name = request.query_params.get('tag')
+            if tag_name:
+                tag = get_object_or_404(Tag, name=tag_name)
+                query_set = tag.hole_set.all()
+            else:
+                query_set = Hole.objects.all()
 
-        holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
-        serializer = HoleSerializer(holes, many=True, context={"user": request.user, "prefetch_length": prefetch_length})
-        return Response(serializer.data)
+            holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
+            serializer = HoleSerializer(holes, many=True, context={"user": request.user, "prefetch_length": prefetch_length})
+            return Response(serializer.data)
 
     def post(self, request):
         serializer = HoleSerializer(data=request.data)

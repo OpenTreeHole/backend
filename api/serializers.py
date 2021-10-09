@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When
@@ -102,10 +104,26 @@ class HoleSerializer(serializers.ModelSerializer):
     division_id = serializers.IntegerField(required=False)
     tags = TagSerializer(many=True, read_only=True)
     tag_names = serializers.ListField(required=False, write_only=True)
+    length = serializers.IntegerField(
+        required=False, write_only=True,
+        default=settings.HOLE_PAGE_SIZE,
+        max_value=settings.MAX_PAGE_SIZE,
+        min_value=1
+    )
+    prefetch_length = serializers.IntegerField(
+        required=False, write_only=True,
+        default=settings.FLOOR_PREFETCH_LENGTH,
+        max_value=settings.MAX_PAGE_SIZE,
+        min_value=1
+    )
+    start_time = serializers.DateTimeField(
+        required=False, write_only=True,
+        default=datetime.now(timezone.utc)
+    )
 
     class Meta:
         model = Hole
-        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply']
+        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
 
     def validate_tag_names(self, tag_names):
         if not tag_names:
@@ -135,12 +153,12 @@ class HoleSerializer(serializers.ModelSerializer):
         prefetch_length = self.context.get('prefetch_length')
         if not user:
             print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
-        elif not prefetch_length:
-            prefetch_length = 1
         else:
+            prefetch_data = FloorSerializer(instance.floor_set.order_by('id')[:prefetch_length], context={'user': user}, many=True).data
             data['floors'] = {
-                'prefetch': FloorSerializer(instance.floor_set.order_by('id')[0:prefetch_length], context={'user': user}, many=True).data,
+                'first_floor': prefetch_data[0],
                 'last_floor': FloorSerializer(instance.floor_set.order_by('-id')[0], context={'user': user}).data,
+                'prefetch': prefetch_data,
             }
         return data
 

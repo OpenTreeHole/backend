@@ -92,7 +92,7 @@ class PermissionTests(APITestCase):
         self.assertEqual(r.status_code, 200)
 
         r = self.client.delete('/holes/1')
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 405)
 
         r = self.client.put('/floors/1')
         self.assertEqual(r.status_code, 200)
