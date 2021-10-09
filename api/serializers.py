@@ -53,14 +53,32 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ['tag_id', 'name', 'temperature']
 
 
+# noinspection DuplicatedCode
 class FloorSerializer(serializers.ModelSerializer):
+    class SubFloorSerializer(serializers.ModelSerializer):
+        floor_id = serializers.IntegerField(source='id', read_only=True)
+
+        class Meta:
+            model = Floor
+            fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+
+        def to_representation(self, instance):
+            data = super().to_representation(instance)
+            user = self.context.get('user')
+            if not user:
+                print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
+            else:
+                data['is_me'] = True if instance.user == user else False
+                data['liked'] = True if user.pk in instance.like_data else False
+            return data
+
     floor_id = serializers.IntegerField(source='id', read_only=True)
+    mention = SubFloorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Floor
         fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
-        read_only_fields = ['floor_id', 'anonyname']
-        depth = 1
+        read_only_fields = ['floor_id', 'anonyname', 'mention']
 
     def validate_content(self, content):
         content = content.strip()
