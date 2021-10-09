@@ -36,6 +36,13 @@ def create_shadow_text(sender, instance, **kwargs):
     instance.shadow_text = to_shadow_text(instance.content)
 
 
+# 添加回复帖后主题帖的 reply + 1
+@receiver(post_save, sender=Floor)
+def add_reply(sender, instance, created, **kwargs):
+    if created:
+        Hole.objects.filter(id=instance.hole.id).update(reply=F('reply') + 1)
+
+
 # 帖子被提及后通知用户
 @receiver(post_save, sender=Floor)
 def notify_when_mentioned(sender, instance, created, **kwargs):

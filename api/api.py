@@ -197,7 +197,6 @@ def add_a_floor(request, hole, category):
     # 创建 floor 并增加 hole 的楼层数
     floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
     floor.mention.set(mention)
-    hole.reply = hole.reply + 1
     hole.save()
     return hole if category == 'hole' else floor
 
