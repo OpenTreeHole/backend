@@ -3,3 +3,6 @@ Pipfile.lock
 try.*
 db.sqlite3
 .idea
+
+data.json
+migrate.py

@@ -1,4 +1,6 @@
-# 站点配置
+"""
+站点配置
+"""
 
 import os
 import uuid
@@ -88,8 +90,8 @@ NAME_LIST = ['陌客', '安逸', '独照', '亡心', '梦巷', '逐风', '花憩
 # 数据库配置
 DATABASE_HOST = "localhost"  # 数据库主机
 DATABASE_PORT = 3306  # 数据库端口
-DATABASE_NAME = "open_tree_hole"  # 数据库名称
-DATABASE_USER = ""  # 数据库用户
+DATABASE_NAME = "hole"  # 数据库名称
+DATABASE_USER = "root"  # 数据库用户
 DATABASE_PASSWORD = ""  # 数据库密码
 REDIS_ADDRESS = 'redis://localhost:6379'  # redis 缓存地址
 
@@ -99,7 +101,7 @@ EMAIL_PORT = 465
 EMAIL_HOST_USER = ''
 EMAIL_HOST_PASSWORD = ''
 EMAIL_USE_TLS = False
-EMAIL_USE_SSL = False
+EMAIL_USE_SSL = True
 DEFAULT_FROM_EMAIL = ''  # 默认发件人地址
 
 # 图片配置
