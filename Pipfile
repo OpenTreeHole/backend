@@ -16,11 +16,13 @@ gunicorn = "*"
 mysql-connector-python = "*"
 channels-redis = "*"
 apns2 = "*"
+markdown = "*"
 
 [dev-packages]
 eventlet = "*"
 python-magic-bin = "*"
 selenium = "*"
+markdownify = "*"
 
 [requires]
 python_version = "3.7"

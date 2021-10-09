@@ -1,18 +1,19 @@
 import collections
-from os import environ
 import re
-
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-from rest_framework.views import exception_handler
-
-from api.models import Message
-from api.serializers import MessageSerializer
+from io import StringIO
+from os import environ
 
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from markdown import Markdown
+from rest_framework.views import exception_handler
+
 from OpenTreeHole.config import PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS, \
-    PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID, APNS_KEY_PATH, APNS_USE_ALTERNATIVE_PORT
+    APNS_KEY_PATH, APNS_USE_ALTERNATIVE_PORT
+from api.models import Message
+from api.serializers import MessageSerializer
 
 # APNS global definition
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
@@ -120,4 +121,28 @@ def custom_exception_handler(exc, context):
 
 
 def to_shadow_text(content):
-    return re.sub(r'[#!>_+*-]+ |[*`\[\]-]+|\d+\. |\(http.+?\)|<.+?>|\s', '', content)
+    """
+    Markdown to plain text
+    """
+
+    def unmark_element(element, stream=None):
+        if stream is None:
+            stream = StringIO()
+        if element.text:
+            stream.write(element.text)
+        for sub in element:
+            unmark_element(sub, stream)
+        if element.tail:
+            stream.write(element.tail)
+        return stream.getvalue()
+
+    # patching Markdown
+    Markdown.output_formats["plain"] = unmark_element
+    # noinspection PyTypeChecker
+    md = Markdown(output_format="plain")
+    md.stripTopLevelTags = False
+
+    # 该方法会把 ![text](url) 中的 text 丢弃，因此需要手动替换
+    content = re.sub(r'!\[(.+)]\(.+\)', r'\1', content)
+
+    return md.convert(content)
