@@ -6,7 +6,6 @@ name = "pypi"
 [packages]
 djangorestframework = "*"
 django-redis = "*"
-djangorestframework-simplejwt = "*"
 celery = "*"
 django-celery-results = "*"
 python-magic = "*"

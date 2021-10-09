@@ -15,10 +15,6 @@ Including another URLconf
 """
 # from django.contrib import admin
 from django.urls import path
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
 
 from api import consumers
 from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout
@@ -50,6 +46,4 @@ urlpatterns = [
     path('users', UsersApi.as_view()),
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
-    path('token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
 ]
