@@ -185,7 +185,7 @@ def add_a_floor(request, hole, category):
     content = serializer.validated_data.get('content')
     mention = request.data.get('mention', [])
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
-    anonyname = hole.mapping.get(request.user.pk)
+    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
     if not anonyname:
         while True:
             anonyname = random.choice(settings.NAME_LIST)
