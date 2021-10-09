@@ -40,7 +40,9 @@ def create_shadow_text(sender, instance, **kwargs):
 @receiver(post_save, sender=Floor)
 def add_reply(sender, instance, created, **kwargs):
     if created:
-        Hole.objects.filter(id=instance.hole.id).update(reply=F('reply') + 1)
+        # Hole.objects.filter(id=instance.hole_id).update(reply=F('reply') + 1)  # 不知道为什么它运行无效
+        instance.hole.reply += 1
+        instance.hole.save()
 
 
 # 帖子被提及后通知用户
