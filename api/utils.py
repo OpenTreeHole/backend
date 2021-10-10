@@ -2,6 +2,7 @@ import re
 from functools import wraps
 from io import StringIO
 
+from django.core.cache import cache
 from markdown import Markdown
 from rest_framework.views import exception_handler
 
@@ -45,3 +46,23 @@ def to_shadow_text(content):
     content = re.sub(r'!\[(.+)]\(.+\)', r'\1', content)
 
     return md.convert(content)
+
+
+def cache_function_call(key, timeout):
+    def decorate(func):
+        cache_key = f'cache-{key}'
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if cache.get(cache_key):
+                print('hit cache', cache_key)
+                return cache.get(cache_key)
+            else:
+                result = func(*args, **kwargs)
+                cache.set(cache_key, result, timeout)
+                print('set cache', cache_key)
+                return result
+
+        return wrapper
+
+    return decorate

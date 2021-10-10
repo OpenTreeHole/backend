@@ -218,7 +218,11 @@ class HolesApi(APIView):
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
             Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
-            serializer = HoleSerializer(hole, context={"user": request.user, "prefetch_length": prefetch_length})
+            serializer = HoleSerializer(hole, context={
+                "user": request.user,
+                "prefetch_length": prefetch_length,
+                'simple_floors': True  # 使用 SimpleFloorSerializer
+            })
             return Response(serializer.data)
         # 获取多个
         else:

@@ -6,6 +6,7 @@ from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
+from api.utils import cache_function_call
 
 User = get_user_model()
 
@@ -72,12 +73,6 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        user = self.context.get('user')
-        if not user:
-            print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
-        else:
-            data['is_me'] = True if instance.user_id == user.id else False
-            data['liked'] = True if user.id in instance.like_data else False
         return data
 
     @staticmethod
@@ -97,6 +92,16 @@ class FloorSerializer(SimpleFloorSerializer):
     @staticmethod
     def get_queryset(queryset):
         return queryset.prefetch_related('mention')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = self.context.get('user')
+        if not user:
+            print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
+        else:
+            data['is_me'] = True if instance.user_id == user.id else False
+            data['liked'] = True if user.id in instance.like_data else False
+        return data
 
 
 class HoleSerializer(serializers.ModelSerializer):
@@ -126,33 +131,36 @@ class HoleSerializer(serializers.ModelSerializer):
         fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        user = self.context.get('user')
-        prefetch_length = self.context.get('prefetch_length', 1)
-        if not user:
-            print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
-        else:
-            # serializer
-            simple_floors = self.context.get('simple_floors', False)
-            serializer = SimpleFloorSerializer if simple_floors else FloorSerializer
+        @cache_function_call(str(instance), settings.HOLE_CACHE_SECONDS)
+        def _inner_to_representation(self, instance):
+            data = super().to_representation(instance)
+            user = self.context.get('user')
+            prefetch_length = self.context.get('prefetch_length', 1)
+            if not user:
+                print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
+            else:
+                # serializer
+                simple_floors = self.context.get('simple_floors', False)
+                serializer = SimpleFloorSerializer if simple_floors else FloorSerializer
 
-            # prefetch_data
-            queryset = instance.floor_set.order_by('id')[:prefetch_length]
-            queryset = serializer.get_queryset(queryset)
-            prefetch_data = serializer(queryset, context={'user': user}, many=True).data
+                # prefetch_data
+                queryset = instance.floor_set.order_by('id')[:prefetch_length]
+                queryset = serializer.get_queryset(queryset)
+                prefetch_data = serializer(queryset, many=True).data
 
-            # last_floor_data
-            queryset = instance.floor_set.order_by('-id')
-            queryset = serializer.get_queryset(queryset)
-            last_floor_data = serializer(queryset[0], context={'user': user}).data
+                # last_floor_data
+                queryset = instance.floor_set.order_by('-id')
+                queryset = serializer.get_queryset(queryset)
+                last_floor_data = serializer(queryset[0]).data
 
-            # data
-            data['floors'] = {
-                'first_floor': prefetch_data[0],
-                'last_floor': last_floor_data,
-                'prefetch': prefetch_data,
-            }
-        return data
+                data['floors'] = {
+                    'first_floor': prefetch_data[0],
+                    'last_floor': last_floor_data,
+                    'prefetch': prefetch_data,
+                }
+            return data
+
+        return _inner_to_representation(self, instance)
 
     @staticmethod
     def get_queryset(queryset):

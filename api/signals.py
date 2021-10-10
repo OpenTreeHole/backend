@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.db.models import F
 from django.db.models.signals import post_save, m2m_changed, pre_save
 from django.dispatch import receiver, Signal
@@ -10,6 +11,7 @@ from rest_framework.authtoken.models import Token
 from api.models import Hole, Tag, Floor, Report
 from api.notification import MessageSender
 from api.serializers import FloorSerializer, ReportSerializer
+from api.utils import to_shadow_text
 
 modified_by_admin = Signal(providing_args=['instance'])
 
@@ -36,13 +38,16 @@ def create_shadow_text(sender, instance, **kwargs):
     instance.shadow_text = to_shadow_text(instance.content)
 
 
-# 添加回复帖后主题帖的 reply + 1
+# 添加回复帖后执行任务
 @receiver(post_save, sender=Floor)
-def add_reply(sender, instance, created, **kwargs):
+def after_adding_a_floor(sender, instance, created, **kwargs):
     if created:
         # Hole.objects.filter(id=instance.hole_id).update(reply=F('reply') + 1)  # 不知道为什么它运行无效
         instance.hole.reply += 1
         instance.hole.save()
+        cache_key = f'cache-{instance.hole}'
+        deleted = cache.delete(cache_key)
+        print(f'reset {cache_key}: {deleted}')
 
 
 # 帖子被提及后通知用户
@@ -97,6 +102,7 @@ def notify_when_permission_changed(sender, instance, **kwargs):
         MessageSender(instance, message, data, 'permission').commit()
 
 
+# 用户帖子被修改后发出通知
 @receiver(modified_by_admin, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
     message = '你的帖子被修改了'
