@@ -17,7 +17,7 @@ Including another URLconf
 from django.urls import path
 
 from api import consumers
-from api.api import index, login, RegisterApi, verify, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout
+from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi
 
 websocket_urlpatterns = [
     path('ws/notification', consumers.NotificationConsumer.as_asgi()),
@@ -29,7 +29,7 @@ urlpatterns = [
     path("login", login),
     path('logout', logout),
     path("register", RegisterApi.as_view()),
-    path("verify/<str:method>", verify),
+    path("verify/<str:method>", VerifyApi.as_view()),
     path("holes", HolesApi.as_view()),
     path("holes/<int:hole_id>", HolesApi.as_view()),
     path('floors', FloorsApi.as_view()),

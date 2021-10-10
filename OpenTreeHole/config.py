@@ -90,6 +90,12 @@ NAME_LIST = ['陌客', '安逸', '独照', '亡心', '梦巷', '逐风', '花憩
              '清风', '喵叽', '梦徒', '安辞', '难喻', '桔栀', '記忔', '北挽', '酒薄', '抵年', '浮笙', '丑角', '暮余', '此月', '酸奶', '贫僧', '酣眠', '明瑞',
              '阳夏', '拽爷']
 
+# 访问速率限制
+THROTTLE_BURST = '10/min'
+THROTTLE_SUSTAINED = '1000/day'
+THROTTLE_EMAIL = '30/day'
+THROTTLE_UPLOAD = '30/day'
+
 # 数据库配置
 DATABASE_HOST = "localhost"  # 数据库主机
 DATABASE_PORT = 3306  # 数据库端口

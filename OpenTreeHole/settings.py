@@ -109,7 +109,23 @@ REST_FRAMEWORK = {
     ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'api.throttles.BurstRateThrottle',
+        'api.throttles.SustainedRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'burst': THROTTLE_BURST,
+        'sustained': THROTTLE_SUSTAINED,
+        'email': THROTTLE_EMAIL,
+        'upload': THROTTLE_UPLOAD
+    }
 }
+# 测试时不限制访问速率
+TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
+if TESTING:
+    del REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']
+    del REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']
 
 FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
 

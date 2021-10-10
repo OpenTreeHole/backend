@@ -36,7 +36,6 @@ from api.utils import MessageSender
 
 @api_view(["GET"])
 def index(request):
-    # hello_world.delay()
     MessageSender(request.user, {'message': 'hi'}).commit()
     return Response({"message": "Hello world!"})
 
@@ -61,31 +60,33 @@ def logout(request):
     return Response({"message": "登出成功"})
 
 
-@api_view(["GET"])
-def verify(request, **kwargs):
-    method = kwargs.get("method")
+class VerifyApi(APIView):
+    throttle_scope = 'email'
 
-    if method == "email":
-        email = request.query_params.get("email")
-        domain = email[email.find("@") + 1:]
-        # 检查邮箱是否在白名单内
-        if domain not in settings.EMAIL_WHITELIST:
-            return Response({"message": "邮箱不在白名单内！"}, 400)
-        # 检查用户是否注册
-        if User.objects.filter(email=email):
-            return Response({"message": "该用户已注册！"}, 400)
+    def get(self, request, **kwargs):
+        method = kwargs.get("method")
 
-        # 设置验证码并发送验证邮件
-        verification = random.randint(100000, 999999)
-        cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-        mail.delay(
-            subject=f'{settings.SITE_NAME} 注册验证',
-            content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {verification}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
-            receivers=[email]
-        )
-        return Response({'message': '验证邮件已发送，请查收验证码'})
-    else:
-        return Response({}, 502)
+        if method == "email":
+            email = request.query_params.get("email")
+            domain = email[email.find("@") + 1:]
+            # 检查邮箱是否在白名单内
+            if domain not in settings.EMAIL_WHITELIST:
+                return Response({"message": "邮箱不在白名单内！"}, 400)
+            # 检查用户是否注册
+            if User.objects.filter(email=email):
+                return Response({"message": "该用户已注册！"}, 400)
+
+            # 设置验证码并发送验证邮件
+            verification = random.randint(100000, 999999)
+            cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+            mail.delay(
+                subject=f'{settings.SITE_NAME} 注册验证',
+                content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {verification}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                receivers=[email]
+            )
+            return Response({'message': '验证邮件已发送，请查收验证码'})
+        else:
+            return Response({}, 502)
 
 
 class RegisterApi(APIView):
@@ -516,6 +517,7 @@ class ReportsApi(APIView):
 
 class ImagesApi(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_scope = 'upload'
 
     def post(self, request):
         # 校验图片
