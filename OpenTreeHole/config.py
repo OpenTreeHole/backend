@@ -96,7 +96,7 @@ DATABASE_PORT = 3306  # 数据库端口
 DATABASE_NAME = "hole"  # 数据库名称
 DATABASE_USER = "root"  # 数据库用户
 DATABASE_PASSWORD = ""  # 数据库密码
-REDIS_ADDRESS = 'redis://localhost:6379'  # redis 缓存地址
+REDIS_URL = 'redis://localhost:6379'  # redis 缓存地址
 
 # 邮件配置
 EMAIL_HOST = ''

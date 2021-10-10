@@ -12,7 +12,7 @@ ALLOWED_HOSTS = ALLOW_CONNECT_HOSTS
 # 生产环境使用 Mysql 数据库
 DATABASES = {
     "default": {
-        "ENGINE": "mysql.connector.django",
+        "ENGINE": "django.db.backends.mysql",
         "NAME": DATABASE_NAME,
         "USER": DATABASE_USER,
         "PASSWORD": DATABASE_PASSWORD,
@@ -29,7 +29,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_ADDRESS,
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -44,7 +44,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [REDIS_ADDRESS],
+            "hosts": [REDIS_URL],
         },
     },
 }

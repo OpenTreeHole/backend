@@ -13,10 +13,10 @@ httpx = "*"
 channels = "*"
 uvicorn = { extras = ["standard"], version = "*" }
 gunicorn = "*"
-mysql-connector-python = "*"
 channels-redis = "*"
 apns2 = "*"
 markdown = "*"
+mysqlclient = "*"
 
 [dev-packages]
 eventlet = "*"
