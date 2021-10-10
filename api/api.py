@@ -225,12 +225,13 @@ class HolesApi(APIView):
             tag_name = request.query_params.get('tag')
             if tag_name:
                 tag = get_object_or_404(Tag, name=tag_name)
-                query_set = tag.hole_set.all()
+                queryset = tag.hole_set.all()
             else:
-                query_set = Hole.objects.all()
+                queryset = Hole.objects.all()
 
-            holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
-            serializer = HoleSerializer(holes, many=True, context={
+            queryset = queryset.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
+            queryset = HoleSerializer.get_queryset(queryset)
+            serializer = HoleSerializer(queryset, many=True, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
                 'simple_floors': True  # 使用 SimpleFloorSerializer

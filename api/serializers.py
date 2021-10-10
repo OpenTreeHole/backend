@@ -61,8 +61,8 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
-        read_only_fields = ['floor_id', 'anonyname', 'mention']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        read_only_fields = ['floor_id', 'anonyname']
 
     def validate_content(self, content):
         content = content.strip()
@@ -76,14 +76,27 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
         if not user:
             print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')
         else:
-            data['is_me'] = True if instance.user == user else False
-            data['liked'] = True if user.pk in instance.like_data else False
+            data['is_me'] = True if instance.user_id == user.id else False
+            data['liked'] = True if user.id in instance.like_data else False
         return data
+
+    @staticmethod
+    def get_queryset(queryset):
+        return queryset
 
 
 class FloorSerializer(SimpleFloorSerializer):
     floor_id = serializers.IntegerField(source='id', read_only=True)
     mention = SimpleFloorSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Floor
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        read_only_fields = ['floor_id', 'anonyname', 'mention']
+
+    @staticmethod
+    def get_queryset(queryset):
+        return queryset.prefetch_related('mention')
 
 
 class HoleSerializer(serializers.ModelSerializer):
@@ -112,6 +125,39 @@ class HoleSerializer(serializers.ModelSerializer):
         model = Hole
         fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        user = self.context.get('user')
+        prefetch_length = self.context.get('prefetch_length', 1)
+        if not user:
+            print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
+        else:
+            # serializer
+            simple_floors = self.context.get('simple_floors', False)
+            serializer = SimpleFloorSerializer if simple_floors else FloorSerializer
+
+            # prefetch_data
+            queryset = instance.floor_set.order_by('id')[:prefetch_length]
+            queryset = serializer.get_queryset(queryset)
+            prefetch_data = serializer(queryset, context={'user': user}, many=True).data
+
+            # last_floor_data
+            queryset = instance.floor_set.order_by('-id')
+            queryset = serializer.get_queryset(queryset)
+            last_floor_data = serializer(queryset[0], context={'user': user}).data
+
+            # data
+            data['floors'] = {
+                'first_floor': prefetch_data[0],
+                'last_floor': last_floor_data,
+                'prefetch': prefetch_data,
+            }
+        return data
+
+    @staticmethod
+    def get_queryset(queryset):
+        return queryset.prefetch_related('tags')
+
     def validate_tag_names(self, tag_names):
         if not tag_names:
             tag_names = ['默认']
@@ -133,23 +179,6 @@ class HoleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('分区不存在', 400)
         else:
             return division_id
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        user = self.context.get('user')
-        prefetch_length = self.context.get('prefetch_length', 1)
-        if not user:
-            print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
-        else:
-            simple_floors = self.context.get('simple_floors', False)
-            serializer = SimpleFloorSerializer if simple_floors else FloorSerializer
-            prefetch_data = serializer(instance.floor_set.order_by('id')[:prefetch_length], context={'user': user}, many=True).data
-            data['floors'] = {
-                'first_floor': prefetch_data[0],
-                'last_floor': serializer(instance.floor_set.order_by('-id')[0], context={'user': user}).data,
-                'prefetch': prefetch_data,
-            }
-        return data
 
 
 class ReportSerializer(serializers.ModelSerializer):
