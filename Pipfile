@@ -17,12 +17,14 @@ channels-redis = "*"
 apns2 = "*"
 markdown = "*"
 mysqlclient = "*"
+django = "~=3.1.13"
 
 [dev-packages]
 eventlet = "*"
 python-magic-bin = "*"
 selenium = "*"
 markdownify = "*"
+django-silk = "*"
 
 [requires]
 python_version = "3.7"

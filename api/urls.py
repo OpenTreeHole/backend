@@ -14,7 +14,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 # from django.contrib import admin
-from django.urls import path
+from django.conf import settings
+from django.conf.urls import url
+from django.urls import path, include
 
 from api import consumers
 from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi
@@ -47,3 +49,6 @@ urlpatterns = [
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
 ]
+
+if settings.HOLE_ENV == 'development':
+    urlpatterns += [url(r'^silk', include('silk.urls', namespace='silk'))]

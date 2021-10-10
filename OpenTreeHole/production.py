@@ -5,6 +5,21 @@ DEBUG = False
 # 此处填写你的域名
 ALLOWED_HOSTS = ALLOW_CONNECT_HOSTS
 
+INSTALLED_APPS = [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
+    'django_celery_results',
+    'channels',
+    "api.apps.ApiConfig",
+]
+
+MIDDLEWARE = [
+    "django.middleware.csrf.CsrfViewMiddleware",
+]
+
 # 生产环境使用 Mysql 数据库
 DATABASES = {
     "default": {

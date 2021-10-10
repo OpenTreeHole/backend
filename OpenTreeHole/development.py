@@ -5,6 +5,24 @@ DEBUG = True
 # 允许任意 host
 ALLOWED_HOSTS = ['*']
 
+INSTALLED_APPS = [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
+    'django_celery_results',
+    'channels',
+    'silk',
+    "api.apps.ApiConfig",
+]
+
+MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'silk.middleware.SilkyMiddleware',
+    "django.middleware.csrf.CsrfViewMiddleware",
+]
+
 # 开发环境使用 sqlite 数据库
 DATABASES = {
     "default": {
@@ -42,6 +60,11 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
+
+# silk profiling
+SILKY_PYTHON_PROFILER = True
+# SILKY_PYTHON_PROFILER_BINARY = True
+# SILKY_PYTHON_PROFILER_RESULT_PATH = BASE_DIR
 
 # LOGGING = {
 #     'version': 1,

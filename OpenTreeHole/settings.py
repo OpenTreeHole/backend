@@ -4,44 +4,25 @@ import sys
 if os.environ.get("HOLE_ENV") == "development":
     from OpenTreeHole.development import *
 
+    HOLE_ENV = "development"
     print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
 
 elif os.environ.get("HOLE_ENV") == "testing":
     from OpenTreeHole.testing import *
 
+    HOLE_ENV = "testing"
     print(f'{SITE_NAME} 正在以测试模式运行，请不要用在生产环境')
 
 elif os.environ.get("HOLE_ENV") == "production":
     from OpenTreeHole.production import *
 
+    HOLE_ENV = 'production'
 else:
     print("未配置 HOLE_ENV 环境变量！请将其配置为 development / testing / production")
     from OpenTreeHole.development import *
 
+    HOLE_ENV = 'development'
     print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
-
-INSTALLED_APPS = [
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    # "django.contrib.sessions",
-    # "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    'django_celery_results',
-    'channels',
-    "api.apps.ApiConfig",
-]
-
-MIDDLEWARE = [
-    # "django.middleware.security.SecurityMiddleware",
-    # "django.contrib.sessions.middleware.SessionMiddleware",
-    # "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    # "django.contrib.auth.middleware.AuthenticationMiddleware",
-    # "django.contrib.messages.middleware.MessageMiddleware",
-    # "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
 
 TEMPLATES = [
     {

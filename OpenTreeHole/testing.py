@@ -5,4 +5,4 @@ from .config import *
 from .development import DEBUG, ALLOWED_HOSTS, REST_FRAMEWORK
 
 # noinspection PyUnresolvedReferences
-from .production import DATABASES, CACHES, EMAIL_BACKEND, CHANNEL_LAYERS
+from .production import INSTALLED_APPS, MIDDLEWARE, DATABASES, CACHES, EMAIL_BACKEND, CHANNEL_LAYERS
