@@ -68,6 +68,9 @@ class MessageSender:
         如果消息需要打包发送(apns)，则加入队列
         如果不需要打包发送(websocket)，则直接发送
         """
+        if not user.is_authenticated:
+            return
+
         if data is None:
             data = {}
 
