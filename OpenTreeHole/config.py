@@ -4,6 +4,7 @@
 
 import os
 import uuid
+from pathlib import Path
 
 SITE_NAME = 'Open Tree Hole'  # 网站名称
 TZ = "Asia/Shanghai"  # 时区
@@ -131,6 +132,9 @@ APNS_KEY_PATH = ""  # NOTE: The APNS KEY must contain both the certificate AND t
 APNS_USE_ALTERNATIVE_PORT = False
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = "org.opentreehole.client"
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = "org.opentreehole.client"
+
+# 就是外层的 OpenTreeHole
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 用环境变量中的配置覆盖
 envs = os.environ

@@ -1,9 +1,5 @@
-from pathlib import Path
-
 from .config import *
 
-# 就是外层的 OpenTreeHole
-BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = False
 
 # 此处填写你的域名
@@ -47,4 +43,26 @@ CHANNEL_LAYERS = {
             "hosts": [REDIS_URL],
         },
     },
+}
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication"
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ],
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'api.throttles.BurstRateThrottle',
+        'api.throttles.SustainedRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'burst': THROTTLE_BURST,
+        'sustained': THROTTLE_SUSTAINED,
+        'email': THROTTLE_EMAIL,
+        'upload': THROTTLE_UPLOAD
+    }
 }

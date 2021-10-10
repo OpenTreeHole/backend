@@ -1,11 +1,5 @@
-from pathlib import Path
-
 from .config import *
 
-print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
-
-# 就是外层的 OpenTreeHole
-BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = True
 
 # 允许任意 host
@@ -35,6 +29,18 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
+}
+
+# 开发环境不限制 API 访问速率
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication"
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ],
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
 }
 
 # LOGGING = {

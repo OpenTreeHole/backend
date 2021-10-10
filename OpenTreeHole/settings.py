@@ -3,13 +3,22 @@ import sys
 
 if os.environ.get("HOLE_ENV") == "development":
     from OpenTreeHole.development import *
+
+    print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
+
+elif os.environ.get("HOLE_ENV") == "testing":
+    from OpenTreeHole.testing import *
+
+    print(f'{SITE_NAME} 正在以测试模式运行，请不要用在生产环境')
+
 elif os.environ.get("HOLE_ENV") == "production":
     from OpenTreeHole.production import *
+
 else:
-    print("未配置 HOLE_ENV 环境变量！请将其配置为 development 或 production")
+    print("未配置 HOLE_ENV 环境变量！请将其配置为 development / testing / production")
     from OpenTreeHole.development import *
 
-# Application definition
+    print(f'{SITE_NAME} 正在以开发模式运行，请不要用在生产环境')
 
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -34,7 +43,6 @@ MIDDLEWARE = [
     # "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# 开发环境使用内置模板支持一些开发工具
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -99,35 +107,6 @@ STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
-    ],
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer'
-    ],
-    "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
-    'DEFAULT_THROTTLE_CLASSES': [
-        'api.throttles.BurstRateThrottle',
-        'api.throttles.SustainedRateThrottle',
-        'rest_framework.throttling.ScopedRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'burst': THROTTLE_BURST,
-        'sustained': THROTTLE_SUSTAINED,
-        'email': THROTTLE_EMAIL,
-        'upload': THROTTLE_UPLOAD
-    }
-}
-# 测试时不限制访问速率
-TESTING = len(sys.argv) > 1 and sys.argv[1] == 'test'
-if TESTING:
-    del REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']
-    del REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES']
-
-FIXTURE_DIRS = [os.path.join(Path(__file__).resolve().parent, 'fixtures')]
 
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_BROKER_URL = REDIS_URL
