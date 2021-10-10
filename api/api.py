@@ -229,7 +229,11 @@ class HolesApi(APIView):
                 query_set = Hole.objects.all()
 
             holes = query_set.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
-            serializer = HoleSerializer(holes, many=True, context={"user": request.user, "prefetch_length": prefetch_length})
+            serializer = HoleSerializer(holes, many=True, context={
+                "user": request.user,
+                "prefetch_length": prefetch_length,
+                'simple_floors': True  # 使用 SimpleFloorSerializer
+            })
             return Response(serializer.data)
 
     def post(self, request):
@@ -415,7 +419,7 @@ class FavoritesApi(APIView):
 
     def get(self, request):
         query_set = request.user.favorites.all()
-        serializer = HoleSerializer(query_set, many=True, context={"user": request.user})
+        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple_floors': True})
         return Response(serializer.data)
 
     def post(self, request):
