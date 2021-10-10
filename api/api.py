@@ -20,13 +20,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
+from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-from api.utils import MessageSender
 
 
 # 发送 csrf 令牌
