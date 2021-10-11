@@ -1,10 +1,9 @@
 import base64
-import random
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 
-# import magic
+import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
