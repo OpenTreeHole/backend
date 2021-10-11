@@ -77,21 +77,17 @@ class VerifyApi(APIView):
             # 检查邮箱是否在白名单内
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
-            # 检查用户是否注册
-            # TODO: Allow users to check if email has been registered without verifying identity? This could
-            #  pose a security threat where everyone can determine who has registered.
-            if RegisteredEmail.objects.filter(email_cleartext=email).exists():
-                return Response({"message": "该用户已注册！"}, 400)
-
-            # 设置验证码并发送验证邮件
-            verification = secrets.randbelow(1000000)
-            cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-            mail.delay(
-                subject=f'{settings.SITE_NAME} 注册验证',
-                content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
-                receivers=[email]
-            )
-            return Response({'message': '验证邮件已发送，请查收验证码'})
+            # 仅当用户未注册时发送邮件
+            if not RegisteredEmail.objects.filter(email_cleartext=email).exists():
+                # 设置验证码并发送验证邮件
+                verification = secrets.randbelow(1000000)
+                cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+                mail.delay(
+                    subject=f'{settings.SITE_NAME} 注册验证',
+                    content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                    receivers=[email]
+                )
+            return Response({'message': '如果您未注册，则会收到包含验证码的验证邮件，请查收；如果您已注册，则不会收到验证邮件，请找回密码。'})
         else:
             return Response({}, 502)
 
