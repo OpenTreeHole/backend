@@ -1,5 +1,6 @@
 import base64
 import random
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 
@@ -83,11 +84,11 @@ class VerifyApi(APIView):
                 return Response({"message": "该用户已注册！"}, 400)
 
             # 设置验证码并发送验证邮件
-            verification = random.randint(100000, 999999)
+            verification = secrets.randbelow(1000000)
             cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
             mail.delay(
                 subject=f'{settings.SITE_NAME} 注册验证',
-                content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {verification}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
                 receivers=[email]
             )
             return Response({'message': '验证邮件已发送，请查收验证码'})
