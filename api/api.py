@@ -3,7 +3,7 @@ import random
 import uuid
 from datetime import datetime, timezone, timedelta
 
-import magic
+# import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
@@ -19,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, RegisteredEmail
 from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
@@ -32,6 +32,7 @@ from api.tasks import mail, post_image_to_github
 # 发送 csrf 令牌
 # from django.views.decorators.csrf import ensure_csrf_cookie
 # @method_decorator(ensure_csrf_cookie)
+from api.utils import encrypt_email
 
 
 @api_view(["GET"])
@@ -42,9 +43,12 @@ def index(request):
 
 @api_view(["POST"])
 def login(request):
+    # TODO: Sanitize input needed?
     email = request.data.get("email")
     password = request.data.get("password")
-    user = get_object_or_404(User, email=email)
+
+    email = encrypt_email(email)
+    user = get_object_or_404(User, email_encrypted=email)
     if check_password(password, user.password):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "message": "登录成功！"})
@@ -73,7 +77,9 @@ class VerifyApi(APIView):
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
             # 检查用户是否注册
-            if User.objects.filter(email=email):
+            # TODO: Allow users to check if email has been registered without verifying identity? This could
+            #  pose a security threat where everyone can determine who has registered.
+            if RegisteredEmail.objects.filter(email_cleartext=email).exists():
                 return Response({"message": "该用户已注册！"}, 400)
 
             # 设置验证码并发送验证邮件
@@ -91,6 +97,7 @@ class VerifyApi(APIView):
 
 class RegisterApi(APIView):
     def post(self, request):
+        # TODO: Sanitize input needed?
         email = request.data.get("email")
         password = request.data.get("password")
         verification = request.data.get("verification")
@@ -104,11 +111,13 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否已存在
-        if User.objects.filter(email=email).exists():
-            return Response({"message": "该用户已注册！"}, 400)
+        if RegisteredEmail.objects.filter(email_cleartext=email).exists():
+            return Response({"message": "该用户已注册！如果忘记密码，请使用忘记密码功能找回。"}, 400)
 
-        user = User.objects.create_user(email=email, password=password)
+        email_encrypted = encrypt_email(email)
+        user = User.objects.create_user(email_encrypted=email_encrypted, password=password)
         token = Token.objects.get(user=user).key
+        RegisteredEmail.objects.create(email_cleartext=email).save()
         return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):
@@ -127,7 +136,8 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否不存在
-        users = User.objects.filter(email=email)
+        email_encrypted = encrypt_email(email)
+        users = User.objects.filter(email_encrypted=email_encrypted)
         if not users:
             return Response({"message": "该用户不存在"}, 400)
         user = users[0]

@@ -7,6 +7,10 @@ from markdown import Markdown
 from rest_framework.views import exception_handler
 
 
+def encrypt_email(email_cleartext):
+    return email_cleartext
+
+
 def custom_exception_handler(exc, context):
     # Call REST framework's default exception handler first,
     # to get the standard error response.
