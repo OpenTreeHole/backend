@@ -1,4 +1,5 @@
 import base64
+import random
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -27,8 +28,6 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer, DivisionSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-
-
 # 发送 csrf 令牌
 # from django.views.decorators.csrf import ensure_csrf_cookie
 # @method_decorator(ensure_csrf_cookie)
@@ -47,8 +46,7 @@ def login(request):
     email = request.data.get("email")
     password = request.data.get("password")
 
-    email = encrypt_email(email)
-    user = get_object_or_404(User, email_encrypted=email)
+    user = get_object_or_404(User, email=encrypt_email(email))
     if check_password(password, user.password):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "message": "登录成功！"})
@@ -110,8 +108,7 @@ class RegisterApi(APIView):
         if RegisteredEmail.objects.filter(email_cleartext=email).exists():
             return Response({"message": "该用户已注册！如果忘记密码，请使用忘记密码功能找回。"}, 400)
 
-        email_encrypted = encrypt_email(email)
-        user = User.objects.create_user(email_encrypted=email_encrypted, password=password)
+        user = User.objects.create_user(email=encrypt_email(email), password=password)
         token = Token.objects.get(user=user).key
         RegisteredEmail.objects.create(email_cleartext=email).save()
         return Response({'message': '注册成功', 'token': token}, 201)
@@ -132,8 +129,7 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否不存在
-        email_encrypted = encrypt_email(email)
-        users = User.objects.filter(email_encrypted=email_encrypted)
+        users = User.objects.filter(email=encrypt_email(email))
         if not users:
             return Response({"message": "该用户不存在"}, 400)
         user = users[0]
