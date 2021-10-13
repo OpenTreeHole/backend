@@ -3,7 +3,7 @@ FROM debian:buster
 MAINTAINER jsclndnz@gmail.com
 
 RUN apt update \
-    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev libmariadb-dev build-essential\
+    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev libmariadb-dev gnutls-bin build-essential\
     && apt autoremove -y \
 	&& pip3 install --no-cache-dir pipenv
 
