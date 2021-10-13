@@ -314,6 +314,7 @@ class FloorsApi(APIView):
                 query_set = query_set[start_floor: start_floor + length]
             else:
                 query_set = query_set[start_floor:]
+        query_set = FloorSerializer.get_queryset(query_set)
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
 
