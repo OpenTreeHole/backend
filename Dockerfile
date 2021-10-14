@@ -3,10 +3,16 @@ FROM debian:buster
 MAINTAINER jsclndnz@gmail.com
 
 RUN apt update \
-    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev libmariadb-dev gnutls-bin build-essential\
+    && apt install -y lsb-release \
+    && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
+    && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
+    && rm mysql.deb \
+    && apt update \
+    && apt install -y libmysqlclient-dev \
+    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev \
     && apt autoremove -y \
-	&& pip3 install --no-cache-dir pipenv
-
+    && pip3 install --no-cache-dir pipenv
+    
 WORKDIR /www/backend
 
 ENV HOLE_ENV=production REDIS_URL=redis://redis:6379
