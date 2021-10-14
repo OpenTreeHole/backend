@@ -5,13 +5,13 @@ MAINTAINER jsclndnz@gmail.com
 ENV HOLE_ENV=production REDIS_URL=redis://redis:6379 DEBIAN_FRONTEND=noninteractive
 
 RUN apt update \
-    && apt install -y --no-install-recommends lsb-release curl wget gnupg \
+    && apt install -y lsb-release curl wget gnupg \
     && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
     && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
     && rm mysql.deb \
     && apt update \
     && apt install -y libmysqlclient-dev \
-    && apt remove -y curl wget lsb-release gnupg \
+    && apt remove -y lsb-release curl wget gnupg \
     && apt autoremove -y \
     && apt clean
     
