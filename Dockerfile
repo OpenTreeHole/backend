@@ -5,7 +5,7 @@ MAINTAINER jsclndnz@gmail.com
 ENV HOLE_ENV=production REDIS_URL=redis://redis:6379 DEBIAN_FRONTEND=noninteractive
 
 RUN apt update \
-    && apt install -y lsb-release curl wget gnupg \
+    && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 \
     && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
     && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
     && rm mysql.deb \
@@ -13,18 +13,10 @@ RUN apt update \
     && apt install -y libmysqlclient-dev \
     && apt remove -y lsb-release curl wget gnupg \
     && apt autoremove -y \
-    && apt clean
-    
-RUN apt update \
-    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev \
-    && pip3 install --no-cache-dir pipenv \
-    && apt remove -y python3-pip \
-    && apt autoremove -y \
-    && apt clean
-    
+    && apt clean \
+    && pip3 install --no-cache-dir pipenv
     
 WORKDIR /www/backend
-
 
 COPY Pipfile /www/backend/
 
