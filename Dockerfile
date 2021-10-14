@@ -7,7 +7,7 @@ ENV HOLE_ENV=production REDIS_URL=redis://redis:6379 DEBIAN_FRONTEND=noninteract
 RUN apt update \
     && apt install -y --no-install-recommends lsb-release curl wget gnupg \
     && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
-    && dpkg -i mysql.deb \
+    && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
     && rm mysql.deb \
     && apt update \
     && apt install -y libmysqlclient-dev \
@@ -15,7 +15,8 @@ RUN apt update \
     && apt autoremove -y \
     && apt clean
     
-RUN apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev \
+RUN apt update \
+    && apt install -y --no-install-recommends python3 python3-pip libmagic1 python3-dev \
     && pip3 install --no-cache-dir pipenv \
     && apt remove -y python3-pip \
     && apt autoremove -y \
