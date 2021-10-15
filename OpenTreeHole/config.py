@@ -129,6 +129,9 @@ GITHUB_BRANCH = 'master'
 # 足够长的密码，供 Django 安全机制
 SECRET_KEY = str(uuid.uuid1())
 
+# 用户名加密公钥文件(PEM)路径
+USERNAME_PUBLIC_KEY_PATH = "demo_key.pem"
+
 # 推送通知
 # Leave APNS_KEY_PATH empty to disable APNS
 APNS_KEY_PATH = ""  # NOTE: The APNS KEY must contain both the certificate AND the private key, in PEM format

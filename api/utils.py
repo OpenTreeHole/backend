@@ -1,14 +1,31 @@
 import re
 from functools import wraps
 from io import StringIO
+import base64
 
+from Crypto.Cipher import PKCS1_OAEP
+from Crypto.PublicKey import RSA
 from django.core.cache import cache
 from markdown import Markdown
 from rest_framework.views import exception_handler
 
+from OpenTreeHole.config import USERNAME_PUBLIC_KEY_PATH
+
+PKCS1_PUBLIC_CIPHER = None
+
 
 def encrypt_email(email_cleartext):
-    return email_cleartext
+    """
+    Provide basic encryption
+
+    To decrypt, use:
+    print(PKCS1_PUBLIC_CIPHER.decrypt(base64.b64decode(encoded.encode("utf8"))).decode("utf8"))
+    """
+    global PKCS1_PUBLIC_CIPHER
+    if PKCS1_PUBLIC_CIPHER is None:
+        with open(USERNAME_PUBLIC_KEY_PATH, 'r') as file:
+            PKCS1_PUBLIC_CIPHER = PKCS1_OAEP.new(RSA.importKey(file.read()))
+    return base64.b64encode(PKCS1_PUBLIC_CIPHER.encrypt(email_cleartext.encode("utf8"))).decode("utf8")
 
 
 def custom_exception_handler(exc, context):

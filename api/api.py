@@ -20,7 +20,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division, RegisteredEmail
+from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
@@ -75,9 +75,10 @@ class VerifyApi(APIView):
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
             # 仅当用户未注册时发送邮件
-            if not RegisteredEmail.objects.filter(email_cleartext=email).exists():
+            if not User.objects.filter(email=encrypt_email(email)).exists():
                 # 设置验证码并发送验证邮件
                 verification = secrets.randbelow(1000000)
+                print(str(verification).zfill(6))
                 cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
@@ -105,12 +106,12 @@ class RegisterApi(APIView):
         except ValidationError as e:
             return Response({'message': '\n'.join(e)}, 400)
         # 校验用户名是否已存在
-        if RegisteredEmail.objects.filter(email_cleartext=email).exists():
+        if User.objects.filter(email=email).exists():
             return Response({"message": "该用户已注册！如果忘记密码，请使用忘记密码功能找回。"}, 400)
 
         user = User.objects.create_user(email=encrypt_email(email), password=password)
         token = Token.objects.get(user=user).key
-        RegisteredEmail.objects.create(email_cleartext=email).save()
+        # RegisteredEmail.objects.create(email_cleartext=email).save()
         return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):

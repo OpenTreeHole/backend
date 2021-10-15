@@ -141,7 +141,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    email = models.CharField(max_length=150, unique=True)
+    email = models.CharField(max_length=400, unique=True)
     joined_time = models.DateTimeField(auto_now_add=True)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, related_name='favored_by', blank=True)
@@ -186,14 +186,14 @@ class Message(models.Model):
         return self.message
 
 
-class RegisteredEmail(models.Model):
-    """
-    The purpose of this model is to store all registered emails.
-
-    The data is unrelated to [User], and is used solely for
-    duplicate check when a new user registers.
-    """
-    email_cleartext = models.CharField(max_length=150, unique=True)
-
-    def __str__(self):
-        return self.email_cleartext
+# class RegisteredEmail(models.Model):
+#     """
+#     The purpose of this model is to store all registered emails.
+#
+#     The data is unrelated to [User], and is used solely for
+#     duplicate check when a new user registers.
+#     """
+#     email_cleartext = models.CharField(max_length=150, unique=True)
+#
+#     def __str__(self):
+#         return self.email_cleartext
