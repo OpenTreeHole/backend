@@ -94,7 +94,12 @@ class FloorSerializer(SimpleFloorSerializer):
         return queryset.prefetch_related('mention')
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
+        # floor 使用缓存效果不好
+        # @cache_function_call(f'floor#{instance.id}', settings.FLOOR_CACHE_SECONDS)
+        def _inner_to_representation(self, instance):
+            return super().to_representation(instance)
+
+        data = _inner_to_representation(self, instance)
         user = self.context.get('user')
         if not user:
             print('[W] FloorSerializer 实例化时应提供参数 context={"user": request.user}')

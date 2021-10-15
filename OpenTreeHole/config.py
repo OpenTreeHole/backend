@@ -93,6 +93,7 @@ NAME_LIST = ['陌客', '安逸', '独照', '亡心', '梦巷', '逐风', '花憩
 
 # 缓存配置
 HOLE_CACHE_SECONDS = 10 * 60
+FLOOR_CACHE_SECONDS = 10 * 60
 
 # 访问速率限制
 THROTTLE_BURST = '10/min'

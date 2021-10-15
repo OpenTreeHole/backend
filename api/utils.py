@@ -76,12 +76,12 @@ def cache_function_call(key, timeout):
         @wraps(func)
         def wrapper(*args, **kwargs):
             if cache.get(cache_key):
-                print('hit cache', cache_key)
+                print('hit cache', key)
                 return cache.get(cache_key)
             else:
                 result = func(*args, **kwargs)
                 cache.set(cache_key, result, timeout)
-                print('set cache', cache_key)
+                print('set cache', key)
                 return result
 
         return wrapper
