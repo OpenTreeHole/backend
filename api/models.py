@@ -6,6 +6,8 @@ from django.db import models
 from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
+from api.utils import encrypt_email
+
 
 class Division(models.Model):
     name = models.CharField(max_length=32, unique=True)
@@ -128,6 +130,7 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('邮箱必须提供')
         email = self.normalize_email(email)
+        email = encrypt_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
@@ -184,7 +187,6 @@ class Message(models.Model):
 
     def __str__(self):
         return self.message
-
 
 # class RegisteredEmail(models.Model):
 #     """

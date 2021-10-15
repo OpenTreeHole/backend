@@ -32,9 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class DivisionSerializer(serializers.ModelSerializer):
+    division_id = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
         model = Division
-        fields = ['name', 'description', 'pinned']
+        fields = ['division_id', 'name', 'description', 'pinned']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -111,7 +113,7 @@ class FloorSerializer(SimpleFloorSerializer):
 
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
-    division_id = serializers.IntegerField(required=False)
+    division_id = serializers.IntegerField(required=False, default=1)
     tags = TagSerializer(many=True, read_only=True)
     tag_names = serializers.ListField(required=False, write_only=True)
     length = serializers.IntegerField(

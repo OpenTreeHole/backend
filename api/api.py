@@ -215,6 +215,7 @@ class HolesApi(APIView):
         length = serializer.validated_data.get('length')
         prefetch_length = serializer.validated_data.get('prefetch_length')
         start_time = serializer.validated_data.get('start_time')
+        division_id = serializer.validated_data.get('division_id')
 
         # 获取单个
         hole_id = kwargs.get('hole_id')
@@ -236,7 +237,10 @@ class HolesApi(APIView):
             else:
                 queryset = Hole.objects.all()
 
-            queryset = queryset.order_by('-time_updated').filter(time_updated__lt=start_time)[:length]
+            queryset = queryset.order_by('-time_updated').filter(
+                time_updated__lt=start_time,
+                division_id=division_id
+            )[:length]
             queryset = HoleSerializer.get_queryset(queryset)
             serializer = HoleSerializer(queryset, many=True, context={
                 "user": request.user,

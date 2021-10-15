@@ -149,13 +149,11 @@ class LoginLogoutTests(APITestCase):
 
     def test_login(self):
         # 正确密码
-        r = self.client.post(
-            "/login",
-            data={
-                "email": self.email,
-                "password": self.password,
-            },
-        )
+        r = self.client.post("/login", {
+            "email": self.email,
+            "password": self.password,
+        },
+                             )
         self.assertEqual(r.status_code, 200)
         self.assertIn("token", r.data)
 
