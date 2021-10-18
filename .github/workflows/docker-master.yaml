@@ -1,11 +1,9 @@
-name: docker-dev
+name: release
 
 on:
   push:
-    branches:
-      - 'master'
-    tags:
-      - v*
+    tags-ignore:
+      - v*.*.*-alpha
 
 env:
   APP_NAME: open_tree_hole_backend
