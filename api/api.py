@@ -225,7 +225,7 @@ class HolesApi(APIView):
             serializer = HoleSerializer(hole, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
-                'simple_floors': True  # 使用 SimpleFloorSerializer
+                'simple': False  # 不使用缓存
             })
             return Response(serializer.data)
         # 获取多个
@@ -245,7 +245,7 @@ class HolesApi(APIView):
             serializer = HoleSerializer(queryset, many=True, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
-                'simple_floors': True  # 使用 SimpleFloorSerializer
+                'simple': True  # 使用 SimpleFloorSerializer
             })
             return Response(serializer.data)
 
@@ -433,7 +433,7 @@ class FavoritesApi(APIView):
 
     def get(self, request):
         query_set = request.user.favorites.all()
-        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple_floors': True})
+        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple': True})
         return Response(serializer.data)
 
     def post(self, request):

@@ -138,7 +138,12 @@ class HoleSerializer(serializers.ModelSerializer):
         fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
 
     def to_representation(self, instance):
-        @cache_function_call(str(instance), settings.HOLE_CACHE_SECONDS)
+        """
+        context 中传入 simple 字段，
+            若为 True 则使用缓存并不返回所有与用户有关的数据
+            若为 False 则不使用缓存，返回所有数据
+        """
+
         def _inner_to_representation(self, instance):
             data = super().to_representation(instance)
             user = self.context.get('user')
@@ -147,18 +152,18 @@ class HoleSerializer(serializers.ModelSerializer):
                 print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
             else:
                 # serializer
-                simple_floors = self.context.get('simple_floors', False)
-                serializer = SimpleFloorSerializer if simple_floors else FloorSerializer
+                serializer = SimpleFloorSerializer if simple else FloorSerializer
+                context = None if simple else {'user': user}
 
                 # prefetch_data
                 queryset = instance.floor_set.order_by('id')[:prefetch_length]
                 queryset = serializer.get_queryset(queryset)
-                prefetch_data = serializer(queryset, many=True).data
+                prefetch_data = serializer(queryset, many=True, context=context).data
 
                 # last_floor_data
                 queryset = instance.floor_set.order_by('-id')
                 queryset = serializer.get_queryset(queryset)
-                last_floor_data = serializer(queryset[0]).data
+                last_floor_data = serializer(queryset[0], context=context).data
 
                 data['floors'] = {
                     'first_floor': prefetch_data[0],
@@ -167,7 +172,15 @@ class HoleSerializer(serializers.ModelSerializer):
                 }
             return data
 
-        return _inner_to_representation(self, instance)
+        @cache_function_call(str(instance), settings.HOLE_CACHE_SECONDS)
+        def _cached(self, instance):
+            return _inner_to_representation(self, instance)
+
+        simple = self.context.get('simple', False)
+        if simple:
+            return _cached(self, instance)
+        else:
+            return _inner_to_representation(self, instance)
 
     @staticmethod
     def get_queryset(queryset):
