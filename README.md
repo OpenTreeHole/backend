@@ -6,6 +6,8 @@
 
 本项目使用 Docker 持续集成部署
 
+规则：添加 tag 时触发构建，如果 tag 的后缀为 alpha，发布 dev-latest 镜像，否则发布 latest 镜像
+
 ### 使用 docker-compose 安装：
 
 1. 下载 [docker-compose.yaml](https://github.com/OpenTreeHole/backend/blob/master/docker-compose.yaml)
