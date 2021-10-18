@@ -130,7 +130,7 @@ class HoleSerializer(serializers.ModelSerializer):
     )
     start_time = serializers.DateTimeField(
         required=False, write_only=True,
-        default=datetime.now(timezone.utc)
+        default=lambda: datetime.now(timezone.utc)  # 使用函数返回值，否则指向的是同一个对象
     )
 
     class Meta:
