@@ -3,6 +3,7 @@ name: alpha-release
 on:
   push:
     tags:
+      - v*.*.*-alpha.*
       - v*.*.*-alpha
 
 env:
