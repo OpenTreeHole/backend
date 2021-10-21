@@ -10,6 +10,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
@@ -25,7 +26,7 @@ from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer
+    UserSerializer, DivisionSerializer, MentionSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 # 发送 csrf 令牌
@@ -78,7 +79,6 @@ class VerifyApi(APIView):
             if not User.objects.filter(email=encrypt_email(email)).exists():
                 # 设置验证码并发送验证邮件
                 verification = secrets.randbelow(1000000)
-                print(str(verification).zfill(6))
                 cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
@@ -187,7 +187,11 @@ def add_a_floor(request, hole, category):
     serializer = FloorSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     content = serializer.validated_data.get('content')
-    mention = request.data.get('mention', [])
+    # 校验 mention
+    mention_serializer = MentionSerializer(data=request.data)
+    mention_serializer.is_valid(raise_exception=True)
+    mention = mention_serializer.validated_data.get('mention', [])
+
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
     if not anonyname:
@@ -198,10 +202,11 @@ def add_a_floor(request, hole, category):
             else:
                 hole.mapping[request.user.pk] = anonyname
                 break
+    hole.save()
+
     # 创建 floor 并增加 hole 的楼层数
     floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
     floor.mention.set(mention)
-    hole.save()
     return hole if category == 'hole' else floor
 
 
@@ -249,6 +254,7 @@ class HolesApi(APIView):
             })
             return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -256,9 +262,8 @@ class HolesApi(APIView):
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
 
-        # 实例化 Hole
-        hole = Hole(division_id=division_id)
-        hole.save()  # 在添加 tag 前要保存 hole，否则没有id
+        # 在添加 tag 前要保存 hole，否则没有id
+        hole = Hole.objects.create(division_id=division_id)
 
         # 创建 tag 并添加至 hole
         for tag_name in tag_names:
@@ -323,6 +328,7 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)

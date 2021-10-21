@@ -67,12 +67,6 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
         fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
         read_only_fields = ['floor_id', 'anonyname']
 
-    def validate_content(self, content):
-        content = content.strip()
-        if not content:
-            raise serializers.ValidationError('内容不能为空')
-        return content
-
     def to_representation(self, instance):
         data = super().to_representation(instance)
         return data
@@ -83,7 +77,6 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
 
 class FloorSerializer(SimpleFloorSerializer):
-    floor_id = serializers.IntegerField(source='id', read_only=True)
     mention = SimpleFloorSerializer(many=True, read_only=True)
 
     class Meta:
@@ -109,6 +102,12 @@ class FloorSerializer(SimpleFloorSerializer):
             data['is_me'] = True if instance.user_id == user.id else False
             data['liked'] = True if user.id in instance.like_data else False
         return data
+
+
+class MentionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Floor
+        fields = ['mention']
 
 
 class HoleSerializer(serializers.ModelSerializer):
