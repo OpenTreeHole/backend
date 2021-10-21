@@ -160,13 +160,16 @@ class HoleSerializer(serializers.ModelSerializer):
                 queryset = serializer.get_queryset(queryset)
                 prefetch_data = serializer(queryset, many=True, context=context).data
 
+                # first_floor_data
+                first_floor_data = prefetch_data[0] if len(prefetch_data) > 0 else None
+
                 # last_floor_data
                 queryset = instance.floor_set.order_by('-id')
                 queryset = serializer.get_queryset(queryset)
-                last_floor_data = serializer(queryset[0], context=context).data
+                last_floor_data = serializer(queryset[0], context=context).data if len(queryset) > 0 else None
 
                 data['floors'] = {
-                    'first_floor': prefetch_data[0],
+                    'first_floor': first_floor_data,
                     'last_floor': last_floor_data,
                     'prefetch': prefetch_data,
                 }
