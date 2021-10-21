@@ -17,10 +17,10 @@ Steps to reproduce the behavior:
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior (Optional) **
+**Expected behavior (Optional)**
 A clear and concise description of what you expected to happen.
 
-**Screenshots (Optional) **
+**Screenshots (Optional)**
 If applicable, add screenshots to help explain your problem.
 
 **Version**
