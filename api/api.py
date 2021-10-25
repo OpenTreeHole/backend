@@ -446,22 +446,19 @@ class FavoritesApi(APIView):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.add(hole)
-        request.user.save()
-        return Response({'message': '收藏成功'}, 201)
+        return Response({'message': '收藏成功', 'data': request.user.favorites.values_list('id', flat=True)}, 201)
 
     def put(self, request):
         hole_ids = request.data.get('hole_ids')
         holes = Hole.objects.filter(pk__in=hole_ids)
         request.user.favorites.set(holes)
-        request.user.save()
-        return Response({'message': '修改成功'}, 200)
+        return Response({'message': '修改成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
     def delete(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.remove(hole)
-        request.user.save()
-        return Response({'message': '删除成功'}, 204)
+        return Response({'message': '删除成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
 
 class ReportsApi(APIView):

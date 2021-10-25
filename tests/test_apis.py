@@ -560,7 +560,7 @@ class UserTests(APITestCase):
         def post():
             r = self.client.post('/user/favorites', {'hole_id': 1})
             self.assertEqual(r.status_code, 201)
-            self.assertEqual(r.json(), {'message': '收藏成功'})
+            self.assertEqual(r.json(), {'message': '收藏成功', 'data': [1]})
             self.assertEqual(User.objects.get(email=USERNAME).favorites.filter(pk=1).exists(), True)
 
         def get():
@@ -571,16 +571,16 @@ class UserTests(APITestCase):
         def put():
             r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.json(), {'message': '修改成功'})
+            self.assertEqual(r.json(), {'message': '修改成功', 'data': [2, 3]})
             ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
             self.assertEqual([2, 3], list(ids))
 
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
-            self.assertEqual(r.status_code, 204)
-            self.assertEqual(r.data, {'message': '删除成功'})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json(), {'message': '删除成功', 'data': [3]})
             ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
-            self.assertNotIn(2, ids)
+            self.assertEqual([3], list(ids))
 
         post()
         put()

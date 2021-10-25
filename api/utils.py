@@ -3,6 +3,7 @@ from functools import wraps
 from io import StringIO
 
 from django.core.cache import cache
+from django.http import Http404
 from markdown import Markdown
 from rest_framework.views import exception_handler
 
@@ -81,3 +82,16 @@ def cache_function_call(key, timeout):
         return wrapper
 
     return decorate
+
+
+def exists_or_404(klass, *args, **kwargs):
+    if hasattr(klass, '_default_manager'):
+        # noinspection PyProtectedMember
+        if not klass._default_manager.filter(*args, **kwargs).exists():
+            raise Http404(f'{klass} 对象不存在！')
+    else:
+        klass__name = klass.__name__ if isinstance(klass, type) else klass.__class__.__name__
+        raise ValueError(
+            "First argument to get_object_or_404() must be a Model, Manager, "
+            "or QuerySet, not '%s'." % klass__name
+        )

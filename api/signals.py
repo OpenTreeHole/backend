@@ -47,7 +47,6 @@ def after_adding_a_floor(sender, instance, created, **kwargs):
         instance.hole.save()
         cache_key = f'cache-{instance.hole}'
         deleted = cache.delete(cache_key)
-        print(f'reset {cache_key}: {deleted}')
 
 
 # 帖子被提及后通知用户
