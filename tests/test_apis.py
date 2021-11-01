@@ -414,12 +414,11 @@ class FloorTests(APITestCase):
 
     def test_search(self):
         r = self.client.get('/floors', {
-            'hole_id': 1,
             's': 'no.2'
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()), 1)
-        self.assertEqual('**Hole#1; Floor No.2**', r.json()[0]['content'])
+        self.assertEqual(len(r.json()), 6)
+        self.assertEqual('**Hole#6; Floor No.2**', r.json()[0]['content'])
 
     def test_wrong_search(self):
         r = self.client.get('/floors', {

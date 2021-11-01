@@ -58,6 +58,27 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ['tag_id', 'name', 'temperature']
 
 
+class FloorGetSerializer(serializers.Serializer):
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+    hole_id = serializers.IntegerField(required=False, write_only=True, default=1)
+    s = serializers.CharField(required=False, write_only=True)
+    length = serializers.IntegerField(
+        required=False, write_only=True,
+        default=settings.PAGE_SIZE,
+        max_value=settings.MAX_PAGE_SIZE,
+        min_value=0
+    )
+    start_floor = serializers.IntegerField(
+        required=False, write_only=True,
+        default=0
+    )
+
+
 # 不序列化 mention 字段
 class SimpleFloorSerializer(serializers.ModelSerializer):
     floor_id = serializers.IntegerField(source='id', read_only=True)
@@ -117,7 +138,7 @@ class HoleSerializer(serializers.ModelSerializer):
     tag_names = serializers.ListField(required=False, write_only=True)
     length = serializers.IntegerField(
         required=False, write_only=True,
-        default=settings.HOLE_PAGE_SIZE,
+        default=settings.PAGE_SIZE,
         max_value=settings.MAX_PAGE_SIZE,
         min_value=1
     )

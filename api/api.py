@@ -26,7 +26,7 @@ from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, MentionSerializer
+    UserSerializer, DivisionSerializer, MentionSerializer, FloorGetSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 # 发送 csrf 令牌
@@ -309,21 +309,24 @@ class FloorsApi(APIView):
             floor = get_object_or_404(Floor, pk=floor_id)
             serializer = FloorSerializer(floor, context={"user": request.user})
             return Response(serializer.data)
-        # 获取多个（给定 hole下）
-        hole_id = int(request.query_params.get('hole_id'))
-        search = request.query_params.get('s')
-        query_set = Floor.objects.filter(hole_id=hole_id)
-        if search:
-            query_set = query_set.filter(shadow_text__icontains=search).order_by('-pk')
+        # 获取多个
+        serializer = FloorGetSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        hole_id = serializer.validated_data.get('hole_id')
+        search = serializer.validated_data.get('s')
+        start_floor = serializer.validated_data.get('start_floor')
+        length = serializer.validated_data.get('length')
+
+        if search:  # 搜索
+            query_set = Floor.objects.filter(shadow_text__icontains=search).order_by('-pk')
+        else:  # 主题帖下
+            query_set = Floor.objects.filter(hole_id=hole_id)
+
+        if length == 0:
+            query_set = query_set[start_floor:]
         else:
-            start_floor = request.query_params.get('start_floor')
-            length = request.query_params.get('length')
-            start_floor = int(start_floor) if start_floor else 0
-            length = int(length) if length else 10
-            if length:
-                query_set = query_set[start_floor: start_floor + length]
-            else:
-                query_set = query_set[start_floor:]
+            query_set = query_set[start_floor: start_floor + length]
+
         query_set = FloorSerializer.get_queryset(query_set)
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
