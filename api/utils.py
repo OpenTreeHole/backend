@@ -6,8 +6,13 @@ from django.core.cache import cache
 from django.http import Http404
 from markdown import Markdown
 from rest_framework.views import exception_handler
+from OpenTreeHole.config import REGISTER_API_KEY_SEED
 
 PKCS1_PUBLIC_CIPHER = None
+
+
+def check_api_key(key_to_check):
+    return key_to_check == REGISTER_API_KEY_SEED
 
 
 def encrypt_email(email_cleartext):

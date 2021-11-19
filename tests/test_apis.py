@@ -328,7 +328,7 @@ class HoleTests(APITestCase):
         r = self.client.post('/holes', {
             'content': self.content,
             'division_id': 1,
-            'tag_names': ['tag1', 'tag2', 'tag3']
+            'tags': [{'name': 'tag1', 'color': 'red'}, {'name': 'tag2', 'color': 'blue'}, {'name': 'tag3', 'color': 'green'}]
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
@@ -364,16 +364,16 @@ class HoleTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         r = self.client.put('/holes/1', {
             'view': 2,
-            'tag_names': ['tag A1', 'tag B1']
+            'tags': [{'name': 'tag A1', 'color': 'red'}, {'name': 'tag B1', 'color': 'red'}]
         })
         self.client.force_authenticate(user=self.user)
         self.assertEqual(r.status_code, 200)
         hole = Hole.objects.get(pk=1)
         self.assertEqual(hole.view, 2)
-        tag_names = set()
+        tags = set()
         for tag in hole.tags.all():
-            tag_names.add(tag.name)
-        self.assertEqual(tag_names, {'tag A1', 'tag B1'})
+            tags.add(tag)
+        self.assertEqual(tags, {'name': 'tag A1', 'color': 'red'}, {'name': 'tag B1', 'color': 'red'})
 
 
 class FloorTests(APITestCase):

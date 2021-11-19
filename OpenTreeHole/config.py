@@ -18,6 +18,8 @@ PAGE_SIZE = 10
 FLOOR_PREFETCH_LENGTH = 10
 MAX_TAGS = 5
 MAX_TAG_LENGTH = 8
+TAG_COLORS = ('red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan', 'teal', 'green',
+              'light-green', 'lime', 'yellow', 'amber', 'orange', 'deep-orange', 'brown', 'blue-grey', 'grey')
 NAME_LIST = ['陌客', '安逸', '独照', '亡心', '梦巷', '逐风', '花憩', '余了', '在乎', '上隐', '璃茉', '擱淺', '双臂', '寰鸾', '不烟', '长野', '怪味', '知人',
              '沐夏', '旭明', '昔年', '穆梦', '自私', '冬渡', '栀瑜', '临风', '孤崖', '栀蓝',
              '看懂', '犊子', '顾挽', '旧夢', '煞尾', '安烨', '超标', '诗句', '冰尘', '洛夏', '灼夏', '振海', '欤你', '柠心', '野性', '鸢浅', '允你', '寄生',
@@ -129,6 +131,9 @@ GITHUB_BRANCH = 'master'
 
 # 足够长的密码，供 Django 安全机制
 SECRET_KEY = str(uuid.uuid1())
+
+# 注册用 API Key (Seed)
+REGISTER_API_KEY_SEED = "abcdefg"
 
 # 用户名加密公钥文件(PEM)路径
 USERNAME_PUBLIC_KEY_PATH = "demo_key.pem"

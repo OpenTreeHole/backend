@@ -51,11 +51,12 @@ class DivisionSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
-    tag_id = serializers.IntegerField(source='id', read_only=True)
+    tag_id = serializers.IntegerField(source='id', read_only=True, required=False)
+    temperature = serializers.IntegerField(required=False)
 
     class Meta:
         model = Tag
-        fields = ['tag_id', 'name', 'temperature']
+        fields = ['tag_id', 'name', 'color', 'temperature']
 
 
 class FloorGetSerializer(serializers.Serializer):
@@ -134,8 +135,7 @@ class MentionSerializer(serializers.ModelSerializer):
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
     division_id = serializers.IntegerField(required=False, default=1)
-    tags = TagSerializer(many=True, read_only=True)
-    tag_names = serializers.ListField(required=False, write_only=True)
+    tags = TagSerializer(many=True, required=False)
     length = serializers.IntegerField(
         required=False, write_only=True,
         default=settings.PAGE_SIZE,
@@ -155,7 +155,7 @@ class HoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hole
-        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'tag_names', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
+        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
 
     def to_representation(self, instance):
         """
@@ -209,18 +209,19 @@ class HoleSerializer(serializers.ModelSerializer):
     def get_queryset(queryset):
         return queryset.prefetch_related('tags')
 
-    def validate_tag_names(self, tag_names):
-        if not tag_names:
-            tag_names = ['默认']
-        if len(tag_names) > settings.MAX_TAGS:
+    def validate_tags(self, tags):
+        tags = [dict(tag) for tag in tags]  # TODO: Get original dict object instead?
+        if len(tags) > settings.MAX_TAGS:
             raise serializers.ValidationError(f'标签不能多于{settings.MAX_TAGS}个', 400)
-        for tag_name in tag_names:
-            tag_name = tag_name.strip()
+        for tag in tags:
+            tag_name = tag['name'].strip()
             if not tag_name:
                 raise serializers.ValidationError('标签名不能为空', 400)
             if len(tag_name) > settings.MAX_TAG_LENGTH:
                 raise serializers.ValidationError(f'标签名不能超过{settings.MAX_TAG_LENGTH}个字符', 400)
-        return tag_names
+            if tag['color'] not in settings.TAG_COLORS:
+                raise serializers.ValidationError(f'标签颜色不合法', 400)
+        return tags
 
     def validate_division_id(self, division_id):
         if not division_id:

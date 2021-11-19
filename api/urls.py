@@ -19,7 +19,8 @@ from django.conf.urls import url
 from django.urls import path, include
 
 from api import consumers
-from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi
+from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
+    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi
 
 websocket_urlpatterns = [
     path('ws/notification', consumers.NotificationConsumer.as_asgi()),
@@ -48,6 +49,8 @@ urlpatterns = [
     path('users', UsersApi.as_view()),
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
+    path('penalty', PenaltyApi.as_view()),
+    path('penalty/<int:user_id>', PenaltyApi.as_view()),
 ]
 
 if settings.HOLE_ENV == 'development':

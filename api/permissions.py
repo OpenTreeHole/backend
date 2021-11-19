@@ -17,6 +17,12 @@ class OnlyAdminCanModify(permissions.BasePermission):
             return True
 
 
+class AdminOnly(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        return request.user.is_admin
+
+
 class NotSilentOrAdminCanPost(permissions.BasePermission):
     """
     在给定分区内是否具有发帖权限，传入一个 division_id

@@ -17,14 +17,14 @@ from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
-    AdminOrPostOnly, OwenerOrAdminCanSee
+    AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, MentionSerializer, FloorGetSerializer
 from api.signals import modified_by_admin
@@ -32,7 +32,7 @@ from api.tasks import mail, post_image_to_github
 # 发送 csrf 令牌
 # from django.views.decorators.csrf import ensure_csrf_cookie
 # @method_decorator(ensure_csrf_cookie)
-from api.utils import encrypt_email
+from api.utils import encrypt_email, check_api_key
 
 
 @api_view(["GET"])
@@ -86,6 +86,19 @@ class VerifyApi(APIView):
                     receivers=[email]
                 )
             return Response({'message': '如果您未注册，则会收到包含验证码的验证邮件，请查收；如果您已注册，则不会收到验证邮件，请找回密码。'})
+        elif method == "apikey":
+            apikey = request.query_params.get("apikey")
+            if not check_api_key(apikey):
+                return Response({"message": "API Key 不正确！"}, 403)
+            email = request.query_params.get("email")
+            domain = email[email.find("@") + 1:]
+            if domain not in settings.EMAIL_WHITELIST:
+                return Response({"message": "邮箱不在白名单内！"}, 400)
+            if not User.objects.filter(email=encrypt_email(email)).exists():
+                verification = secrets.randbelow(1000000)
+                cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+                return Response({'message': '验证成功', 'code': str(verification).zfill(6)}, 200)
+            return Response({'message': '用户已注册'}, 409)
         else:
             return Response({}, 502)
 
@@ -258,7 +271,7 @@ class HolesApi(APIView):
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        tag_names = serializer.validated_data.get('tag_names')
+        tags = serializer.validated_data.get('tags')
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
 
@@ -266,8 +279,13 @@ class HolesApi(APIView):
         hole = Hole.objects.create(division_id=division_id)
 
         # 创建 tag 并添加至 hole
-        for tag_name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=tag_name)
+        for tag in tags:
+            try:
+                tag = Tag.objects.get(name=tag['name'])
+            except Tag.DoesNotExist:
+                if 'color' not in tag:
+                    tag.color = random.choice(settings.TAG_COLORS)
+                tag = Tag.objects.create(name=tag['name'], color=tag['color'])
             hole.tags.add(tag)
 
         hole = add_a_floor(request, hole, category='hole')
@@ -279,13 +297,18 @@ class HolesApi(APIView):
         hole = get_object_or_404(Hole, pk=hole_id)
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        tag_names = serializer.validated_data.get('tag_names')
+        tags = serializer.validated_data.get('tags')
         view = serializer.validated_data.get('view')
 
-        if tag_names:
+        if tags:
             hole.tags.clear()
-            for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
+            for tag in tags:
+                try:
+                    tag = Tag.objects.get(name=tag['name'])
+                except Tag.DoesNotExist:
+                    if 'color' not in tag:
+                        tag.color = random.choice(settings.TAG_COLORS)
+                    tag = Tag.objects.create(name=tag['name'], color=tag['color'])
                 hole.tags.add(tag)
         if view:
             hole.view = view
@@ -703,3 +726,31 @@ class UsersApi(APIView):
         user.save(update_fields=['push_notification_tokens'])
 
         return Response(status=status.HTTP_200_OK)
+
+
+class PenaltyApi(APIView):
+    permission_classes = [AdminOnly]
+
+    def post(self, request, **kwargs):
+        user_id = kwargs.get('user_id')
+        user = get_object_or_404(User, pk=user_id)
+        self.check_object_permissions(request, user)
+
+        try:
+            penalty_level = int(request.data.get('penalty_level'))
+            division_id = request.data.get('division_id')
+        except (ValueError, TypeError):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        if penalty_level > 0:
+            user.permission['offense_count'] += 1
+            penalty_multiplier = 1
+            if penalty_level == 2:
+                penalty_multiplier = 5
+            elif penalty_level == 3:
+                penalty_multiplier = 999
+            new_penalty_date = datetime.now() + timedelta(days=int(user.permission['offense_count']) * penalty_multiplier)
+            user.permission['silent'].update({division_id: new_penalty_date.isoformat()})
+
+        user.save(update_fields=['permission'])
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
