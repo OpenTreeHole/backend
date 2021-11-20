@@ -17,7 +17,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -88,6 +88,7 @@ class VerifyApi(APIView):
             return Response({'message': '如果您未注册，则会收到包含验证码的验证邮件，请查收；如果您已注册，则不会收到验证邮件，请找回密码。'})
         elif method == "apikey":
             apikey = request.query_params.get("apikey")
+            check_register = request.query_params.get("check_register")
             if not check_api_key(apikey):
                 return Response({"message": "API Key 不正确！"}, 403)
             email = request.query_params.get("email")
@@ -95,12 +96,15 @@ class VerifyApi(APIView):
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
             if not User.objects.filter(email=encrypt_email(email)).exists():
-                verification = secrets.randbelow(1000000)
-                cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-                return Response({'message': '验证成功', 'code': str(verification).zfill(6)}, 200)
+                if check_register:
+                    return Response({"message": "用户未注册！"}, 200)
+                else:
+                    verification = secrets.randbelow(1000000)
+                    cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+                    return Response({'message': '验证成功', 'code': str(verification).zfill(6)}, 200)
             return Response({'message': '用户已注册'}, 409)
         else:
-            return Response({}, 502)
+            return Response({}, 404)
 
 
 class RegisterApi(APIView):
