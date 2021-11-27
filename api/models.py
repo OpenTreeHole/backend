@@ -20,7 +20,7 @@ class Division(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=8, unique=True)
-    color = models.CharField(max_length=32, default='red')
+    color = models.CharField(max_length=32, default='black')
     temperature = models.IntegerField(db_index=True, default=0, help_text="该标签下的主题帖数")
 
     def __str__(self):
@@ -137,6 +137,7 @@ class UserManager(BaseUserManager):
         user.set_password(password)
         user.save()
         return user
+
     def create_superuser(self, email, password=None, **extra_fields):
         user = self.create_user(email, password, **extra_fields)
         user.permission['admin'] = settings.VERY_LONG_TIME
