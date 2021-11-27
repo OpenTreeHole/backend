@@ -374,9 +374,9 @@ class FloorsApi(APIView):
         mention = request.data.get('mention')
         anonyname = request.data.get('anonyname')
         floor = get_object_or_404(Floor, pk=floor_id)
-        self.check_object_permissions(request, floor)
 
         if content and content.strip():
+            self.check_object_permissions(request, floor)
             floor.history.append({
                 'content': floor.content,
                 'altered_by': request.user.pk,
@@ -384,6 +384,7 @@ class FloorsApi(APIView):
             })
             floor.content = content
         if like:
+            # 点赞无需权限
             if like == 'add' and request.user.pk not in floor.like_data:
                 floor.like_data.append(request.user.pk)
             elif like == 'cancel' and request.user.pk in floor.like_data:
@@ -392,10 +393,13 @@ class FloorsApi(APIView):
                 pass
             floor.like = len(floor.like_data)
         if mention:
+            self.check_object_permissions(request, floor)
             floor.mention.set(mention)
         if fold:
+            self.check_object_permissions(request, floor)
             floor.fold = fold
         if anonyname and request.user.is_admin:
+            self.check_object_permissions(request, floor)
             floor.anonyname = anonyname
 
         floor.save()
