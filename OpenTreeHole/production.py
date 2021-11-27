@@ -68,7 +68,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer'
     ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [
         'api.throttles.BurstRateThrottle',
         'api.throttles.SustainedRateThrottle',

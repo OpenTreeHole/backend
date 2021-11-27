@@ -6,7 +6,7 @@ from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
-from api.utils import cache_function_call
+from utils.decorators import cache_function_call
 
 User = get_user_model()
 

@@ -11,7 +11,7 @@ from rest_framework.authtoken.models import Token
 from api.models import Hole, Tag, Floor, Report
 from api.notification import MessageSender
 from api.serializers import FloorSerializer, ReportSerializer
-from api.utils import to_shadow_text
+from utils.apis import to_shadow_text
 
 modified_by_admin = Signal(providing_args=['instance'])
 

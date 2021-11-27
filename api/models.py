@@ -6,7 +6,7 @@ from django.db import models
 from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
-from api.utils import encrypt_email
+from utils.auth import encrypt_email
 
 
 class Division(models.Model):

@@ -29,10 +29,8 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer, DivisionSerializer, MentionSerializer, FloorGetSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-# 发送 csrf 令牌
-# from django.views.decorators.csrf import ensure_csrf_cookie
-# @method_decorator(ensure_csrf_cookie)
-from api.utils import encrypt_email, check_api_key
+from utils.apis import add_tags_to_a_hole
+from utils.auth import check_api_key, encrypt_email
 
 
 @api_view(["GET"])
@@ -283,14 +281,7 @@ class HolesApi(APIView):
         hole = Hole.objects.create(division_id=division_id)
 
         # 创建 tag 并添加至 hole
-        for tag in tags:
-            try:
-                tag = Tag.objects.get(name=tag['name'])
-            except Tag.DoesNotExist:
-                if 'color' not in tag:
-                    tag.color = random.choice(settings.TAG_COLORS)
-                tag = Tag.objects.create(name=tag['name'], color=tag['color'])
-            hole.tags.add(tag)
+        add_tags_to_a_hole(tags, hole)
 
         hole = add_a_floor(request, hole, category='hole')
         serializer = HoleSerializer(hole, context={"user": request.user})
@@ -299,21 +290,12 @@ class HolesApi(APIView):
     def put(self, request, **kwargs):
         hole_id = kwargs.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        serializer = HoleSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        tags = serializer.validated_data.get('tags')
-        view = serializer.validated_data.get('view')
+        tags = request.data.get('tags')
+        view = request.data.get('view')
 
         if tags:
             hole.tags.clear()
-            for tag in tags:
-                try:
-                    tag = Tag.objects.get(name=tag['name'])
-                except Tag.DoesNotExist:
-                    if 'color' not in tag:
-                        tag.color = random.choice(settings.TAG_COLORS)
-                    tag = Tag.objects.create(name=tag['name'], color=tag['color'])
-                hole.tags.add(tag)
+            add_tags_to_a_hole(tags, hole)
         if view:
             hole.view = view
 
