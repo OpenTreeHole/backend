@@ -2,15 +2,11 @@
 业务相关
 """
 
-import random
 import re
 from io import StringIO
 
-from django.conf import settings
 from django.http import Http404
 from markdown import Markdown
-
-from api.models import Tag
 
 
 def to_shadow_text(content):
@@ -52,18 +48,3 @@ def exists_or_404(klass, *args, **kwargs):
             "First argument to get_object_or_404() must be a Model, Manager, "
             "or QuerySet, not '%s'." % klass__name
         )
-
-
-def add_tags_to_a_hole(tags, hole):
-    for tag in tags:
-        try:
-            tag_object = Tag.objects.get(name=tag['name'])
-            # 更新颜色
-            if 'color' in tag:
-                tag_object.color = tag['color']
-                tag_object.save()
-        except Tag.DoesNotExist:
-            if 'color' not in tag:
-                tag.color = random.choice(settings.TAG_COLORS)
-            tag_object = Tag.objects.create(name=tag['name'], color=tag['color'])
-        hole.tags.add(tag_object)

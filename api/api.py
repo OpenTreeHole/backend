@@ -1,5 +1,4 @@
 import base64
-import random
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -26,10 +25,9 @@ from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, MentionSerializer, FloorGetSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, add_a_floor
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
-from utils.apis import add_tags_to_a_hole
 from utils.auth import check_api_key, encrypt_email
 
 
@@ -168,6 +166,7 @@ class DivisionsApi(APIView):
         serializer = DivisionSerializer(query_set, many=not division_id, context={'user': request.user})
         return Response(serializer.data)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         division_id = kwargs.get('division_id')
         division = get_object_or_404(Division, id=division_id)
@@ -185,44 +184,6 @@ class DivisionsApi(APIView):
         division.save()
         serializer = DivisionSerializer(division, context={'user': request.user})
         return Response(serializer.data)
-
-
-def add_a_floor(request, hole, category):
-    """
-    增加一条回复帖
-    Args:
-        request:
-        hole:       hole对象
-        category:   指定返回值为 floor 或 hole
-
-    Returns:        floor or hole
-
-    """
-    # 校验 content
-    serializer = FloorSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    content = serializer.validated_data.get('content')
-    # 校验 mention
-    mention_serializer = MentionSerializer(data=request.data)
-    mention_serializer.is_valid(raise_exception=True)
-    mention = mention_serializer.validated_data.get('mention', [])
-
-    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
-    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
-    if not anonyname:
-        while True:
-            anonyname = random.choice(settings.NAME_LIST)
-            if anonyname in hole.mapping.values():
-                pass
-            else:
-                hole.mapping[request.user.pk] = anonyname
-                break
-    hole.save()
-
-    # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
-    floor.mention.set(mention)
-    return hole if category == 'hole' else floor
 
 
 class HolesApi(APIView):
@@ -273,33 +234,26 @@ class HolesApi(APIView):
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        tags = serializer.validated_data.get('tags')
+
+        # 检查权限
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
 
-        # 在添加 tag 前要保存 hole，否则没有id
-        hole = Hole.objects.create(division_id=division_id)
-
-        # 创建 tag 并添加至 hole
-        add_tags_to_a_hole(tags, hole)
-
+        hole = serializer.save()
         hole = add_a_floor(request, hole, category='hole')
+
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         hole_id = kwargs.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        tags = request.data.get('tags')
-        view = request.data.get('view')
 
-        if tags:
-            hole.tags.clear()
-            add_tags_to_a_hole(tags, hole)
-        if view:
-            hole.view = view
+        serializer = HoleSerializer(hole, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        hole = serializer.save()
 
-        hole.save()
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response(serializer.data)
 
@@ -348,6 +302,7 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
         content = request.data.get('content')
@@ -390,6 +345,7 @@ class FloorsApi(APIView):
         serializer = FloorSerializer(floor, context={"user": request.user})
         return Response(serializer.data)
 
+    @transaction.atomic
     def delete(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
         delete_reason = request.data.get('delete_reason')

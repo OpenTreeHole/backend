@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timezone
 
 from django.conf import settings
@@ -52,11 +53,12 @@ class DivisionSerializer(serializers.ModelSerializer):
 
 class TagSerializer(serializers.ModelSerializer):
     tag_id = serializers.IntegerField(source='id', read_only=True, required=False)
+    name = serializers.CharField(max_length=settings.MAX_TAG_LENGTH)
     temperature = serializers.IntegerField(required=False)
 
     class Meta:
         model = Tag
-        fields = ['tag_id', 'name', 'color', 'temperature']
+        fields = ['tag_id', 'name', 'temperature']
 
 
 class FloorGetSerializer(serializers.Serializer):
@@ -134,7 +136,7 @@ class MentionSerializer(serializers.ModelSerializer):
 
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
-    division_id = serializers.IntegerField(required=False, default=1)
+    division_id = serializers.IntegerField(default=1)
     tags = TagSerializer(many=True, required=False)
     length = serializers.IntegerField(
         required=False, write_only=True,
@@ -210,17 +212,8 @@ class HoleSerializer(serializers.ModelSerializer):
         return queryset.prefetch_related('tags')
 
     def validate_tags(self, tags):
-        tags = [dict(tag) for tag in tags]  # TODO: Get original dict object instead?
         if len(tags) > settings.MAX_TAGS:
             raise serializers.ValidationError(f'标签不能多于{settings.MAX_TAGS}个', 400)
-        for tag in tags:
-            tag_name = tag['name'].strip()
-            if not tag_name:
-                raise serializers.ValidationError('标签名不能为空', 400)
-            if len(tag_name) > settings.MAX_TAG_LENGTH:
-                raise serializers.ValidationError(f'标签名不能超过{settings.MAX_TAG_LENGTH}个字符', 400)
-            if tag['color'] not in settings.TAG_COLORS:
-                raise serializers.ValidationError(f'标签颜色不合法', 400)
         return tags
 
     def validate_division_id(self, division_id):
@@ -231,6 +224,29 @@ class HoleSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('分区不存在', 400)
         else:
             return division_id
+
+    def create(self, validated_data):
+        tags = validated_data.pop('tags')
+        division_id = validated_data.pop('division_id')
+        # 在添加 tag 前要保存 hole，否则没有id
+        hole = Hole.objects.create(division_id=division_id)
+        # 创建 tag 并添加至 hole
+        for tag_name in tags:
+            tag, created = Tag.objects.get_or_create(name=tag_name['name'])
+            hole.tags.add(tag)
+        return hole
+
+    def update(self, instance, validated_data):
+        tags = validated_data.get('tags')
+        if tags:
+            tag_list = []
+            for tag_name in tags:
+                tag, created = Tag.objects.get_or_create(name=tag_name['name'])
+                tag_list.append(tag)
+            instance.tags.set(tag_list)
+        instance.view = validated_data.get('view', instance.view)
+        instance.save()
+        return instance
 
 
 class ReportSerializer(serializers.ModelSerializer):
@@ -253,3 +269,41 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created']
+
+
+def add_a_floor(request, hole, category):
+    """
+    增加一条回复帖
+    Args:
+        request:
+        hole:       hole对象
+        category:   指定返回值为 floor 或 hole
+
+    Returns:        floor or hole
+
+    """
+    # 校验 content
+    serializer = FloorSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    content = serializer.validated_data.get('content')
+    # 校验 mention
+    mention_serializer = MentionSerializer(data=request.data)
+    mention_serializer.is_valid(raise_exception=True)
+    mention = mention_serializer.validated_data.get('mention', [])
+
+    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
+    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
+    if not anonyname:
+        while True:
+            anonyname = random.choice(settings.NAME_LIST)
+            if anonyname in hole.mapping.values():
+                pass
+            else:
+                hole.mapping[request.user.pk] = anonyname
+                break
+    hole.save()
+
+    # 创建 floor 并增加 hole 的楼层数
+    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
+    floor.mention.set(mention)
+    return hole if category == 'hole' else floor

@@ -19,8 +19,7 @@ class Division(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=8, unique=True)
-    color = models.CharField(max_length=32, default='black')
+    name = models.CharField(max_length=settings.MAX_TAG_LENGTH, unique=True)
     temperature = models.IntegerField(db_index=True, default=0, help_text="该标签下的主题帖数")
 
     def __str__(self):
