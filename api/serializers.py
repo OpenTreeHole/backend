@@ -80,6 +80,7 @@ class FloorGetSerializer(serializers.Serializer):
         required=False, write_only=True,
         default=0
     )
+    reverse = serializers.BooleanField(default=False)
 
 
 # 不序列化 mention 字段

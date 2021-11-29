@@ -279,11 +279,16 @@ class FloorsApi(APIView):
         search = serializer.validated_data.get('s')
         start_floor = serializer.validated_data.get('start_floor')
         length = serializer.validated_data.get('length')
+        reverse = serializer.validated_data.get('reverse')
 
         if search:  # 搜索
-            query_set = Floor.objects.filter(shadow_text__icontains=search).order_by('-pk')
+            query_set = Floor.objects.filter(shadow_text__icontains=search)
+            if not reverse:  # 搜索默认降序，reverse 反转
+                query_set = query_set.order_by('-pk')
         else:  # 主题帖下
             query_set = Floor.objects.filter(hole_id=hole_id)
+            if reverse:  # 主题帖默认升序，reverse 反转
+                query_set = query_set.order_by('-pk')
 
         if length == 0:
             query_set = query_set[start_floor:]
