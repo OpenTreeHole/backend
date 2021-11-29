@@ -138,7 +138,7 @@ class MentionSerializer(serializers.ModelSerializer):
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
     division_id = serializers.IntegerField(default=1)
-    tags = TagSerializer(many=True)
+    tags = TagSerializer(many=True, required=False)
     length = serializers.IntegerField(
         required=False, write_only=True,
         default=settings.PAGE_SIZE,

@@ -234,7 +234,8 @@ class HolesApi(APIView):
     def post(self, request):
         serializer = HoleSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
+        if not serializer.validated_data.get('tags'):
+            return Response({'message': 'tags 不能为空'}, 400)
         # 检查权限
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
