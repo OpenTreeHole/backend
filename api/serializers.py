@@ -137,7 +137,7 @@ class MentionSerializer(serializers.ModelSerializer):
 class HoleSerializer(serializers.ModelSerializer):
     hole_id = serializers.IntegerField(source='id', read_only=True)
     division_id = serializers.IntegerField(default=1)
-    tags = TagSerializer(many=True, required=False)
+    tags = TagSerializer(many=True)
     length = serializers.IntegerField(
         required=False, write_only=True,
         default=settings.PAGE_SIZE,
@@ -212,6 +212,8 @@ class HoleSerializer(serializers.ModelSerializer):
         return queryset.prefetch_related('tags')
 
     def validate_tags(self, tags):
+        if len(tags) == 0:
+            raise serializers.ValidationError('tags 不能为空', 400)
         if len(tags) > settings.MAX_TAGS:
             raise serializers.ValidationError(f'标签不能多于{settings.MAX_TAGS}个', 400)
         return tags
