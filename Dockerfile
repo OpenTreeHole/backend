@@ -8,7 +8,7 @@ ENV HOLE_ENV=production \
     POETRY_VIRTUALENVS_IN-PROJECT=true
 
 RUN apt update \
-    && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 \
+    && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 libffi-dev\
     && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
     && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
     && rm mysql.deb \
