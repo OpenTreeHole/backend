@@ -5,7 +5,8 @@ MAINTAINER jsclndnz@gmail.com
 ENV HOLE_ENV=production \
     REDIS_URL=redis://redis:6379 \
     DEBIAN_FRONTEND=noninteractive \
-    POETRY_VIRTUALENVS_IN-PROJECT=true
+    POETRY_VIRTUALENVS_IN-PROJECT=true \
+    PATH=$PATH:$HOME/.poetry/bin
 
 RUN apt update \
     && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 libffi-dev\
