@@ -1,4 +1,4 @@
 #!/bin/sh
-python3 manage.py migrate
-python3 start.py
-gunicorn -c gconfig.py OpenTreeHole.asgi
+poetry run python3 manage.py migrate
+poetry run python3 start.py
+poetry run gunicorn -c gconfig.py OpenTreeHole.asgi

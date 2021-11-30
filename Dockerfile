@@ -14,15 +14,16 @@ RUN apt update \
     && rm mysql.deb \
     && apt update \
     && apt install -y libmysqlclient-dev \
+    && curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python - \
     && apt remove -y lsb-release curl wget gnupg \
     && apt autoremove -y \
     && apt clean
-    
+
 WORKDIR /www/backend
 
-COPY requirements.txt /www/backend/
+COPY poetry.lock pyproject.toml /www/backend/
 
-RUN  pip3 install -r requirements.txt
+RUN  poetry install
 
 COPY . /www/backend
 
