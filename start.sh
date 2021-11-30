@@ -1,4 +1,4 @@
 #!/bin/sh
-pipenv run python manage.py migrate
-pipenv run python start.py
+python3 manage.py migrate
+python3 start.py
 pipenv run gunicorn -c gconfig.py OpenTreeHole.asgi

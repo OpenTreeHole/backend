@@ -2,7 +2,10 @@ FROM debian:buster
 
 MAINTAINER jsclndnz@gmail.com
 
-ENV HOLE_ENV=production REDIS_URL=redis://redis:6379 DEBIAN_FRONTEND=noninteractive
+ENV HOLE_ENV=production \
+    REDIS_URL=redis://redis:6379 \
+    DEBIAN_FRONTEND=noninteractive \
+    POETRY_VIRTUALENVS_IN-PROJECT=true
 
 RUN apt update \
     && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 \
@@ -13,14 +16,13 @@ RUN apt update \
     && apt install -y libmysqlclient-dev \
     && apt remove -y lsb-release curl wget gnupg \
     && apt autoremove -y \
-    && apt clean \
-    && pip3 install --no-cache-dir pipenv
+    && apt clean
     
 WORKDIR /www/backend
 
-COPY Pipfile /www/backend/
+COPY requirements.txt /www/backend/
 
-RUN pipenv install --skip-lock
+RUN  pip3 install -r requirements.txt
 
 COPY . /www/backend
 

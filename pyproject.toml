@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "opentreehole"
+version = "1.0.1"
+description = "匿名论坛后端项目"
+authors = ["hasbai <jsclndnz@outlook.com>"]
+license = "Apache"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+Django = "~3.1.13"
+djangorestframework = "^3.12.4"
+django-redis = "^5.0.0"
+celery = "^5.2.1"
+django-celery-results = "^2.2.0"
+python-magic = "^0.4.24"
+httpx = "^0.21.1"
+channels = "^3.0.4"
+uvicorn = { extras = ["standard"], version = "^0.15.0" }
+gunicorn = "^20.1.0"
+channels-redis = "^3.3.1"
+apns2 = "^0.7.2"
+Markdown = "^3.3.6"
+mysqlclient = "^2.1.0"
+pycryptodome = "^3.11.0"
+
+[tool.poetry.dev-dependencies]
+markdownify = "^0.10.0"
+django-silk = "^4.2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
