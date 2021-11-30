@@ -111,9 +111,10 @@ class PermissionTests(APITestCase):
             'content': CONTENT,
             'division_id': 1,
             'hole_id': 1,
-            'tag_names': ['tag'],
+            'tags': [{'name': 'tag'}],
         }
         r = self.client.post('/holes', data)
+        print(r.data)
         self.assertEqual(r.status_code, 403)
 
         r = self.client.post('/floors', data)
@@ -190,7 +191,7 @@ class RegisterTests(APITestCase):
     def register_verify(self):
         # 正确校验
         r = self.client.get("/verify/email", {"email": self.email})
-        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.status_code, 202)
         self.assertIsNotNone(r.json()['message'])
         self.assertIsNotNone(cache.get(self.email))
         self.verification = cache.get(self.email)

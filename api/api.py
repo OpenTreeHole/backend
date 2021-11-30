@@ -71,17 +71,22 @@ class VerifyApi(APIView):
             # 检查邮箱是否在白名单内
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
-            # 仅当用户未注册时发送邮件
-            if not User.objects.filter(email=encrypt_email(email)).exists():
-                # 设置验证码并发送验证邮件
-                verification = secrets.randbelow(1000000)
-                cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+            # 设置验证码并发送验证邮件
+            verification = secrets.randbelow(1000000)
+            cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+            if not User.objects.filter(email=encrypt_email(email)).exists():  # 用户不存在，注册邮件
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
                     content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
                     receivers=[email]
                 )
-            return Response({'message': '如果您未注册，则会收到包含验证码的验证邮件，请查收；如果您已注册，则不会收到验证邮件，请找回密码。'})
+            else:  # 用户存在，重置密码
+                mail.delay(
+                    subject=f'{settings.SITE_NAME} 重置密码',
+                    content=f'您正在重置密码，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                    receivers=[email]
+                )
+            return Response({'message': '验证邮件已发送，请查收'}, 202)
         elif method == "apikey":
             apikey = request.query_params.get("apikey")
             check_register = request.query_params.get("check_register")
