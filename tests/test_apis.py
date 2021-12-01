@@ -114,7 +114,6 @@ class PermissionTests(APITestCase):
             'tags': [{'name': 'tag'}],
         }
         r = self.client.post('/holes', data)
-        print(r.data)
         self.assertEqual(r.status_code, 403)
 
         r = self.client.post('/floors', data)
