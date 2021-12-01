@@ -112,6 +112,18 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ['tag_id', 'name', 'temperature']
 
+    def create(self, validated_data):
+        tag, created = Tag.objects.get_or_create(name=validated_data.get('name'))
+        if not created:
+            raise BadRequest('tag 已存在')
+        return tag
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.temperature = validated_data.get('temperature', instance.temperature)
+        instance.save()
+        return instance
+
 
 class FloorGetSerializer(serializers.Serializer):
     def create(self, validated_data):

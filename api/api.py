@@ -355,7 +355,14 @@ class FloorsApi(APIView):
 class TagsApi(APIView):
     permission_classes = [IsAuthenticated, AdminOrReadOnly]
 
-    def get(self, request):
+    def get(self, request, **kwargs):
+        # 获取单个
+        tag_id = kwargs.get('tag_id')
+        if tag_id:
+            tag = get_object_or_404(Tag, pk=tag_id)
+            serializer = TagSerializer(tag)
+            return Response(serializer.data)
+        # 获取列表
         search = request.query_params.get('s')
         query_set = Tag.objects.order_by('-temperature')
         if search:
@@ -366,23 +373,17 @@ class TagsApi(APIView):
     def post(self, request):
         serializer = TagSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        name = serializer.validated_data.get('name')
-        tag = Tag.objects.create(name=name, temperature=0)
-        serializer = TagSerializer(tag)
+        serializer.save()
         return Response(serializer.data, 201)
 
     def put(self, request, **kwargs):
-        serializer = TagSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.validated_data.get('name')
-        temperature = serializer.validated_data.get('temperature')
         tag_id = kwargs.get('tag_id')
         tag = get_object_or_404(Tag, pk=tag_id)
-        if name:
-            tag.name = name
-        if temperature:
-            tag.temperature = temperature
-        serializer = TagSerializer(tag)
+
+        serializer = TagSerializer(instance=tag, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response(serializer.data)
 
     def delete(self, request, **kwargs):
