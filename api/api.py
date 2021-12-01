@@ -62,6 +62,16 @@ def logout(request):
 class VerifyApi(APIView):
     throttle_scope = 'email'
 
+    @staticmethod
+    def _set_verification_code(email: str) -> str:
+        """
+        设置验证码并返回
+        """
+        verification = secrets.randbelow(1000000)
+        verification = str(verification).zfill(6)
+        cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+        return verification
+
     def get(self, request, **kwargs):
         method = kwargs.get("method")
 
@@ -72,18 +82,22 @@ class VerifyApi(APIView):
             if domain not in settings.EMAIL_WHITELIST:
                 return Response({"message": "邮箱不在白名单内！"}, 400)
             # 设置验证码并发送验证邮件
-            verification = secrets.randbelow(1000000)
-            cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+            verification = self._set_verification_code(email)
+            base_content = (
+                f'您的验证码是: {verification}\r\n'
+                f'验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n'
+                '如果您意外地收到了此邮件，请忽略它'
+            )
             if not User.objects.filter(email=encrypt_email(email)).exists():  # 用户不存在，注册邮件
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
-                    content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                    content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
                     receivers=[email]
                 )
             else:  # 用户存在，重置密码
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 重置密码',
-                    content=f'您正在重置密码，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
+                    content=f'您正在重置密码，{base_content}',
                     receivers=[email]
                 )
             return Response({'message': '验证邮件已发送，请查收'}, 202)
@@ -100,9 +114,8 @@ class VerifyApi(APIView):
                 if check_register:
                     return Response({"message": "用户未注册！"}, 200)
                 else:
-                    verification = secrets.randbelow(1000000)
-                    cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-                    return Response({'message': '验证成功', 'code': str(verification).zfill(6)}, 200)
+                    verification = self._set_verification_code(email)
+                    return Response({'message': '验证成功', 'code': verification}, 200)
             return Response({'message': '用户已注册'}, 409)
         else:
             return Response({}, 404)
