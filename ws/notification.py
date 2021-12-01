@@ -7,14 +7,11 @@ from api.models import Message
 from api.serializers import MessageSerializer
 
 
-@database_sync_to_async
-def get_unread_messages(user):
-    messages = Message.objects.filter(user=user, has_read=False)
-    serializer = MessageSerializer(messages, many=True)
-    return serializer.data
-
-
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = None
+
     async def send_json(self, content, close=False):
         """
         unicode 编码 json 并发给客户端
@@ -22,13 +19,13 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
 
     async def connect(self):
-        user = self.scope["user"]
+        self.user = self.scope["user"]
         # 仅允许已登录用户
-        if user.is_authenticated:
+        if self.user.is_authenticated:
             await self.accept()
-            await self.channel_layer.group_add(f'user-{user.id}', self.channel_name)
+            await self.channel_layer.group_add(f'user-{self.user.id}', self.channel_name)
             await self.send_json({'message': '未读消息'})
-            for message in await get_unread_messages(user):
+            for message in await get(self.user):
                 await self.send_json(message)
         else:
             await self.close()
@@ -36,12 +33,57 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def disconnect(self, close_code):
         pass
 
-    async def receive_json(self, content, **kwargs):
-        message = content.get('message', 'hi')
-
-        await self.send_json({
-            'message': message,
-        })
-
     async def notification(self, event):
         await self.send_json(event['content'])
+
+    async def receive_json(self, content, **kwargs):
+        action = content.get('action', '')
+        id = content.get('id')
+        unread = content.get('unread', True)
+
+        if action == 'get':
+            data = await get(self.user, id, unread)
+            await self.send_json(data)
+        elif action == 'read' and id:
+            data = await read(self.user, id, has_read=True)
+            await self.send_json(data)
+        elif action == 'unread' and id:
+            data = await read(self.user, id, has_read=False)
+            await self.send_json(data)
+        elif action == 'clear':
+            await clear(self.user)
+            await self.send_json({'message': '所有未读消息已清空'})
+        else:
+            await self.send_json({'message': 'action 字段不合法'})
+
+
+@database_sync_to_async
+def get(user, id=None, unread=True):
+    messages = Message.objects.filter(user=user)
+    if id:
+        messages = messages.filter(pk=id)
+        if len(messages) == 0:
+            return
+        serializer = MessageSerializer(messages[0])
+    else:
+        if unread:
+            messages = messages.filter(has_read=False)
+        serializer = MessageSerializer(messages, many=True)
+    return serializer.data
+
+
+@database_sync_to_async
+def read(user, id, has_read=True):
+    messages = Message.objects.filter(user=user, pk=id)
+    if len(messages) == 0:
+        return
+    message = messages[0]
+    message.has_read = has_read
+    message.save()
+    serializer = MessageSerializer(message)
+    return serializer.data
+
+
+@database_sync_to_async
+def clear(user):
+    Message.objects.filter(user=user).update(has_read=True)
