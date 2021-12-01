@@ -98,7 +98,7 @@ class PermissionTests(APITestCase):
         self.assertEqual(r.status_code, 200)
 
         r = self.client.delete('/floors/1')
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
 
     def test_silent(self):
         silent_user = User.objects.create_user('silented user')
@@ -497,7 +497,7 @@ class FloorTests(APITestCase):
         original_content = Floor.objects.get(pk=2).content
         r = self.client.delete('/floors/2')
         floor = Floor.objects.get(pk=2)
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data['content'], '该内容已被作者删除')
         self.assertEqual(Floor.objects.get(pk=2).deleted, True)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
@@ -672,7 +672,7 @@ class ReportTests(APITestCase):
                 'silent': 3,
             }
         })
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
         floor = Floor.objects.get(pk=1)
         self.assertEqual(floor.fold, ['fold 1', 'fold 2'])
         self.assertEqual(floor.deleted, True)

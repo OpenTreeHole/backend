@@ -349,7 +349,7 @@ class FloorsApi(APIView):
         floor.deleted = True
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
-        return Response(serializer.data, 204)
+        return Response(serializer.data, 200)
 
 
 class TagsApi(APIView):
@@ -483,7 +483,7 @@ class ReportsApi(APIView):
         report.dealed_by = request.user
         report.dealed = True
         report.save()
-        return Response({'message': '举报处理成功'}, 204)
+        return Response({'message': '举报处理成功'}, 200)
 
     def put(self, request):
         pass
