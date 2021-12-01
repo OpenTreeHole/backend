@@ -175,94 +175,83 @@ class LoginLogoutTests(APITestCase):
         self.assertNotEqual(Token.objects.get(user=self.user).key, token)
 
 
-class RegisterTests(APITestCase):
+class VerifyTests(APITestCase):
     email = EMAIL
     another_email = 'another@test.com'
     wrong_email = "test@foo.com"
     password = "fsdvkhjng"
-    simple_password = '123456'
-    new_password = 'jwhkerbb4v5'
-    verification = None
 
     def setUp(self):
         User.objects.create_user(self.another_email, password=self.password)
 
-    def register_verify(self):
-        # 正确校验
+    def test_verify(self):
+        # 新用户校验
         r = self.client.get("/verify/email", {"email": self.email})
         self.assertEqual(r.status_code, 202)
-        self.assertIsNotNone(r.json()['message'])
-        self.assertIsNotNone(cache.get(self.email))
-        self.verification = cache.get(self.email)
+        self.assertIn('邮件', r.json()['message'])
+        # 验证码为六位字符串
+        code = cache.get(self.email)
+        self.assertEqual(type(code), str)
+        self.assertEqual(len(code), 6)
+
+        # 老用户校验
+        r = self.client.get("/verify/email", {"email": self.another_email})
+        self.assertEqual(r.status_code, 202)
+        # 验证码为六位字符串
+        code = cache.get(self.email)
+        self.assertEqual(type(code), str)
+        self.assertEqual(len(code), 6)
 
         # 错误域名
         r = self.client.get("/verify/email", {"email": self.wrong_email})
         self.assertEqual(r.status_code, 400)
-        self.assertEqual('邮箱不在白名单内！', r.data['message'])
+        self.assertIn('email', r.json())
         self.assertIsNone(cache.get(self.wrong_email))
 
-        # # 重复邮箱
-        # r = self.client.get("/verify/email", {"email": self.another_email})
-        # self.assertEqual(r.status_code, 400)
-        # self.assertEqual("该用户已注册！", r.data['message'])
-        # self.assertIsNone(cache.get(self.another_email))
 
-    def register(self):
-        expected_users = User.objects.count() + 1
-        # 正确注册
+class RegisterTests(APITestCase):
+    email = EMAIL
+    wrong_email = "test@foo.com"
+    password = "fsdvkhjng"
+    simple_password = '123456'
+    new_password = 'jwhkerbb4v5'
+    verification = '123456'
+    expected_users = User.objects.count() + 1
+    another_email = 'another@test.com'
+
+    def setUp(self):
+        User.objects.create_user(self.another_email, password=self.password)
+
+    # 正确注册
+    def test_register(self):
+        cache.set(self.email, self.verification)
         r = self.client.post("/register", {
             "email": self.email,
             "password": self.password,
             'verification': self.verification
         })
         self.assertEqual(r.status_code, 201)
-        self.assertIsNotNone(r.data['message'])
+        self.assertIn('注册', r.data['message'])
         user = User.objects.get(email=self.email)
         Token.objects.get(user=user)
+        self.assertIsNone(cache.get(self.email))  # 校验成功后验证码失效
 
         # 重复注册
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
         r = self.client.post("/register", {
             "email": self.email,
             "password": self.password,
             'verification': self.verification
         })
         self.assertEqual(r.status_code, 400)
-        # self.assertEqual(r.json(), {"message": "该用户已注册！"})
-        self.assertEqual(User.objects.count(), expected_users)
+        self.assertIn('已注册', r.json()['message'])
+        self.assertEqual(User.objects.count(), num)
 
-        # 未提供验证码
-        r = self.client.post("/register", {
-            "email": self.email,
-            "password": self.password,
-            # 'verification': self.verification
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual(r.data['message'], '验证码不能为空！')
-        self.assertEqual(User.objects.count(), expected_users)
-
-        # 简单密码
-        r = self.client.post("/register", {
-            "email": self.email,
-            "password": self.simple_password,
-            'verification': self.verification,
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertIn('密码', r.data['message'])
-        self.assertEqual(User.objects.count(), expected_users)
-
-        # 错误邮箱
-        r = self.client.post("/register", {
-            "email": self.wrong_email,
-            "password": self.password,
-            'verification': self.verification,
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual('注册校验未通过！', r.data['message'])
-        self.assertEqual(User.objects.count(), expected_users)
-
-    def modify_password(self):
+    def test_modify_password(self):
+        cache.set(self.another_email, self.verification)
         r = self.client.put("/register", {
-            "email": self.email,
+            "email": self.another_email,
             "password": self.new_password,
             'verification': self.verification
         })
@@ -270,15 +259,58 @@ class RegisterTests(APITestCase):
         self.assertEqual(r.json(), {'message': '已重置密码'})
 
         r = self.client.post('/login', {
-            'email': EMAIL,
+            'email': self.another_email,
             'password': self.new_password,
         })
         self.assertEqual(r.status_code, 200)
 
-    def test(self):
-        self.register_verify()
-        self.register()
-        self.modify_password()
+    def test_wrong_email(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.wrong_email,
+            "password": self.password,
+            'verification': self.verification,
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('email', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_simple_password(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.simple_password,
+            'verification': self.verification,
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('password', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_no_verification(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.password,
+            # 'verification': self.verification
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('verification', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_wrong_verification(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.password,
+            'verification': 000000
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('verification', r.json())
+        self.assertEqual(User.objects.count(), num)
 
 
 class DivisionTests(APITestCase):

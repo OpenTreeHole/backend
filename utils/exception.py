@@ -1,3 +1,4 @@
+from rest_framework.exceptions import APIException
 from rest_framework.views import exception_handler
 
 
@@ -12,3 +13,8 @@ def custom_exception_handler(exc, context):
         del (response.data['detail'])
 
     return response
+
+
+class BadRequest(APIException):
+    status_code = 400
+    default_detail = 'Invalid input.'

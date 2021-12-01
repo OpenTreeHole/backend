@@ -6,9 +6,7 @@ from datetime import datetime, timezone, timedelta
 import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
@@ -25,7 +23,7 @@ from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, add_a_floor
+    UserSerializer, DivisionSerializer, FloorGetSerializer, add_a_floor, RegisterSerializer, EmailSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 from utils.auth import check_api_key, encrypt_email
@@ -75,12 +73,11 @@ class VerifyApi(APIView):
     def get(self, request, **kwargs):
         method = kwargs.get("method")
 
+        serializer = EmailSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+
         if method == "email":
-            email = request.query_params.get("email")
-            domain = email[email.find("@") + 1:]
-            # 检查邮箱是否在白名单内
-            if domain not in settings.EMAIL_WHITELIST:
-                return Response({"message": "邮箱不在白名单内！"}, 400)
             # 设置验证码并发送验证邮件
             verification = self._set_verification_code(email)
             base_content = (
@@ -106,10 +103,6 @@ class VerifyApi(APIView):
             check_register = request.query_params.get("check_register")
             if not check_api_key(apikey):
                 return Response({"message": "API Key 不正确！"}, 403)
-            email = request.query_params.get("email")
-            domain = email[email.find("@") + 1:]
-            if domain not in settings.EMAIL_WHITELIST:
-                return Response({"message": "邮箱不在白名单内！"}, 400)
             if not User.objects.filter(email=encrypt_email(email)).exists():
                 if check_register:
                     return Response({"message": "用户未注册！"}, 200)
@@ -124,50 +117,18 @@ class VerifyApi(APIView):
 class RegisterApi(APIView):
     def post(self, request):
         # TODO: Sanitize input needed?
-        email = request.data.get("email")
-        password = request.data.get("password")
-        verification = request.data.get("verification")
-        if not verification:
-            return Response({"message": "验证码不能为空！"}, 400)
-        if not cache.get(email) or not cache.get(email) == verification:
-            return Response({"message": "注册校验未通过！"}, 400)
-        # 校验密码可用性
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            return Response({'message': '\n'.join(e)}, 400)
-        # 校验用户名是否已存在
-        if User.objects.filter(email=email).exists():
-            return Response({"message": "该用户已注册！如果忘记密码，请使用忘记密码功能找回。"}, 400)
-
-        user = User.objects.create_user(email=encrypt_email(email), password=password)
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
         token = Token.objects.get(user=user).key
-        # RegisteredEmail.objects.create(email_cleartext=email).save()
         return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-        verification = request.data.get("verification")
-
-        # 校验验证码
-        if not verification:
-            return Response({"message": "验证码不能为空！"}, 400)
-        if not cache.get(email) or not cache.get(email) == verification:
-            return Response({"message": "注册校验未通过！"}, 400)
-        # 校验密码可用性
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            return Response({'message': '\n'.join(e)}, 400)
-        # 校验用户名是否不存在
-        users = User.objects.filter(email=encrypt_email(email))
-        if not users:
-            return Response({"message": "该用户不存在"}, 400)
-        user = users[0]
-
-        user.set_password(password)
-        user.save()
+        email = request.data.get('email')
+        user = get_object_or_404(User, email=encrypt_email(email))
+        serializer = RegisterSerializer(instance=user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({"message": "已重置密码"}, 200)
 
 

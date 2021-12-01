@@ -3,11 +3,15 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.cache import cache
 from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
+from utils.auth import encrypt_email
 from utils.decorators import cache_function_call
+from utils.exception import BadRequest
 
 User = get_user_model()
 
@@ -30,6 +34,55 @@ class UserSerializer(serializers.ModelSerializer):
             if s not in config:
                 raise serializers.ValidationError(f'字段 {s} 不存在')
         return config
+
+
+class EmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, email):
+        domain = email[email.find("@") + 1:]
+        # 检查邮箱是否在白名单内
+        if domain not in settings.EMAIL_WHITELIST:
+            raise serializers.ValidationError('邮箱不在白名单内')
+        return email
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+
+class RegisterSerializer(EmailSerializer):
+    password = serializers.CharField()
+    verification = serializers.CharField(max_length=6, min_length=6)
+
+    def validate_password(self, password):
+        validate_password(password)
+        return password
+
+    def validate(self, data):
+        email = data['email']
+        verification = data['verification']
+        if not cache.get(email) or not cache.get(email) == verification:
+            raise serializers.ValidationError('验证码错误')
+        cache.delete(email)
+        return data
+
+    def create(self, validated_data):
+        email = validated_data.get('email')
+        password = validated_data.get('password')
+        encrypted_email = encrypt_email(email)
+        # 校验用户名是否已存在
+        if User.objects.filter(email=encrypted_email).exists():
+            raise BadRequest(detail='该用户已注册！如果忘记密码，请使用忘记密码功能找回')
+        user = User.objects.create_user(email=encrypted_email, password=password)
+        return user
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data.get('password'))
+        instance.save()
+        return instance
 
 
 class DivisionSerializer(serializers.ModelSerializer):
