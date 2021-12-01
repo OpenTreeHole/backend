@@ -253,7 +253,7 @@ class HoleSerializer(serializers.ModelSerializer):
                 # last_floor_data
                 queryset = instance.floor_set.order_by('-id')
                 queryset = serializer.get_queryset(queryset)
-                last_floor_data = serializer(queryset[0], context=context).data if len(queryset) > 0 else None
+                last_floor_data = serializer(queryset[0], context=context).data if queryset.count() > 0 else None
 
                 data['floors'] = {
                     'first_floor': first_floor_data,
