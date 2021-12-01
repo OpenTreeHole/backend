@@ -1,4 +1,3 @@
-import random
 from datetime import datetime, timezone
 
 from django.conf import settings
@@ -325,41 +324,3 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created']
-
-
-def add_a_floor(request, hole, category):
-    """
-    增加一条回复帖
-    Args:
-        request:
-        hole:       hole对象
-        category:   指定返回值为 floor 或 hole
-
-    Returns:        floor or hole
-
-    """
-    # 校验 content
-    serializer = FloorSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    content = serializer.validated_data.get('content')
-    # 校验 mention
-    mention_serializer = MentionSerializer(data=request.data)
-    mention_serializer.is_valid(raise_exception=True)
-    mention = mention_serializer.validated_data.get('mention', [])
-
-    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
-    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
-    if not anonyname:
-        while True:
-            anonyname = random.choice(settings.NAME_LIST)
-            if anonyname in hole.mapping.values():
-                pass
-            else:
-                hole.mapping[request.user.pk] = anonyname
-                break
-    hole.save()
-
-    # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
-    floor.mention.set(mention)
-    return hole if category == 'hole' else floor

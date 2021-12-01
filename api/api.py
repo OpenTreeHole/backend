@@ -1,4 +1,5 @@
 import base64
+import random
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -23,7 +24,7 @@ from api.notification import MessageSender
 from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, add_a_floor, RegisterSerializer, EmailSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 from utils.auth import check_api_key, encrypt_email
@@ -220,7 +221,7 @@ class HolesApi(APIView):
         self.check_object_permissions(request, division_id)
 
         hole = serializer.save()
-        hole = add_a_floor(request, hole, category='hole')
+        hole = add_a_floor(request, hole, returns='hole')
 
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
@@ -284,7 +285,7 @@ class FloorsApi(APIView):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
+        serializer = FloorSerializer(add_a_floor(request, hole, returns='floor'), context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     @transaction.atomic
@@ -685,3 +686,41 @@ class PenaltyApi(APIView):
         user.save(update_fields=['permission'])
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+
+def add_a_floor(request, hole, returns='floor'):
+    """
+    增加一条回复帖
+    Args:
+        request:
+        hole:       hole对象
+        returns:   指定返回值为 floor 或 hole
+
+    Returns:        floor or hole
+
+    """
+    # 校验 content
+    serializer = FloorSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    content = serializer.validated_data.get('content')
+    # 校验 mention
+    mention_serializer = MentionSerializer(data=request.data)
+    mention_serializer.is_valid(raise_exception=True)
+    mention = mention_serializer.validated_data.get('mention', [])
+
+    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
+    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
+    if not anonyname:
+        while True:
+            anonyname = random.choice(settings.NAME_LIST)
+            if anonyname in hole.mapping.values():
+                pass
+            else:
+                hole.mapping[request.user.pk] = anonyname
+                break
+    hole.save()
+
+    # 创建 floor 并增加 hole 的楼层数
+    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
+    floor.mention.set(mention)
+    return hole if returns == 'hole' else floor
