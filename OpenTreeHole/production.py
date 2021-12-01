@@ -70,8 +70,8 @@ REST_FRAMEWORK = {
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [
-        'api.throttles.BurstRateThrottle',
-        'api.throttles.SustainedRateThrottle',
+        'utils.throttles.BurstRateThrottle',
+        'utils.throttles.SustainedRateThrottle',
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {

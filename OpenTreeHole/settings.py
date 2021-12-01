@@ -40,7 +40,7 @@ TEMPLATES = [
     },
 ]
 
-ROOT_URLCONF = "api.urls"
+ROOT_URLCONF = "OpenTreeHole.urls"
 
 WSGI_APPLICATION = "OpenTreeHole.wsgi.application"
 ASGI_APPLICATION = "OpenTreeHole.asgi.application"

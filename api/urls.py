@@ -18,13 +18,8 @@ from django.conf import settings
 from django.conf.urls import url
 from django.urls import path, include
 
-from api import consumers
 from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
     MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi
-
-websocket_urlpatterns = [
-    path('ws/notification', consumers.NotificationConsumer.as_asgi()),
-]
 
 urlpatterns = [
     # path("admin/", admin.site.urls),

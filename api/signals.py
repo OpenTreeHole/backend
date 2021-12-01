@@ -9,9 +9,9 @@ from django.dispatch import receiver, Signal
 from rest_framework.authtoken.models import Token
 
 from api.models import Hole, Tag, Floor, Report
-from api.notification import MessageSender
 from api.serializers import FloorSerializer, ReportSerializer
 from utils.apis import to_shadow_text
+from utils.notification import MessageSender
 
 modified_by_admin = Signal(providing_args=['instance'])
 
