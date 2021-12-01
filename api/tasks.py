@@ -51,7 +51,6 @@ def post_image_to_github(url, headers, body):
 @app.task
 def update_hole_views():
     cached = cache.get('hole_views', {})
-    print(cached)
     for id in cached:
         if cached[id] > 0:
             Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
@@ -59,6 +58,6 @@ def update_hole_views():
     cache.set('hole_views', cached, None)
 
 
-@app.on_after_configure.connect
+@app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
-    sender.add_periodic_task(10.0, update_hole_views.s(), name='add every 10')
+    sender.add_periodic_task(60, update_hole_views.s())  # 每分钟更新一次浏览量
