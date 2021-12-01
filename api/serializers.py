@@ -284,10 +284,11 @@ class HoleSerializer(serializers.ModelSerializer):
         return tags
 
     def validate_division_id(self, division_id):
-        if not division_id:
-            division, created = Division.objects.get_or_create(name='树洞')
-            return division.pk
-        elif not Division.objects.filter(pk=division_id).exists():
+        @cache_function_call(division_id, 86400)
+        def division_exists(division_id):
+            return Division.objects.filter(pk=division_id).exists()
+
+        if not division_exists(division_id):
             raise serializers.ValidationError('分区不存在', 400)
         else:
             return division_id

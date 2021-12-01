@@ -9,7 +9,6 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -182,13 +181,19 @@ class HolesApi(APIView):
         hole_id = kwargs.get('hole_id')
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
-            Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
+            # 缓存中增加主题帖的浏览量
+            cached = cache.get('hole_views', {})
+            view = cached.get(hole_id, 0)
+            cached[hole_id] = view + 1
+            cache.set('hole_views', cached)
+
             serializer = HoleSerializer(hole, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
                 'simple': False  # 不使用缓存
             })
             return Response(serializer.data)
+
         # 获取多个
         else:
             tag_name = request.query_params.get('tag')

@@ -7,7 +7,12 @@ from smtplib import SMTPException
 
 import httpx
 from celery import shared_task
+from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db.models import F
+
+from OpenTreeHole.celery import app
+from api.models import Hole
 
 
 @shared_task
@@ -41,3 +46,19 @@ def post_image_to_github(url, headers, body):
         return '上传成功'
     else:
         return '上传失败', r.json()
+
+
+@app.task
+def update_hole_views():
+    cached = cache.get('hole_views', {})
+    print(cached)
+    for id in cached:
+        if cached[id] > 0:
+            Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
+            cached[id] = 0
+    cache.set('hole_views', cached, None)
+
+
+@app.on_after_configure.connect
+def setup_periodic_tasks(sender, **kwargs):
+    sender.add_periodic_task(10.0, update_hole_views.s(), name='add every 10')
