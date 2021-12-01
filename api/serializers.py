@@ -251,9 +251,8 @@ class HoleSerializer(serializers.ModelSerializer):
                 first_floor_data = prefetch_data[0] if len(prefetch_data) > 0 else None
 
                 # last_floor_data
-                queryset = instance.floor_set.order_by('-id')
-                queryset = serializer.get_queryset(queryset)
-                last_floor_data = serializer(queryset[0], context=context).data if queryset.count() > 0 else None
+                queryset = serializer.get_queryset(instance.floor_set)
+                last_floor_data = serializer(queryset.last(), context=context).data
 
                 data['floors'] = {
                     'first_floor': first_floor_data,
