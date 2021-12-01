@@ -666,11 +666,9 @@ class ReportTests(APITestCase):
     def test_delete(self):
         self.client.force_authenticate(user=self.admin)
         r = self.client.delete('/reports/1', {
-            'deal': {
-                'fold': ['fold 1', 'fold 2'],
-                'delete': 'test delete',
-                'silent': 3,
-            }
+            'fold': ['fold 1', 'fold 2'],
+            'delete': 'test delete',
+            'silent': 3
         })
         self.assertEqual(r.status_code, 200)
         floor = Floor.objects.get(pk=1)

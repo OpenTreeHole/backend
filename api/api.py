@@ -457,14 +457,13 @@ class ReportsApi(APIView):
         report_id = kwargs.get('report_id')
         report = get_object_or_404(Report, pk=report_id)
         floor = report.floor
-        deal = request.data.get('deal')
 
-        if deal.get('not_deal'):
+        if request.data.get('not_deal'):
             pass
-        if deal.get('fold'):
-            floor.fold = deal.get('fold')
-        if deal.get('delete'):
-            delete_reason = deal.get('delete')
+        if request.data.get('fold'):
+            floor.fold = request.data.get('fold')
+        if request.data.get('delete'):
+            delete_reason = request.data.get('delete')
             floor.history.append({
                 'content': floor.content,
                 'altered_by': request.user.pk,
@@ -472,11 +471,11 @@ class ReportsApi(APIView):
             })
             floor.content = delete_reason
             floor.deleted = True
-        if deal.get('silent'):
+        if request.data.get('silent'):
             permission = floor.user.permission
             current_time_str = permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
             current_time = parse_datetime(current_time_str)
-            expected_time = datetime.now(timezone.utc) + timedelta(days=deal.get('silent'))
+            expected_time = datetime.now(timezone.utc) + timedelta(days=request.data.get('silent'))
             permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
             floor.user.save()
 
