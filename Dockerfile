@@ -26,6 +26,8 @@ COPY . /www/backend
 
 EXPOSE 80
 
-RUN chmod +x start.sh
+RUN chmod +x start.sh \
+# APNS 证书问题，安全性低，临时解决方案
+    && echo "CipherString=DEFAULT@SECLEVEL=1" >> /etc/ssl/openssl.cnf
 
 ENTRYPOINT ["./start.sh"]
