@@ -369,6 +369,7 @@ class HoleTests(APITestCase):
         self.assertEqual(hole.tags.count(), 3)
         for tag in hole.tags.all():
             self.assertEqual(tag.temperature, 1)
+        self.assertTrue(self.user.favorites.filter(pk=hole.id).exists())
 
     def test_get_by_time(self):
         time.sleep(1)

@@ -227,6 +227,7 @@ class HolesApi(APIView):
 
         hole = serializer.save()
         hole = add_a_floor(request, hole, returns='hole')
+        request.user.favorites.add(hole)  # 自动收藏自己发的树洞
 
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
