@@ -15,6 +15,7 @@ Notification = collections.namedtuple('Notification', ['token', 'payload'])
 if settings.APNS_KEY_PATH:
     apns_client = APNsClient(settings.APNS_KEY_PATH, use_sandbox=(environ.get("HOLE_ENV") != "production"),
                              use_alternative_port=settings.APNS_USE_ALTERNATIVE_PORT)
+    print('APNS Client Initialized')
 else:
     apns_client = None
 
@@ -88,18 +89,25 @@ class MessageSender:
         发送队列中的消息
         并清除过期token
         """
-        if apns_client:
-            response = apns_client.send_notification_batch(notifications=self.apns_notifications,
-                                                           topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
-            self.apns_notifications.clear()
 
-            # 清除过期token
-            for token in response:
-                if response[token] == 'BadDeviceToken':
-                    user = self.apns_user_token_record[token]
-                    for device in user.push_notification_tokens['apns']:
-                        if user.push_notification_tokens['apns'][device] == token:
-                            del user.push_notification_tokens['apns'][device]
-                            break
-                    user.save(update_fields=['push_notification_tokens'])
-            self.apns_user_token_record.clear()
+        def _commit():
+            if apns_client:
+                response = apns_client.send_notification_batch(notifications=self.apns_notifications,
+                                                               topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS)
+                self.apns_notifications.clear()
+
+                # 清除过期token
+                for token in response:
+                    if response[token] == 'BadDeviceToken':
+                        user = self.apns_user_token_record[token]
+                        for device in user.push_notification_tokens['apns']:
+                            if user.push_notification_tokens['apns'][device] == token:
+                                del user.push_notification_tokens['apns'][device]
+                                break
+                        user.save(update_fields=['push_notification_tokens'])
+                self.apns_user_token_record.clear()
+
+        try:
+            _commit()
+        except:
+            pass
