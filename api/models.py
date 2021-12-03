@@ -101,7 +101,7 @@ def default_config():
         show: 展示
 
     notify: 在以下场景时通知
-        reply: 被回复时
+        mention: 帖子被提及时
         favorite: 收藏的主题帖有新帖时
         report: 被举报时
     另外，当用户权限发生变化或所发帖被修改时也会收到通知
