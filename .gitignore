@@ -6,3 +6,4 @@ db.sqlite3
 
 data.json
 migrate.py
+apns.pem
