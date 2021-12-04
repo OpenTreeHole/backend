@@ -24,14 +24,14 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
 from api.signals import modified_by_admin
 from api.tasks import mail, post_image_to_github
 from utils.auth import check_api_key, encrypt_email
-from utils.notification import MessageSender
+from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 
 
 @api_view(["GET"])
 def index(request):
-    MessageSender(request.user, {'message': 'hi'}).commit()
+    send_notifications.delay(request.user.id, 'hi')
     return Response({"message": "Hello world!"})
 
 
