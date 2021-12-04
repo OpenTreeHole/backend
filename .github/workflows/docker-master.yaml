@@ -1,10 +1,9 @@
-name: release
+name: build
 
 on:
   push:
-    tags-ignore:
-      - v*.*.*-alpha
-      - v*.*.*-alpha*
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+
 
 env:
   APP_NAME: open_tree_hole_backend
