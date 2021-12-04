@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer
-from api.signals import modified_by_admin
+from api.signals import modified_by_admin, mention_to
 from api.tasks import mail, post_image_to_github
 from utils.auth import check_api_key, encrypt_email
 from utils.notification import send_notifications
@@ -729,4 +729,5 @@ def add_a_floor(request, hole, returns='floor'):
     # 创建 floor 并增加 hole 的楼层数
     floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
     floor.mention.set(mention)
+    mention_to.send(sender=Floor, instance=floor, mentioned=mention)
     return hole if returns == 'hole' else floor

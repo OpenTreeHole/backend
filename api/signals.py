@@ -14,6 +14,7 @@ from utils.apis import to_shadow_text
 from utils.notification import send_notifications
 
 modified_by_admin = Signal(providing_args=['instance'])
+mention_to = Signal(providing_args=['instance', 'mentioned'])
 
 
 # 自动在创建用户后创建其 Token
@@ -42,33 +43,37 @@ def create_shadow_text(sender, instance, **kwargs):
 @receiver(post_save, sender=Floor)
 def after_adding_a_floor(sender, instance, created, **kwargs):
     if created:
-        # Hole.objects.filter(id=instance.hole_id).update(reply=F('reply') + 1)  # 不知道为什么它运行无效
-        instance.hole.reply += 1
-        instance.hole.save()
-        cache_key = f'cache-{instance.hole}'
-        deleted = cache.delete(cache_key)
+        Hole.objects.filter(id=instance.hole_id).update(reply=F('reply') + 1)
+        cache_key = f'_cached-{instance.hole}'
+        cache.delete(cache_key)
 
 
 # 帖子被提及后通知用户
-@receiver(post_save, sender=Floor)
-def notify_when_mentioned(sender, instance, created, **kwargs):
-    if created:
-        for floor in instance.mention.all():
-            if 'mention' in floor.user.config['notify']:
-                message = f'你在{floor.hole} 的帖子#{floor.id} 被提及了'
-                data = FloorSerializer(floor, context={"user": floor.user}).data
-                send_notifications.delay(floor.user_id, message, data, 'mention')
+@receiver(mention_to, sender=Floor)
+def notify_when_mentioned(sender, instance, mentioned, **kwargs):
+    """
+    Args:
+        instance: 提及的帖子
+        sender: Floor
+        mentioned: [<Floor: 被提及的帖子>]
+        **kwargs:
+    """
+    print(mentioned)
+    for floor in mentioned:
+        if 'mention' in floor.user.config['notify']:
+            message = f'你在树洞#{floor.hole_id} 的帖子#{floor.id} 被提及了'
+            data = FloorSerializer(instance, context={"user": floor.user}).data
+            send_notifications.delay(floor.user_id, message, data, 'mention')
 
 
 # 收藏的主题帖有新帖时通知用户
 @receiver(post_save, sender=Floor)
 def notify_when_favorites_updated(sender, instance, created, **kwargs):
     if created:
-        for user in instance.hole.favored_by.all():
-            if 'favorite' in user.config['notify']:
-                message = f'你收藏的{instance.hole} 被回复了{instance.id}'
-                data = FloorSerializer(instance, context={"user": user}).data
-                send_notifications.delay(user.id, message, data, 'favorite')
+        for user in instance.hole.favored_by.filter(config__notify__icontains='favorite'):
+            message = f'你收藏的{instance.hole} 被回复了{instance.id}'
+            data = FloorSerializer(instance, context={"user": user}).data
+            send_notifications.delay(user.id, message, data, 'favorite')
 
 
 # 被举报时通知用户和管理员
