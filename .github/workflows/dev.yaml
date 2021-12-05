@@ -22,7 +22,7 @@ jobs:
           python-version: 3.9
       - name: Install Dependencies
         run: |
-          apt update && apt install -y libmagic1
+          apt update && apt install -y libmagic1 redis
           pip3 install pipenv
           pipenv install --dev --skip-lock
       - name: Run Tests

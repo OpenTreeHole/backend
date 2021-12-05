@@ -10,7 +10,7 @@ RUN apt update \
 
 COPY Pipfile /www/backend/
 
-RUN pipenv install --skip-lock
+RUN pipenv install --dev --skip-lock
 
 FROM python:3.9-slim
 
