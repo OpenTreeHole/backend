@@ -28,8 +28,8 @@ Please refer to [API Docs](https://github.com/OpenTreeHole/backend/wiki/API-æ–‡æ
 
 ## Badge
 
-[![build](https://github.com/OpenTreeHole/backend/actions/workflows/docker-master.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/docker-master.yaml)
-[![dev build](https://github.com/OpenTreeHole/backend/actions/workflows/docker-dev.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/docker-dev.yaml)
+[![build](https://github.com/OpenTreeHole/backend/actions/workflows/master.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/master.yaml)
+[![dev build](https://github.com/OpenTreeHole/backend/actions/workflows/dev.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/dev.yaml)
 
 [![stars](https://img.shields.io/github/stars/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/stargazers)
 [![issues](https://img.shields.io/github/issues/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/issues)
