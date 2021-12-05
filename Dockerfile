@@ -1,6 +1,6 @@
 FROM python:3.9 as builder
 
-ENV PIPENV_VENV_IN_PROJECT="enabled" DEBIAN_FRONTEND=noninteractive
+ENV PIPENV_VENV_IN_PROJECT="enabled"
 
 WORKDIR /www/backend
 
@@ -26,9 +26,7 @@ COPY --from=builder /www/backend/.venv /www/backend/.venv
 
 COPY . /www/backend
 
-ENV HOLE_ENV=production \
-    REDIS_URL=redis://redis:6379 \
-    PATH="/www/backend/.venv/bin:$PATH"
+ENV PATH="/www/backend/.venv/bin:$PATH"
 
 EXPOSE 80
 
