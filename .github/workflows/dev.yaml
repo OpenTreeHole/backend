@@ -23,7 +23,7 @@ jobs:
       - name: Install Dependencies
         run: |
           pip3 install pipenv
-          pipenv install --skip-lock
+          pipenv install --dev --skip-lock
       - name: Run Tests
         run: pipenv run python manage.py test
 
