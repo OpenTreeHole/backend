@@ -25,9 +25,11 @@ jobs:
           pip3 install pipenv
           pipenv install --dev --skip-lock
       - name: Run Tests
-        run: pipenv run python manage.py test
+        run: |
+          pipenv run python manage.py migrate
+          pipenv run python manage.py test
 
-  docker:
+  build:
     runs-on: ubuntu-latest
     needs: test
     steps:
