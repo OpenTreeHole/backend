@@ -81,3 +81,7 @@ REST_FRAMEWORK = {
         'upload': THROTTLE_UPLOAD
     }
 }
+
+# celery 使用 redis
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL

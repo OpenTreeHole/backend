@@ -22,6 +22,7 @@ pycryptodome = "*"
 
 [dev-packages]
 django-silk = "*"
+sqlalchemy = "*"
 
 [requires]
 python_version = "3.9"

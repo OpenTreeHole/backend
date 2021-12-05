@@ -1,7 +1,6 @@
-config.bak
 Pipfile.lock
 try.*
-db.sqlite3
+*.sqlite3
 .idea
 
 data.json

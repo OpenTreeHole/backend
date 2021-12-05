@@ -1,3 +1,5 @@
+import sqlite3
+
 from .config import *
 
 DEBUG = True
@@ -32,39 +34,26 @@ DATABASES = {
 }
 
 # 开发环境使用本地内存作为缓存
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-#         "LOCATION": "unique-snowflake",
-#     }
-# }
 CACHES = {
     "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    },
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
 }
+
+# channels 通道层，使用内存
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+# celery 使用 sqlite
+sqlite3.connect('celery.sqlite3')
+CELERY_BROKER_URL = 'sqla+sqlite:///celery.sqlite3'
 
 # 开发环境邮件发送至控制台
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# channels 通道层，使用内存
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels.layers.InMemoryChannelLayer"
-#     }
-# }
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [REDIS_URL],
-        },
-    },
-}
 
 # 开发环境不限制 API 访问速率
 REST_FRAMEWORK = {
@@ -80,23 +69,3 @@ REST_FRAMEWORK = {
 
 # silk profiling
 SILKY_PYTHON_PROFILER = True
-# SILKY_PYTHON_PROFILER_BINARY = True
-# SILKY_PYTHON_PROFILER_RESULT_PATH = BASE_DIR
-
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'level': 'DEBUG',
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django.db.backends': {  # 在终端打印 sql 语句
-#             'handlers': ['console'],
-#             'propagate': True,
-#             'level': 'DEBUG',
-#         },
-#     }
-# }

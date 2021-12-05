@@ -89,9 +89,6 @@ STATIC_URL = "/static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CELERY_RESULT_BACKEND = REDIS_URL
-CELERY_BROKER_URL = REDIS_URL
-
 # 自定义用户模型
 AUTH_USER_MODEL = 'api.User'
 
