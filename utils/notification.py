@@ -34,6 +34,8 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             }
         )
 
+    if not user_id:
+        return
     # 创建对象
     if data is None:
         data = {}
