@@ -3,7 +3,7 @@ name: dev build
 on:
   push:
     branches:
-      - unittest
+      - dev
   pull_request:
     branches:
       - dev
@@ -34,8 +34,7 @@ jobs:
           load: true
           tags: ${{ env.TEST_TAG }}
       - name: Test
-        run: |
-          docker run --rm ${{ env.TEST_TAG }} test
+        run: docker run --rm ${{ env.TEST_TAG }} test
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
