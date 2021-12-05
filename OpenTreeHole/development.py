@@ -1,3 +1,5 @@
+import sqlite3
+
 from .config import *
 
 DEBUG = True
@@ -39,15 +41,19 @@ CACHES = {
     }
 }
 
-# 开发环境邮件发送至控制台
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
 # channels 通道层，使用内存
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+# celery 使用 sqlite
+sqlite3.connect('celery.sqlite3')
+CELERY_BROKER_URL = 'sqla+sqlite:///celery.sqlite3'
+
+# 开发环境邮件发送至控制台
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # 开发环境不限制 API 访问速率
 REST_FRAMEWORK = {
