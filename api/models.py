@@ -145,8 +145,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    email = models.TextField(unique=True)  # RSA encrypted email
-    identifier = models.CharField(max_length=128, null=True)  # sha512 of email
+    email = models.CharField(max_length=1000)  # RSA encrypted email
+    identifier = models.CharField(max_length=128, unique=True)  # sha512 of email
     joined_time = models.DateTimeField(auto_now_add=True)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, related_name='favored_by', blank=True)
@@ -156,7 +156,7 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'identifier'
 
     @property
     def is_admin(self):

@@ -66,4 +66,4 @@ def sha512(string):
 
 if __name__ == '__main__':
     encrypted = encrypt_email('hi')
-    print(decrypt_email(encrypted))
+    print((len(encrypted)))
