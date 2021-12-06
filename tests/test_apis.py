@@ -719,7 +719,7 @@ class MessageTests(APITestCase):
     def test_get_many(self):
         r = self.client.get('/messages', {
             'not_read': True,
-            'start_time': '1970-01-01T00:00:00+00:00'
+            'start_time': VERY_LONG_TIME
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 1)
