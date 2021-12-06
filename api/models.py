@@ -6,7 +6,7 @@ from django.db import models
 from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
-from utils.auth import encrypt_email
+from utils.auth import encrypt_email, many_hashes
 
 
 class Division(models.Model):
@@ -128,11 +128,21 @@ def default_push_notification_tokens():
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
+        """
+        Args:
+            email: 明文
+            password: 明文
+        Returns:
+            user
+        """
         if not email:
             raise ValueError('邮箱必须提供')
         email = self.normalize_email(email)
-        email = encrypt_email(email)
-        user = self.model(email=email, **extra_fields)
+        user = self.model(
+            email=encrypt_email(email),
+            identifier=many_hashes(email),
+            **extra_fields
+        )
         user.set_password(password)
         user.save()
         return user
