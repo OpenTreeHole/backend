@@ -104,6 +104,6 @@ def notify_when_permission_changed(sender, instance, **kwargs):
 # 用户帖子被修改后发出通知
 @receiver(modified_by_admin, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
-    message = f'你的帖子{instance.floor}被修改了'
+    message = f'你的帖子{instance}被修改了'
     data = FloorSerializer(instance, context={"user": instance.user}).data
     send_notifications.delay(instance.user_id, message, data, 'modify')
