@@ -3,9 +3,6 @@ name: dev build
 on:
   push:
     branches:
-      - auth
-  pull_request:
-    branches:
       - dev
 
 env:
@@ -28,17 +25,17 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      #      - name: Build and export to Docker
-      #        uses: docker/build-push-action@v2
-      #        with:
-      #          load: true
-      #          tags: ${{ env.TEST_TAG }}
-      #      - name: Test
-      #        run: docker run --rm ${{ env.TEST_TAG }} test
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v2
+        with:
+          load: true
+          tags: ${{ env.TEST_TAG }}
+      - name: Test
+        run: docker run --rm ${{ env.TEST_TAG }} test
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64
+          platforms: linux/amd64  # 开发版本不构建 arm 镜像（太慢了）
           push: true
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:dev
