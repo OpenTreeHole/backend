@@ -108,7 +108,7 @@ def default_config():
     """
     return {
         'show_folded': 'fold',
-        'notify': ['mention', 'favorite', 'report']
+        'notify': ['mention', 'favorite']
     }
 
 
