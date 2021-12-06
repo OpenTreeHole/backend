@@ -23,7 +23,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer
 from api.signals import modified_by_admin, mention_to
 from api.tasks import mail, post_image_to_github
-from utils.auth import check_api_key, encrypt_email
+from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -41,7 +41,7 @@ def login(request):
     email = request.data.get("email")
     password = request.data.get("password")
 
-    user = get_object_or_404(User, email=encrypt_email(email))
+    user = get_object_or_404(User, identifier=many_hashes(email))
     if check_password(password, user.password):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "message": "登录成功！"})
@@ -85,7 +85,7 @@ class VerifyApi(APIView):
                 f'验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n'
                 '如果您意外地收到了此邮件，请忽略它'
             )
-            if not User.objects.filter(email=encrypt_email(email)).exists():  # 用户不存在，注册邮件
+            if not User.objects.filter(identifier=many_hashes(email)).exists():  # 用户不存在，注册邮件
                 mail.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
                     content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
@@ -103,7 +103,7 @@ class VerifyApi(APIView):
             check_register = request.query_params.get("check_register")
             if not check_api_key(apikey):
                 return Response({"message": "API Key 不正确！"}, 403)
-            if not User.objects.filter(email=encrypt_email(email)).exists():
+            if not User.objects.filter(identifier=many_hashes(email)).exists():
                 if check_register:
                     return Response({"message": "用户未注册！"}, 200)
                 else:
@@ -125,7 +125,7 @@ class RegisterApi(APIView):
 
     def put(self, request):
         email = request.data.get('email')
-        user = get_object_or_404(User, email=encrypt_email(email))
+        user = get_object_or_404(User, identifier=many_hashes(email))
         serializer = RegisterSerializer(instance=user, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

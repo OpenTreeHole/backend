@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 
 from tests.test_apis import basic_setup
+from utils.auth import many_hashes
 
 User = get_user_model()
 
@@ -33,7 +34,7 @@ class MessageTest(APITestCase):
 
     def test_post(self):
         r = self.client.post('/messages', {
-            'from': User.objects.get(email='another user').pk,
+            'from': User.objects.get(identifier=many_hashes('another user')).pk,
             'to': 1,
             'share_email': True,
         })

@@ -11,7 +11,6 @@ from rest_framework.authtoken.models import Token
 from api.models import Hole, Tag, Floor, Report
 from api.serializers import FloorSerializer, ReportSerializer
 from utils.apis import to_shadow_text
-from utils.auth import sha512
 from utils.notification import send_notifications
 
 modified_by_admin = Signal(providing_args=['instance'])
@@ -23,13 +22,6 @@ mention_to = Signal(providing_args=['instance', 'mentioned'])
 def create_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-
-
-# 在创建用户时设置其 identifier
-@receiver(pre_save, sender=settings.AUTH_USER_MODEL)
-def create_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        instance.identifier = sha512(instance.email)
 
 
 # 自动修改 tag 的热度

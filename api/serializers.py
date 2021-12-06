@@ -8,7 +8,7 @@ from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
-from utils.auth import encrypt_email
+from utils.auth import many_hashes
 from utils.decorators import cache_function_call
 from utils.exception import BadRequest
 
@@ -71,11 +71,10 @@ class RegisterSerializer(EmailSerializer):
     def create(self, validated_data):
         email = validated_data.get('email')
         password = validated_data.get('password')
-        encrypted_email = encrypt_email(email)
         # 校验用户名是否已存在
-        if User.objects.filter(email=encrypted_email).exists():
+        if User.objects.filter(identifier=many_hashes(email)).exists():
             raise BadRequest(detail='该用户已注册！如果忘记密码，请使用忘记密码功能找回')
-        user = User.objects.create_user(email=encrypted_email, password=password)
+        user = User.objects.create_user(email=email, password=password)
         return user
 
     def update(self, instance, validated_data):

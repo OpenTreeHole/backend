@@ -3,6 +3,7 @@
 """
 import base64
 import hashlib
+import time
 
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
@@ -60,10 +61,24 @@ def decrypt_email(encrypted):
     return back_text.decode('utf-8')
 
 
-def sha512(string):
-    return hashlib.sha512(bytes(string.encode('utf-8'))).hexdigest()
+def sha512(string: str) -> str:
+    byte_string = bytes(string.encode('utf-8'))
+    return hashlib.sha512(byte_string).hexdigest()
+
+
+def many_hashes(string: str) -> str:
+    if settings.HOLE_ENV == 'development':
+        iterations = 1
+    else:
+        iterations = 1000000
+    byte_string = bytes(string.encode('utf-8'))
+    return hashlib.pbkdf2_hmac('sha3_512', byte_string, b'', iterations).hex()
 
 
 if __name__ == '__main__':
-    encrypted = encrypt_email('hi')
-    print((len(encrypted)))
+    start = time.time()
+
+    many_hashes('hi')
+
+    end = time.time()
+    print(end - start)
