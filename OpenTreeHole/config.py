@@ -136,7 +136,7 @@ SECRET_KEY = str(uuid.uuid1())
 REGISTER_API_KEY_SEED = "abcdefg"
 
 # 用户名加密公钥文件(PEM)路径
-USERNAME_PUBLIC_KEY_PATH = "demo_key.pem"
+USERNAME_PUBLIC_KEY_PATH = "treehole_demo_public.pem"
 
 # 推送通知
 # Leave APNS_KEY_PATH empty to disable APNS

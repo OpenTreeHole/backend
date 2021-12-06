@@ -145,7 +145,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    email = models.CharField(max_length=400, unique=True)
+    email = models.TextField(unique=True)  # RSA encrypted email
+    identifier = models.CharField(max_length=128, null=True)  # sha512 of email
     joined_time = models.DateTimeField(auto_now_add=True)
     nickname = models.CharField(max_length=32, blank=True)
     favorites = models.ManyToManyField(Hole, related_name='favored_by', blank=True)
@@ -154,6 +155,7 @@ class User(AbstractBaseUser):
     push_notification_tokens = models.JSONField(default=default_push_notification_tokens)
 
     objects = UserManager()
+
     USERNAME_FIELD = 'email'
 
     @property
