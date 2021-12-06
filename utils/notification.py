@@ -2,6 +2,7 @@ import collections
 
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
+from apns2.payload import PayloadAlert
 from asgiref.sync import async_to_sync
 from celery import shared_task
 from channels.layers import get_channel_layer
@@ -45,6 +46,25 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             }
         )
 
+    def _generate_subtitle(data, code: str):
+        """
+        生成消息的副标题
+        Args:
+            data: 消息数据
+            code: 消息类型
+
+        Returns: 副标题
+        """
+        try:
+            if code == 'mention' or code == 'favorite' or code == 'modify':
+                # Data is Floor
+                return f"{data['anonyname']}：{data['content']}"
+            elif code == 'report':
+                # Data is Report
+                return f"内容：{data['floor']['content']}，理由：{data['reason']}"
+        except Exception:
+            return None
+
     if not user_id:
         return
     # 创建对象
@@ -54,7 +74,6 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     payload = MessageSerializer(instance).data
     # 发送 websocket 通知
     _send_websocket_message_to_user(instance.user_id, payload)
-
     # 发送 APNS 通知
     if APNS:
         # 准备数据
@@ -62,9 +81,9 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         apns_user_token_record = {}
         user = instance.user
         apns_payload = APNsPayload(
-            alert=instance.message,
+            alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
             sound="default",
-            badge=1,
+            # badge=1,
             thread_id=instance.code,
             custom=payload
         )

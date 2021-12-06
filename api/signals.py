@@ -58,10 +58,9 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
         mentioned: [<Floor: 被提及的帖子>]
         **kwargs:
     """
-    print(mentioned)
     for floor in mentioned:
         if 'mention' in floor.user.config['notify']:
-            message = f'你在树洞#{floor.hole_id} 的帖子#{floor.id} 被提及了'
+            message = f'你在树洞#{floor.hole_id}的帖子#{floor.id}被引用了'
             data = FloorSerializer(instance, context={"user": floor.user}).data
             send_notifications.delay(floor.user_id, message, data, 'mention')
 
@@ -71,7 +70,7 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
 def notify_when_favorites_updated(sender, instance, created, **kwargs):
     if created:
         for user in instance.hole.favored_by.filter(config__notify__icontains='favorite'):
-            message = f'你收藏的{instance.hole} 被回复了{instance.id}'
+            message = f'你收藏的树洞{instance.hole}有新回复'
             data = FloorSerializer(instance, context={"user": user}).data
             send_notifications.delay(user.id, message, data, 'favorite')
 
@@ -83,12 +82,12 @@ def notify_when_reported(sender, instance, created, **kwargs):
     if created:
         data = ReportSerializer(instance).data
         if 'report' in floor.user.config['notify']:
-            message = f'你被举报了{instance.id}'
+            message = f'你的帖子{instance.hole}({instance.floor})被举报了'
             send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
         queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(timezone.utc).isoformat()).values_list('id', flat=True)
         for admin_id in list(queryset):
-            message = f'{floor.user}被举报了{instance.id}'
+            message = f'{floor.user}的树洞{instance.hole}({instance.floor})被举报了'
             send_notifications.delay(admin_id, message, data, 'report')
 
 
@@ -105,6 +104,6 @@ def notify_when_permission_changed(sender, instance, **kwargs):
 # 用户帖子被修改后发出通知
 @receiver(modified_by_admin, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
-    message = '你的帖子被修改了'
+    message = f'你的帖子{instance}被修改了'
     data = FloorSerializer(instance, context={"user": instance.user}).data
     send_notifications.delay(instance.user_id, message, data, 'modify')
