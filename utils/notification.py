@@ -12,6 +12,17 @@ from api.serializers import MessageSerializer
 
 # APNS global definition
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
+APNS = None
+if settings.APNS_KEY_PATH:
+    try:
+        APNS = APNsClient(
+            settings.APNS_KEY_PATH,
+            use_sandbox=(settings.HOLE_ENV != "production"),
+            use_alternative_port=settings.APNS_USE_ALTERNATIVE_PORT
+        )
+        print('APNS Client Initialized')
+    except Exception as e:
+        print(e)
 
 
 @shared_task
@@ -45,8 +56,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     _send_websocket_message_to_user(instance.user_id, payload)
 
     # 发送 APNS 通知
-    apns = bool(settings.APNS_KEY_PATH)
-    if apns:
+    if APNS:
         # 准备数据
         apns_notifications = []
         apns_user_token_record = {}
@@ -63,11 +73,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_device]))
             apns_user_token_record.update({token_dict[apns_device]: user})
         # 发送数据
-        response = APNsClient(
-            settings.APNS_KEY_PATH,
-            use_sandbox=(settings.HOLE_ENV != "production"),
-            use_alternative_port=settings.APNS_USE_ALTERNATIVE_PORT
-        ).send_notification_batch(
+        response = APNS.send_notification_batch(
             notifications=apns_notifications,
             topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS
         )
