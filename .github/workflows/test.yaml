@@ -6,7 +6,7 @@ on:
       - master
       - dev
     types:
-      - ready_for_review
+      - opened
 
 env:
   APP_NAME: open_tree_hole_backend
