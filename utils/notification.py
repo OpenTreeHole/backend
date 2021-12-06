@@ -58,11 +58,11 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         try:
             if code == 'mention' or code == 'favorite' or code == 'modify':
                 # Data is Floor
-                return data['shadow_text']
+                return f"{data['anonyname']}：{data['content']}"
             elif code == 'report':
                 # Data is Report
-                return f"内容：{data['floor']['shadow_text']}，理由：{data['reason']}"
-        finally:
+                return f"内容：{data['floor']['content']}，理由：{data['reason']}"
+        except Exception:
             return None
 
     if not user_id:
@@ -74,7 +74,6 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     payload = MessageSerializer(instance).data
     # 发送 websocket 通知
     _send_websocket_message_to_user(instance.user_id, payload)
-
     # 发送 APNS 通知
     if APNS:
         # 准备数据

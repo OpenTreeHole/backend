@@ -58,7 +58,6 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
         mentioned: [<Floor: 被提及的帖子>]
         **kwargs:
     """
-    print(mentioned)
     for floor in mentioned:
         if 'mention' in floor.user.config['notify']:
             message = f'你在树洞#{floor.hole_id}的帖子#{floor.id}被引用了'
