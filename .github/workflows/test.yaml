@@ -1,21 +1,19 @@
-name: build
+name: test
 
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+  pull_request:
+    branches:
+      - master
+      - dev
 
 env:
   APP_NAME: open_tree_hole_backend
   TEST_TAG: app:test
 
 jobs:
-  test_and_build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Get tag version
-        id: tag
-        run: echo "::set-output name=tag::${GITHUB_REF#refs/*/}"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -32,11 +30,3 @@ jobs:
           tags: ${{ env.TEST_TAG }}
       - name: Test
         run: docker run --rm ${{ env.TEST_TAG }} test
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:${{ steps.tag.outputs.tag }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:latest
