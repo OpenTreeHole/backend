@@ -3,7 +3,7 @@ name: dev build
 on:
   push:
     branches:
-      - dev
+      - auth
   pull_request:
     branches:
       - dev
