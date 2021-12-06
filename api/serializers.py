@@ -234,7 +234,7 @@ class HoleSerializer(serializers.ModelSerializer):
         def _inner_to_representation(self, instance):
             data = super().to_representation(instance)
             user = self.context.get('user')
-            prefetch_length = self.context.get('prefetch_length', 1)
+            prefetch_length = self.context.get('prefetch_length', settings.FLOOR_PREFETCH_LENGTH)
             if not user:
                 print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
             else:
