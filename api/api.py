@@ -570,9 +570,9 @@ class MessagesApi(APIView):
             if not_read:
                 query_set = query_set.filter(has_read=False)
             if start_time:
-                query_set = query_set.filter(time_created__gt=start_time)
-
-            serializer = MessageSerializer(query_set, many=True)
+                query_set = query_set.filter(time_created__lt=start_time)
+            length = settings.FLOOR_PREFETCH_LENGTH
+            serializer = MessageSerializer(query_set[:length], many=True)
             return Response(serializer.data)
 
     def put(self, request, **kwargs):
