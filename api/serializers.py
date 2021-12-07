@@ -65,7 +65,6 @@ class RegisterSerializer(EmailSerializer):
         verification = data['verification']
         if not cache.get(email) or not cache.get(email) == verification:
             raise serializers.ValidationError('验证码错误')
-        cache.delete(email)
         return data
 
     def create(self, validated_data):
@@ -75,6 +74,7 @@ class RegisterSerializer(EmailSerializer):
         if User.objects.filter(identifier=many_hashes(email)).exists():
             raise BadRequest(detail='该用户已注册！如果忘记密码，请使用忘记密码功能找回')
         user = User.objects.create_user(email=email, password=password)
+        cache.delete(email)  # 注册成功后验证码失效
         return user
 
     def update(self, instance, validated_data):
