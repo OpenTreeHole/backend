@@ -77,6 +77,7 @@ class VerifyApi(APIView):
         serializer = EmailSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('email')
 
         if method == "email":
             # 设置验证码并发送验证邮件
@@ -90,15 +91,17 @@ class VerifyApi(APIView):
                 send_email.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
                     content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
-                    receivers=[email]
+                    receivers=[email],
+                    uuid=uuid
                 )
             else:  # 用户存在，重置密码
                 send_email.delay(
                     subject=f'{settings.SITE_NAME} 重置密码',
                     content=f'您正在重置密码，{base_content}',
-                    receivers=[email]
+                    receivers=[email],
+                    uuid=uuid
                 )
-            return Response({'message': '验证邮件已发送，请查收'}, 202)
+            return Response({'message': '处理中'}, 202)
         elif method == "apikey":
             apikey = request.query_params.get("apikey")
             check_register = request.query_params.get("check_register")
@@ -140,6 +143,7 @@ class EmailApi(APIView):
         serializer = BaseEmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('uuid')
 
         if kwargs.get('type') == 'password':
             password = request.data.get('password')
@@ -152,9 +156,10 @@ class EmailApi(APIView):
                     f'\r\n\r\n{password}\r\n\r\n'
                     '提示：服务器中仅存储加密后的密码，无须担心安全问题'
                 ),
-                receivers=[email]
+                receivers=[email],
+                uuid=uuid
             )
-            return Response({'message': '已发送邮件'}, 202)
+            return Response({'message': '处理中'}, 202)
         else:
             raise Http404()
 
@@ -540,7 +545,7 @@ class ImagesApi(APIView):
 
         # 准备数据
         date_str = datetime.now().strftime('%Y-%m-%d')
-        uid = uuid.uuid1()
+        uid = uuid.uuid4()
         file_type = mime.split('/')[1]
         upload_url = f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{file_type}'
         headers = {
@@ -551,10 +556,10 @@ class ImagesApi(APIView):
             'message': f'upload image by user {request.user.pk}',
             'branch': settings.GITHUB_BRANCH,
         }
-        post_image_to_github.delay(url=upload_url, headers=headers, body=body)
+        post_image_to_github.delay(url=upload_url, headers=headers, body=body, user_id=request.user.id)
 
         result_url = f'https://cdn.jsdelivr.net/gh/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}@{settings.GITHUB_BRANCH}/{date_str}/{uid}.{file_type}'
-        return Response({'url': result_url, 'message': '图片已上传'}, 202)
+        return Response({'url': result_url, 'message': '处理中'}, 202)
 
 
 class MessagesApi(APIView):

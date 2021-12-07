@@ -33,24 +33,28 @@ DATABASES = {
     }
 }
 
-# 开发环境使用本地内存作为缓存
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+if USE_REDIS_IN_DEV:
+    # noinspection PyUnresolvedReferences
+    from .production import CACHES, CHANNEL_LAYERS, CELERY_BROKER_URL, CELERY_RESULT_BACKEND
+else:
+    # 开发环境使用本地内存作为缓存
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
     }
-}
 
-# channels 通道层，使用内存
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    # channels 通道层，使用内存
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        }
     }
-}
 
-# celery 使用 sqlite
-sqlite3.connect('celery.sqlite3')
-CELERY_BROKER_URL = 'sqla+sqlite:///celery.sqlite3'
+    # celery 使用 sqlite
+    sqlite3.connect('celery.sqlite3')
+    CELERY_BROKER_URL = 'sqla+sqlite:///celery.sqlite3'
 
 # 开发环境邮件发送至控制台
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

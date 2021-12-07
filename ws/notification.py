@@ -1,42 +1,34 @@
-import json
+import uuid
 
 from channels.db import database_sync_to_async
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from api.models import Message
 from api.serializers import MessageSerializer
+from ws.utils import MyJsonWebsocketConsumer
 
 
-class NotificationConsumer(AsyncJsonWebsocketConsumer):
+class NotificationConsumer(MyJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = None
 
-    async def send_json(self, content, close=False):
-        """
-        unicode 编码 json 并发给客户端
-        """
-        await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
-
     async def connect(self):
+        await self.accept()
         self.user = self.scope["user"]
-        # 仅允许已登录用户
         if self.user.is_authenticated:
-            await self.accept()
             await self.channel_layer.group_add(f'user-{self.user.id}', self.channel_name)
             await self.send_json({'message': '未读消息'})
             for message in await get(self.user):
                 await self.send_json(message)
         else:
-            await self.close()
-
-    async def disconnect(self, close_code):
-        pass
-
-    async def notification(self, event):
-        await self.send_json(event['content'])
+            uid = str(uuid.uuid4())
+            await self.send_json({'uuid': uid})
+            await self.channel_layer.group_add(uid, self.channel_name)
 
     async def receive_json(self, content, **kwargs):
+        if not self.user.is_authenticated:
+            return
+        
         action = content.get('action', '')
         id = content.get('id')
         unread = content.get('unread', True)

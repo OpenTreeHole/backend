@@ -132,13 +132,15 @@ GITHUB_REPO = 'images'
 GITHUB_BRANCH = 'master'
 
 # 足够长的密码，供 Django 安全机制
-SECRET_KEY = str(uuid.uuid1())
+SECRET_KEY = str(uuid.uuid4())
 
 # 注册用 API Key (Seed)
 REGISTER_API_KEY_SEED = "abcdefg"
 
 # 用户名加密公钥文件(PEM)路径
 USERNAME_PUBLIC_KEY_PATH = "treehole_demo_public.pem"
+
+USE_REDIS_IN_DEV = False  # 开发环境中使用 redis
 
 # 推送通知
 # Leave APNS_KEY_PATH empty to disable APNS
