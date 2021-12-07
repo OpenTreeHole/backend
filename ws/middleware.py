@@ -20,11 +20,11 @@ def find_token_in_headers(headers):
             return header[1].decode().split(' ')[-1]
 
 
-def find_token_in_query_string(query_string):
+def find_in_query_string(query_string, name='token'):
     params = query_string.decode().split('&')
     for param in params:
-        if param.startswith('token='):
-            return param.replace('token=', '')
+        if param.startswith(f'{name}='):
+            return param.replace(f'{name}=', '')
 
 
 class TokenAuthMiddleware(BaseMiddleware):
@@ -33,7 +33,7 @@ class TokenAuthMiddleware(BaseMiddleware):
 
     async def __call__(self, scope, receive, send):
         try:
-            token_key = find_token_in_headers(scope['headers']) or find_token_in_query_string(scope['query_string'])
+            token_key = find_token_in_headers(scope['headers']) or find_in_query_string(scope['query_string'])
         except ValueError:
             token_key = None
         scope['user'] = AnonymousUser() if token_key is None else await get_user(token_key)

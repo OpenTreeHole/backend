@@ -1,22 +1,14 @@
-import json
-
 from channels.db import database_sync_to_async
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
 
 from api.models import Message
 from api.serializers import MessageSerializer
+from ws.utils import MyJsonWebsocketConsumer
 
 
-class NotificationConsumer(AsyncJsonWebsocketConsumer):
+class NotificationConsumer(MyJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = None
-
-    async def send_json(self, content, close=False):
-        """
-        unicode 编码 json 并发给客户端
-        """
-        await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
 
     async def connect(self):
         self.user = self.scope["user"]
@@ -29,12 +21,6 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
                 await self.send_json(message)
         else:
             await self.close()
-
-    async def disconnect(self, close_code):
-        pass
-
-    async def notification(self, event):
-        await self.send_json(event['content'])
 
     async def receive_json(self, content, **kwargs):
         action = content.get('action', '')
