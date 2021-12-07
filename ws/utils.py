@@ -10,5 +10,5 @@ class MyJsonWebsocketConsumer(AsyncJsonWebsocketConsumer):
         """
         await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
 
-    async def notification(self, event):
+    async def on_send(self, event):
         await self.send_json(event['content'])

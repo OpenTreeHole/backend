@@ -41,7 +41,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         async_to_sync(channel_layer.group_send)(
             f'user-{user_id}',  # Channels 组名称
             {
-                "type": "notification",
+                "type": "on_send",
                 "content": content,
             }
         )
