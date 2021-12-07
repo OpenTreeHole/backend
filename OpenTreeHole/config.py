@@ -7,9 +7,11 @@ import uuid
 from pathlib import Path
 
 SITE_NAME = 'Open Tree Hole'  # 网站名称
+lower_site_name = SITE_NAME.replace(' ', '').lower()
+HOST = f'www.{lower_site_name}.com'  # 网站域名
 TZ = "Asia/Shanghai"  # 时区
 LANGUAGE = "zh-Hans"  # 语言代码
-ALLOW_CONNECT_HOSTS = ['opentreehole.org']  # 允许连接的域名
+ALLOW_CONNECT_HOSTS = [HOST]  # 允许连接的域名
 EMAIL_WHITELIST = ["test.com"]  # 允许注册树洞的邮箱域名
 MIN_PASSWORD_LENGTH = 8  # 允许的最短用户密码长度
 VALIDATION_CODE_EXPIRE_TIME = 5  # 验证码失效时间（分钟）
@@ -125,7 +127,7 @@ MAX_IMAGE_SIZE = 20  # 最大上传图片大小（MB）
 
 # 采用 Github 图床，具体可参考 https://gitnoteapp.com/zh/extensions/github.html
 GITHUB_OWENER = 'OpenTreeHole'
-GITHUB_TOKEN = ''
+GITHUB_TOKEN = '123456'
 GITHUB_REPO = 'images'
 GITHUB_BRANCH = 'master'
 
