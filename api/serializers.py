@@ -37,6 +37,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class BaseEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
+    uuid = serializers.CharField(required=False)
 
     def create(self, validated_data):
         pass

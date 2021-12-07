@@ -1,3 +1,5 @@
+import uuid
+
 from channels.db import database_sync_to_async
 
 from api.models import Message
@@ -11,16 +13,17 @@ class NotificationConsumer(MyJsonWebsocketConsumer):
         self.user = None
 
     async def connect(self):
+        await self.accept()
         self.user = self.scope["user"]
-        # 仅允许已登录用户
         if self.user.is_authenticated:
-            await self.accept()
             await self.channel_layer.group_add(f'user-{self.user.id}', self.channel_name)
             await self.send_json({'message': '未读消息'})
             for message in await get(self.user):
                 await self.send_json(message)
         else:
-            await self.close()
+            uid = str(uuid.uuid4())
+            await self.send_json({'uuid': uid})
+            await self.channel_layer.group_add(uid, self.channel_name)
 
     async def receive_json(self, content, **kwargs):
         action = content.get('action', '')

@@ -13,6 +13,7 @@ from django.db.models import F
 
 from OpenTreeHole.celery import app
 from api.models import Hole
+from ws.utils import send_websocket_message_to_group
 
 
 @shared_task
@@ -22,7 +23,7 @@ def hello_world():
 
 
 @shared_task
-def send_email(subject: str, content: str, receivers: list[str]) -> str:
+def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> dict:
     try:
         send_mail(
             subject=subject,
@@ -32,20 +33,31 @@ def send_email(subject: str, content: str, receivers: list[str]) -> str:
             fail_silently=False,
         )
     except SMTPException as e:
-        return f'邮件发送错误，收件人：{receivers}，错误信息：{e}'
+        result = {
+            'message': f'邮件发送错误，收件人：{receivers}，错误信息：{e}',
+            'success': False
+        }
     else:
-        return '邮件发送成功！'
+        result = {
+            'message': '邮件发送成功',
+            'success': True
+        }
+    if uuid:
+        send_websocket_message_to_group(uuid, result)
+    return result
 
 
 @shared_task
-def post_image_to_github(url, headers, body):
+def post_image_to_github(url: str, headers: dict, body: dict, user_id: int) -> dict:
     proxies = os.environ.get("HTTP_PROXY")
     with httpx.Client(proxies=proxies) as client:
         r = client.put(url, headers=headers, json=body)
     if r.status_code == 201:
-        return '上传成功'
+        result = {'message': '上传成功', 'success': True}
     else:
-        return '上传失败', r.json()
+        result = {'message': '上传失败', 'data': r.json(), 'success': False}
+    send_websocket_message_to_group(f'user-{user_id}', result)
+    return result
 
 
 @app.task

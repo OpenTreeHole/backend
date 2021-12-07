@@ -189,7 +189,7 @@ class VerifyTests(APITestCase):
         # 新用户校验
         r = self.client.get("/verify/email", {"email": self.email})
         self.assertEqual(r.status_code, 202)
-        self.assertIn('邮件', r.json()['message'])
+        self.assertIn('message', r.json())
         # 验证码为六位字符串
         code = cache.get(self.email)
         self.assertEqual(type(code), str)

@@ -140,6 +140,8 @@ REGISTER_API_KEY_SEED = "abcdefg"
 # 用户名加密公钥文件(PEM)路径
 USERNAME_PUBLIC_KEY_PATH = "treehole_demo_public.pem"
 
+USE_REDIS_IN_DEV = False  # 开发环境中使用 redis
+
 # 推送通知
 # Leave APNS_KEY_PATH empty to disable APNS
 APNS_KEY_PATH = ""  # NOTE: The APNS KEY must contain both the certificate AND the private key, in PEM format

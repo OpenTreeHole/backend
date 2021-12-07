@@ -3,15 +3,14 @@ import collections
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
 from apns2.payload import PayloadAlert
-from asgiref.sync import async_to_sync
 from celery import shared_task
-from channels.layers import get_channel_layer
 from django.conf import settings
 
 from api.models import Message
 from api.serializers import MessageSerializer
-
 # APNS global definition
+from ws.utils import send_websocket_message_to_group
+
 Notification = collections.namedtuple('Notification', ['token', 'payload'])
 APNS = None
 if settings.APNS_KEY_PATH:
@@ -28,24 +27,6 @@ if settings.APNS_KEY_PATH:
 
 @shared_task
 def send_notifications(user_id: int, message: str, data=None, code=''):
-    def _send_websocket_message_to_user(user_id: int, content: dict):
-        """
-        向用户发送 WebSocket 消息
-        Args:
-            user_id: 用户 id
-            content: 消息内容
-
-        Returns: None
-        """
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            f'user-{user_id}',  # Channels 组名称
-            {
-                "type": "on_send",
-                "content": content,
-            }
-        )
-
     def _generate_subtitle(data, code: str):
         """
         生成消息的副标题
@@ -73,7 +54,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     instance = Message.objects.create(user_id=user_id, message=message, data=data, code=code)
     payload = MessageSerializer(instance).data
     # 发送 websocket 通知
-    _send_websocket_message_to_user(instance.user_id, payload)
+    send_websocket_message_to_group(f'user-{user_id}', payload)
     # 发送 APNS 通知
     if APNS:
         # 准备数据
