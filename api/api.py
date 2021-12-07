@@ -540,7 +540,7 @@ class ImagesApi(APIView):
 
         # 准备数据
         date_str = datetime.now().strftime('%Y-%m-%d')
-        uid = uuid.uuid1()
+        uid = uuid.uuid4()
         file_type = mime.split('/')[1]
         upload_url = f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{file_type}'
         headers = {

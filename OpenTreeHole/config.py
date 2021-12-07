@@ -132,7 +132,7 @@ GITHUB_REPO = 'images'
 GITHUB_BRANCH = 'master'
 
 # 足够长的密码，供 Django 安全机制
-SECRET_KEY = str(uuid.uuid1())
+SECRET_KEY = str(uuid.uuid4())
 
 # 注册用 API Key (Seed)
 REGISTER_API_KEY_SEED = "abcdefg"
