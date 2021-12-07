@@ -35,8 +35,17 @@ class UserSerializer(serializers.ModelSerializer):
         return config
 
 
-class EmailSerializer(serializers.Serializer):
+class BaseEmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+    def create(self, validated_data):
+        pass
+
+    def update(self, instance, validated_data):
+        pass
+
+
+class EmailSerializer(BaseEmailSerializer):
 
     def validate_email(self, email):
         domain = email[email.find("@") + 1:]
@@ -44,12 +53,6 @@ class EmailSerializer(serializers.Serializer):
         if domain not in settings.EMAIL_WHITELIST:
             raise serializers.ValidationError('邮箱不在白名单内')
         return email
-
-    def create(self, validated_data):
-        pass
-
-    def update(self, instance, validated_data):
-        pass
 
 
 class RegisterSerializer(EmailSerializer):

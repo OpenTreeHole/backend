@@ -22,7 +22,7 @@ def hello_world():
 
 
 @shared_task
-def mail(subject, content, receivers):
+def send_email(subject: str, content: str, receivers: list[str]) -> str:
     try:
         send_mail(
             subject=subject,

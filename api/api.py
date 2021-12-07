@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.db import transaction
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -20,9 +21,9 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer, BaseEmailSerializer
 from api.signals import modified_by_admin, mention_to
-from api.tasks import mail, post_image_to_github
+from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
@@ -86,13 +87,13 @@ class VerifyApi(APIView):
                 '如果您意外地收到了此邮件，请忽略它'
             )
             if not User.objects.filter(identifier=many_hashes(email)).exists():  # 用户不存在，注册邮件
-                mail.delay(
+                send_email.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
                     content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
                     receivers=[email]
                 )
             else:  # 用户存在，重置密码
-                mail.delay(
+                send_email.delay(
                     subject=f'{settings.SITE_NAME} 重置密码',
                     content=f'您正在重置密码，{base_content}',
                     receivers=[email]
@@ -130,6 +131,32 @@ class RegisterApi(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "已重置密码"}, 200)
+
+
+class EmailApi(APIView):
+    throttle_scope = 'email'
+
+    def post(self, request, **kwargs):
+        serializer = BaseEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+
+        if kwargs.get('type') == 'password':
+            password = request.data.get('password')
+            if not password:
+                return Response({'message': 'password 字段不存在'}, 400)
+            send_email.delay(
+                subject=f'{settings.SITE_NAME} 密码存档',
+                content=(
+                    f'您已成功注册{settings.SITE_NAME}，您选择了随机设置密码，密码如下：'
+                    f'\r\n\r\n{password}\r\n\r\n'
+                    '提示：服务器中仅存储加密后的密码，无须担心安全问题'
+                ),
+                receivers=[email]
+            )
+            return Response({'message': '已发送邮件'}, 202)
+        else:
+            raise Http404()
 
 
 class DivisionsApi(APIView):

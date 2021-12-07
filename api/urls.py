@@ -19,7 +19,7 @@ from django.conf.urls import url
 from django.urls import path, include
 
 from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
-    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi
+    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -28,6 +28,7 @@ urlpatterns = [
     path('logout', logout),
     path("register", RegisterApi.as_view()),
     path("verify/<str:method>", VerifyApi.as_view()),
+    path('email/<str:type>', EmailApi.as_view()),
     path("holes", HolesApi.as_view()),
     path("holes/<int:hole_id>", HolesApi.as_view()),
     path('floors', FloorsApi.as_view()),

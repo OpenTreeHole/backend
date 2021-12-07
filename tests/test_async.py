@@ -40,3 +40,39 @@ class MessageTest(APITestCase):
         })
         self.assertEqual(r.status_code, 201)
         self.assertIn('message', r.json())
+
+
+class EmailTest(APITestCase):
+    def setUp(self):
+        basic_setup(self)
+
+    def test_wrong_email(self):
+        r = self.client.post('/email/password', {
+            'email': 'test',
+            'password': 123456,
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('email', r.json())
+
+    def test_wrong_path(self):
+        r = self.client.post('/email/path', {
+            'email': 'test@test.com',
+            'password': 123456,
+        })
+        self.assertEqual(r.status_code, 404)
+        self.assertIn('message', r.json())
+
+    def test_password_email(self):
+        r = self.client.post('/email/password', {
+            'email': 'test@test.com',
+            'password': 123456,
+        })
+        self.assertEqual(r.status_code, 202)
+        self.assertIn('message', r.json())
+
+    def test_no_password(self):
+        r = self.client.post('/email/password', {
+            'email': 'test@test.com',
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('message', r.json())
