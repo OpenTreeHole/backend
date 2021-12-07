@@ -26,6 +26,9 @@ class NotificationConsumer(MyJsonWebsocketConsumer):
             await self.channel_layer.group_add(uid, self.channel_name)
 
     async def receive_json(self, content, **kwargs):
+        if not self.user.is_authenticated:
+            return
+        
         action = content.get('action', '')
         id = content.get('id')
         unread = content.get('unread', True)
