@@ -753,7 +753,8 @@ def add_a_floor(request, hole, returns='floor'):
             hole_ids = list(map(lambda i: int(i), hole_ids))
             for id in hole_ids:
                 floor = Floor.objects.filter(hole_id=id).first()
-                mentions.append(floor)
+                if floor:
+                    mentions.append(floor)
         floor_ids = re.findall(r'##(\d+)', s)
         if floor_ids:
             floor_ids = list(map(lambda i: int(i), floor_ids))
