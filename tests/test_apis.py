@@ -444,6 +444,14 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.json()['data']['mention'], [])
 
+    def test_wrong_mention(self):
+        r = self.client.post('/floors', {
+            'content': '#1234567 ##7654321',
+            'hole_id': 1
+        })
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json()['data']['mention'], [])
+
     def test_get(self):
         r = self.client.get('/floors', {
             'hole_id': 1,
