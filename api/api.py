@@ -22,7 +22,7 @@ from rest_framework.views import APIView
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer, BaseEmailSerializer
-from api.signals import modified_by_admin, mention_to
+from api.signals import modified_by_admin, mention_to, new_penalty
 from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
@@ -702,9 +702,9 @@ class PenaltyApi(APIView):
     permission_classes = [AdminOnly]
 
     def post(self, request, **kwargs):
-        user_id = kwargs.get('user_id')
-        user = get_object_or_404(User, pk=user_id)
-        self.check_object_permissions(request, user)
+        self.check_object_permissions(request, request.user)
+        floor = get_object_or_404(Floor, pk=kwargs.get('floor_id'))
+        user = floor.user
 
         try:
             penalty_level = int(request.data.get('penalty_level'))
@@ -720,6 +720,8 @@ class PenaltyApi(APIView):
                 penalty_multiplier = 999
             new_penalty_date = datetime.now() + timedelta(days=int(user.permission['offense_count']) * penalty_multiplier)
             user.permission['silent'].update({division_id: new_penalty_date.isoformat()})
+
+            new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))
 
         user.save(update_fields=['permission'])
         serializer = UserSerializer(user)
