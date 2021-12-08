@@ -1,5 +1,4 @@
 import base64
-import random
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -25,6 +24,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
 from api.signals import modified_by_admin, mention_to
 from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
+from utils.name import random_name
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -749,13 +749,8 @@ def add_a_floor(request, hole, returns='floor'):
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
     if not anonyname:
-        while True:
-            anonyname = random.choice(settings.NAME_LIST)
-            if anonyname in hole.mapping.values():
-                pass
-            else:
-                hole.mapping[request.user.pk] = anonyname
-                break
+        anonyname = random_name(hole.mapping.values())
+        hole.mapping[request.user.pk] = anonyname
     hole.save()
 
     # 创建 floor 并增加 hole 的楼层数
