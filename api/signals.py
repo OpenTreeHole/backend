@@ -15,6 +15,7 @@ from utils.notification import send_notifications
 
 modified_by_admin = Signal(providing_args=['instance'])
 mention_to = Signal(providing_args=['instance', 'mentioned'])
+new_penalty = Signal(providing_args=['instance', 'penalty'])
 
 
 # 在创建用户后创建其 Token
@@ -107,3 +108,15 @@ def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
     message = f'你的帖子{instance}被修改了'
     data = FloorSerializer(instance, context={"user": instance.user}).data
     send_notifications.delay(instance.user_id, message, data, 'modify')
+
+
+# 用户被处罚后发送通知
+@receiver(new_penalty, sender=Floor)
+def notify_when_floor_modified_by_admin(sender, instance, penalty, **kwargs):
+    message = f'你因为帖子{instance}违规而被处罚'
+    data = {
+        "level": penalty[0],
+        "date": penalty[1],
+        "division_id": penalty[2],
+    }
+    send_notifications.delay(instance.user_id, message, data, 'penalty')
