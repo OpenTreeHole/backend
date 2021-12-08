@@ -1,6 +1,7 @@
 Pipfile.lock
 try.*
 *.sqlite3
+*.txt
 .idea
 
 data.json
