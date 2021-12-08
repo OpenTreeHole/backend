@@ -61,7 +61,7 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
     """
     for floor in mentioned:
         if 'mention' in floor.user.config['notify']:
-            message = f'你在树洞#{floor.hole_id}的帖子#{floor.id}被引用了'
+            message = f'你在树洞#{floor.hole_id}的帖子##{floor.id}被引用了'
             data = FloorSerializer(instance, context={"user": floor.user}).data
             send_notifications.delay(floor.user_id, message, data, 'mention')
 
@@ -83,12 +83,12 @@ def notify_when_reported(sender, instance, created, **kwargs):
     if created:
         data = ReportSerializer(instance).data
         if 'report' in floor.user.config['notify']:
-            message = f'你的帖子{instance.hole}({instance.floor})被举报了'
+            message = f'你的帖子#{instance.hole}(##{instance.floor})被举报了'
             send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
         queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(timezone.utc).isoformat()).values_list('id', flat=True)
         for admin_id in list(queryset):
-            message = f'{floor.user}的树洞{instance.hole}({instance.floor})被举报了'
+            message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor})被举报了'
             send_notifications.delay(admin_id, message, data, 'report')
 
 
@@ -105,7 +105,7 @@ def notify_when_permission_changed(sender, instance, **kwargs):
 # 用户帖子被修改后发出通知
 @receiver(modified_by_admin, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
-    message = f'你的帖子{instance}被修改了'
+    message = f'你的帖子##{instance}被修改了'
     data = FloorSerializer(instance, context={"user": instance.user}).data
     send_notifications.delay(instance.user_id, message, data, 'modify')
 
@@ -113,7 +113,7 @@ def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
 # 用户被处罚后发送通知
 @receiver(new_penalty, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, penalty, **kwargs):
-    message = f'你因为帖子{instance}违规而被处罚'
+    message = f'你因为帖子##{instance}违规而被处罚'
     data = {
         "level": penalty[0],
         "date": penalty[1],
