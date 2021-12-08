@@ -1,4 +1,5 @@
 import base64
+import re
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -20,7 +21,7 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, MentionSerializer, BaseEmailSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer
 from api.signals import modified_by_admin, mention_to, new_penalty
 from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
@@ -739,15 +740,32 @@ def add_a_floor(request, hole, returns='floor'):
     Returns:        floor or hole
 
     """
+
+    def _find_mentions(text: str) -> list[int]:
+        """
+        从文本中解析 mention
+        Returns:  [<floor.id>]
+        """
+        s = ' ' + text
+        hole_ids = re.findall(r'[^#]#(\d+)', s)
+        mentions = []
+        if hole_ids:
+            hole_ids = list(map(lambda i: int(i), hole_ids))
+            for id in hole_ids:
+                floor = Floor.objects.filter(hole_id=id).first()
+                mentions.append(floor)
+        floor_ids = re.findall(r'##(\d+)', s)
+        if floor_ids:
+            floor_ids = list(map(lambda i: int(i), floor_ids))
+            floors = Floor.objects.filter(id__in=floor_ids)
+            mentions += list(floors)
+        return mentions
+
     # 校验 content
     serializer = FloorSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     content = serializer.validated_data.get('content')
-    # 校验 mention
-    mention_serializer = MentionSerializer(data=request.data)
-    mention_serializer.is_valid(raise_exception=True)
-    mention = mention_serializer.validated_data.get('mention', [])
-
+    mentions = _find_mentions(content)
     # 获取匿名信息，如没有则随机选取一个，并判断有无重复
     anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
     if not anonyname:
@@ -757,6 +775,6 @@ def add_a_floor(request, hole, returns='floor'):
 
     # 创建 floor 并增加 hole 的楼层数
     floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
-    floor.mention.set(mention)
-    mention_to.send(sender=Floor, instance=floor, mentioned=mention)
+    floor.mention.set(mentions)
+    mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
     return hole if returns == 'hole' else floor

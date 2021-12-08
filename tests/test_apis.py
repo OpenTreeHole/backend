@@ -416,17 +416,17 @@ class FloorTests(APITestCase):
         basic_setup(self)
 
     def test_post(self):
-        hole = Hole.objects.get(pk=1)
-        mention = list(hole.floor_set.order_by('id')[:2].values_list('id', flat=True))
+        floor_id = Floor.objects.filter(hole_id=1)[2].id
+        mention_ids = [1, floor_id]
+        content = f'reply #1 ##{floor_id}'
         r = self.client.post('/floors', {
-            'content': CONTENT,
-            'hole_id': 1,
-            'mention': mention,
+            'content': content,
+            'hole_id': 1
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
-        floor = Floor.objects.get(content=CONTENT)
-        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention)
+        floor = Floor.objects.get(content=content)
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention_ids)
 
     def test_get(self):
         r = self.client.get('/floors', {
