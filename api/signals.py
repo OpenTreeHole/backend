@@ -71,7 +71,7 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
 def notify_when_favorites_updated(sender, instance, created, **kwargs):
     if created:
         for user in instance.hole.favored_by.filter(config__notify__icontains='favorite'):
-            message = f'你收藏的树洞{instance.hole}有新回复'
+            message = f'你收藏的树洞#{instance.hole_id}有新回复'
             data = FloorSerializer(instance, context={"user": user}).data
             send_notifications.delay(user.id, message, data, 'favorite')
 
