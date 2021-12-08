@@ -43,6 +43,9 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             elif code == 'report':
                 # Data is Report
                 return f"内容：{data['floor']['content']}，理由：{data['reason']}"
+            elif code == 'penalty':
+                # Data is Penalty
+                return f"被处罚分区ID：{data['division_id']}，处罚等级：{data['level']}，截止日期：{data['date']}"
         except Exception:
             return None
 

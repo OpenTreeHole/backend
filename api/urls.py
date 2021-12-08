@@ -46,7 +46,7 @@ urlpatterns = [
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
     path('penalty', PenaltyApi.as_view()),
-    path('penalty/<int:user_id>', PenaltyApi.as_view()),
+    path('penalty/<int:floor_id>', PenaltyApi.as_view()),
 ]
 
 if settings.HOLE_ENV == 'development':
