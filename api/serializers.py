@@ -176,8 +176,8 @@ class FloorSerializer(SimpleFloorSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
-        read_only_fields = ['floor_id', 'history', 'anonyname']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        read_only_fields = ['floor_id', 'anonyname']
 
     @staticmethod
     def get_queryset(queryset):
