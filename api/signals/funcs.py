@@ -5,17 +5,14 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models import F
 from django.db.models.signals import post_save, m2m_changed, pre_save
-from django.dispatch import receiver, Signal
+from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from api.models import Hole, Tag, Floor, Report
 from api.serializers import FloorSerializer, ReportSerializer
+from api.signals import modified_by_admin, mention_to, new_penalty
 from utils.apis import to_shadow_text
 from utils.notification import send_notifications
-
-modified_by_admin = Signal(providing_args=['instance'])
-mention_to = Signal(providing_args=['instance', 'mentioned'])
-new_penalty = Signal(providing_args=['instance', 'penalty'])
 
 
 # 在创建用户后创建其 Token

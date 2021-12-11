@@ -7,4 +7,4 @@ class ApiConfig(AppConfig):
     # 需要在此处导入信号模块
     def ready(self):
         # noinspection PyUnresolvedReferences
-        import api.signals
+        import api.signals.funcs

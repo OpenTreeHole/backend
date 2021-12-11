@@ -1,5 +1,4 @@
 import base64
-import re
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -21,11 +20,10 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer
-from api.signals import modified_by_admin, mention_to, new_penalty
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, FloorUpdateSerializer, HoleCreateSerializer
+from api.signals import modified_by_admin, new_penalty
 from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
-from utils.name import random_name
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -250,19 +248,13 @@ class HolesApi(APIView):
 
     @transaction.atomic
     def post(self, request):
-        serializer = HoleSerializer(data=request.data)
+        serializer = HoleCreateSerializer(data=request.data, context={'request_data': request.data, 'user': request.user})
         serializer.is_valid(raise_exception=True)
-        if not serializer.validated_data.get('tags'):
-            return Response({'message': 'tags 不能为空'}, 400)
         # 检查权限
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
 
-        hole = serializer.save()
-        hole = add_a_floor(request, hole, returns='hole')
-        request.user.favorites.add(hole)  # 自动收藏自己发的树洞
-
-        serializer = HoleSerializer(hole, context={"user": request.user})
+        serializer.save()
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     @transaction.atomic
@@ -324,51 +316,37 @@ class FloorsApi(APIView):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(add_a_floor(request, hole, returns='floor'), context={"user": request.user})
+        serializer = FloorSerializer(data=request.data, context={'user': request.user, 'hole': hole})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
     @transaction.atomic
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
-        content = request.data.get('content')
-        like = request.data.get('like')
-        fold = request.data.get('fold')
-        mention = request.data.get('mention')
-        anonyname = request.data.get('anonyname')
         floor = get_object_or_404(Floor, pk=floor_id)
 
-        if content and content.strip():
-            self.check_object_permissions(request, floor)
-            floor.history.append({
-                'content': floor.content,
-                'altered_by': request.user.pk,
-                'altered_time': datetime.now(timezone.utc).isoformat()
-            })
-            floor.content = content
-        if like:
-            # 点赞无需权限
-            if like == 'add' and request.user.pk not in floor.like_data:
-                floor.like_data.append(request.user.pk)
-            elif like == 'cancel' and request.user.pk in floor.like_data:
-                floor.like_data.remove(request.user.pk)
-            else:
-                pass
-            floor.like = len(floor.like_data)
-        if mention:
-            self.check_object_permissions(request, floor)
-            floor.mention.set(mention)
-        if fold:
-            self.check_object_permissions(request, floor)
-            floor.fold = fold
-        if anonyname and request.user.is_admin:
-            self.check_object_permissions(request, floor)
-            floor.anonyname = anonyname
+        serializer = FloorUpdateSerializer(data=request.data, instance=floor, context={"user": request.user})
+        serializer.is_valid(raise_exception=True)
 
-        floor.save()
+        # 检查权限
+        fields = serializer.validated_data.keys()
+        if 'like' in fields and len(fields) == 1:
+            # 只进行点赞操作则不检查权限
+            pass
+        elif 'anonyname' in fields:
+            # 要求属主和管理员
+            if not request.user.is_admin:
+                return Response(status=403)
+            self.check_object_permissions(request, floor)
+        else:
+            # 要求属主
+            self.check_object_permissions(request, floor)
+
+        floor = serializer.save()
         if request.user.is_admin and floor.user != request.user:
             modified_by_admin.send(sender=Floor, instance=floor)
-        serializer = FloorSerializer(floor, context={"user": request.user})
-        return Response(serializer.data)
+        return Response(FloorSerializer(floor, context={'user': request.user}).data)
 
     @transaction.atomic
     def delete(self, request, **kwargs):
@@ -727,55 +705,3 @@ class PenaltyApi(APIView):
         user.save(update_fields=['permission'])
         serializer = UserSerializer(user)
         return Response(serializer.data)
-
-
-def add_a_floor(request, hole, returns='floor'):
-    """
-    增加一条回复帖
-    Args:
-        request:
-        hole:       hole对象
-        returns:   指定返回值为 floor 或 hole
-
-    Returns:        floor or hole
-
-    """
-
-    def _find_mentions(text: str) -> list[int]:
-        """
-        从文本中解析 mention
-        Returns:  [<floor.id>]
-        """
-        s = ' ' + text
-        hole_ids = re.findall(r'[^#]#(\d+)', s)
-        mentions = []
-        if hole_ids:
-            hole_ids = list(map(lambda i: int(i), hole_ids))
-            for id in hole_ids:
-                floor = Floor.objects.filter(hole_id=id).first()
-                if floor:
-                    mentions.append(floor)
-        floor_ids = re.findall(r'##(\d+)', s)
-        if floor_ids:
-            floor_ids = list(map(lambda i: int(i), floor_ids))
-            floors = Floor.objects.filter(id__in=floor_ids)
-            mentions += list(floors)
-        return mentions
-
-    # 校验 content
-    serializer = FloorSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    content = serializer.validated_data.get('content')
-    mentions = _find_mentions(content)
-    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
-    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
-    if not anonyname:
-        anonyname = random_name(hole.mapping.values())
-        hole.mapping[request.user.pk] = anonyname
-    hole.save()
-
-    # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
-    floor.mention.set(mentions)
-    mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
-    return hole if returns == 'hole' else floor
