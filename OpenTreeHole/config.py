@@ -74,6 +74,7 @@ USE_REDIS_IN_DEV = False  # 开发环境中使用 redis
 # Leave APNS_KEY_PATH empty to disable APNS
 APNS_KEY_PATH = ""  # NOTE: The APNS KEY must contain both the certificate AND the private key, in PEM format
 APNS_USE_ALTERNATIVE_PORT = False
+MIPUSH_APP_SECRET = ""  # Leave blank to disable MiPush
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = "org.opentreehole.client"
 PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = "org.opentreehole.client"
 

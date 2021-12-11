@@ -1,4 +1,5 @@
 import collections
+import urllib.parse
 
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
@@ -6,8 +7,10 @@ from apns2.payload import PayloadAlert
 from celery import shared_task
 from django.conf import settings
 
+from OpenTreeHole.config import MIPUSH_APP_SECRET
 from api.models import Message
 from api.serializers import MessageSerializer
+import requests
 # APNS global definition
 from ws.utils import send_websocket_message_to_group
 
@@ -55,6 +58,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     if data is None:
         data = {}
     instance = Message.objects.create(user_id=user_id, message=message, data=data, code=code)
+    user = instance.user
     payload = MessageSerializer(instance).data
     # 发送 websocket 通知
     send_websocket_message_to_group(f'user-{user_id}', payload)
@@ -63,7 +67,6 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         # 准备数据
         apns_notifications = []
         apns_user_token_record = {}
-        user = instance.user
         apns_payload = APNsPayload(
             alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
             sound="default",
@@ -89,3 +92,27 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                         del user.push_notification_tokens['apns'][device]
                         break
                 user.save(update_fields=['push_notification_tokens'])
+
+        if MIPUSH_APP_SECRET:
+            response_json = requests.post("https://api.xmpush.xiaomi.com/v2/message/regid",
+                                          headers={"Authorization": f"key={MIPUSH_APP_SECRET}"}, data={
+                    "registration_id": ','.join(user.push_notification_tokens['mipush'].values()),
+                    "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
+                    "title": instance.message,
+                    "description": _generate_subtitle(data, code),
+                    "payload": urllib.parse.urlencode(data),
+                }).json()
+
+            # 清除过期token
+            try:
+                bad_ids = response_json['data']['bad_regids']
+                if bad_ids:
+                    for bad_id in bad_ids.split(','):
+                        for device in user.push_notification_tokens['mipush']:
+                            if user.push_notification_tokens['mipush'][device] == bad_id:
+                                del user.push_notification_tokens['mipush'][device]
+                                break
+                    user.save(update_fields=['push_notification_tokens'])
+            except KeyError:
+                pass
+
