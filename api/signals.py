@@ -40,13 +40,15 @@ def create_shadow_text(sender, instance, **kwargs):
     instance.shadow_text = to_shadow_text(instance.content)
 
 
-# 添加回复帖后执行任务
+# 添加 / 修改帖子后
 @receiver(post_save, sender=Floor)
 def after_adding_a_floor(sender, instance, created, **kwargs):
+    # 添加帖子后增加 reply 数
     if created:
         Hole.objects.filter(id=instance.hole_id).update(reply=F('reply') + 1)
-        cache_key = f'_cached-{instance.hole}'
-        cache.delete(cache_key)
+    # 修改帖子后清除缓存
+    cache_key = f'_cached-{instance.hole}'
+    cache.delete(cache_key)
 
 
 # 帖子被提及后通知用户
