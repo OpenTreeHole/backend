@@ -416,6 +416,7 @@ class FloorTests(APITestCase):
         basic_setup(self)
 
     def test_post(self):
+        old_reply = Hole.objects.get(id=1).reply
         floor_id = Floor.objects.filter(hole_id=1)[2].id
         mention_ids = [1, floor_id]
         content = f'reply #1 ##{floor_id}'
@@ -426,7 +427,14 @@ class FloorTests(APITestCase):
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
         floor = Floor.objects.get(content=content)
+        self.assertEqual(Hole.objects.get(id=1).reply, old_reply + 1)  # reply
+        # mention
+        new_mention_ids = list(map(lambda i: i['floor_id'], r.json()['data']['mention']))
+        self.assertEqual(new_mention_ids, mention_ids)
         self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention_ids)
+        # 清缓存
+        r = self.client.get('/holes')
+        self.assertEqual(r.json()[0]['floors']['last_floor']['floor_id'], floor.id)
 
     def test_wrong_mention(self):
         r = self.client.post('/floors', {
@@ -481,17 +489,16 @@ class FloorTests(APITestCase):
     def test_put(self):
         original_content = Floor.objects.get(pk=1).content
         r = self.client.put('/floors/1', {
-            'content': 'Modified',
+            'content': 'Modified replay ##1 ##2 ##3',
             'like': 'add',
-            'fold': ['fold1', 'fold2'],
-            'mention': [1, 2, 3]
+            'fold': ['fold1', 'fold2']
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['content'], 'Modified')
+        self.assertEqual(r.json()['content'], 'Modified replay ##1 ##2 ##3')
         self.assertEqual(r.json()['like'], 1)
         self.assertEqual(r.json()['liked'], True)
         floor = Floor.objects.get(pk=1)
-        self.assertEqual(floor.content, 'Modified')
+        self.assertEqual(floor.content, 'Modified replay ##1 ##2 ##3')
         self.assertEqual(floor.like, 1)
         self.assertIn(self.user.pk, floor.like_data)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
@@ -502,6 +509,21 @@ class FloorTests(APITestCase):
         r = self.client.put('/floors/1', {'like': 'cancel'})
         self.assertEqual(r.json()['like'], 0)
         self.assertEqual(r.json()['liked'], False)
+        # # 清缓存
+        # r = self.client.get('/holes')
+        # print(r.json()[0])
+        # self.assertEqual(r.json()[0]['floors']['first_floor']['floor_id'], 1)
+        # mention
+        floor_id = Floor.objects.filter(hole_id=1)[2].id
+        mention_ids = [1, floor_id]
+        content = f'reply #1 ##{floor_id}'
+        r = self.client.put('/floors/1', {
+            'content': content
+        })
+        floor = Floor.objects.get(content=content)
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention_ids)
+        new_mention_ids = list(map(lambda i: i['floor_id'], r.json()['mention']))
+        self.assertEqual(new_mention_ids, mention_ids)
 
     def test_delete(self):
         original_content = Floor.objects.get(pk=2).content

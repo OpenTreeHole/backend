@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 
 from django.conf import settings
@@ -8,9 +9,11 @@ from django.db.models import Case, When
 from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message
+from api.signals import mention_to
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
 from utils.exception import BadRequest
+from utils.name import random_name
 
 User = get_user_model()
 
@@ -174,11 +177,51 @@ class FloorSerializer(SimpleFloorSerializer):
     class Meta:
         model = Floor
         fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
-        read_only_fields = ['floor_id', 'anonyname', 'mention']
+        read_only_fields = ['floor_id', 'anonyname']
 
     @staticmethod
     def get_queryset(queryset):
         return queryset.prefetch_related('mention')
+
+    @staticmethod
+    def _find_mentions(text: str) -> list:
+        """
+        从文本中解析 mention
+        Returns:  [<Floor>]
+        """
+        s = ' ' + text
+        hole_ids = re.findall(r'[^#]#(\d+)', s)
+        mentions = []
+        if hole_ids:
+            hole_ids = list(map(lambda i: int(i), hole_ids))
+            for id in hole_ids:
+                floor = Floor.objects.filter(hole_id=id).first()
+                if floor:
+                    mentions.append(floor)
+        floor_ids = re.findall(r'##(\d+)', s)
+        if floor_ids:
+            floor_ids = list(map(lambda i: int(i), floor_ids))
+            floors = Floor.objects.filter(id__in=floor_ids)
+            mentions += list(floors)
+        return mentions
+
+    def create(self, validated_data):
+        content = validated_data.get('content', '')
+        mentions = self._find_mentions(content)
+        user = self.context.get('user')
+        hole = self.context.get('hole')
+        if not user or not hole:
+            raise BadRequest(detail='创建floor需要在context中提供user和hole')
+        # 获取匿名信息，如没有则随机选取一个，并判断有无重复
+        anonyname = hole.mapping.get(str(user.pk))  # 存在数据库中的字典里的数据类型都是 string
+        if not anonyname:
+            anonyname = random_name(hole.mapping.values())
+            hole.mapping[user.pk] = anonyname
+        hole.save()
+        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=user)
+        floor.mention.set(mentions)
+        mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
+        return floor
 
     def to_representation(self, instance):
         # floor 使用缓存效果不好
@@ -196,10 +239,47 @@ class FloorSerializer(SimpleFloorSerializer):
         return data
 
 
-class MentionSerializer(serializers.ModelSerializer):
+class FloorUpdateSerializer(FloorSerializer):
+    like = serializers.CharField(required=False)
+    content = serializers.CharField(required=False)
+    anonyname = serializers.CharField(required=False, max_length=16)
+
     class Meta:
         model = Floor
-        fields = ['mention']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        read_only_fields = ['floor_id']
+
+    def update(self, instance, validated_data):
+        user = self.context.get('user')
+        if not user:
+            raise BadRequest()
+
+        content = validated_data.get('content')
+        if content:
+            instance.history.append({
+                'content': instance.content,
+                'altered_by': user.pk,
+                'altered_time': datetime.now(timezone.utc).isoformat()
+            })
+            instance.content = content
+            mentions = self._find_mentions(content)
+            instance.mention.set(mentions)
+            mention_to.send(sender=Floor, instance=instance, mentioned=mentions)
+
+        like = validated_data.get('like')
+        if like:
+            if like == 'add' and user.pk not in instance.like_data:
+                instance.like_data.append(user.pk)
+            elif like == 'cancel' and user.pk in instance.like_data:
+                instance.like_data.remove(user.pk)
+            else:
+                pass
+            instance.like = len(instance.like_data)
+
+        instance.fold = validated_data.get('fold', instance.fold)
+        instance.anonyname = validated_data.get('anonyname', instance.anonyname)
+        instance.save()
+        return instance
 
 
 class HoleSerializer(serializers.ModelSerializer):
@@ -295,17 +375,6 @@ class HoleSerializer(serializers.ModelSerializer):
         else:
             return division_id
 
-    def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        division_id = validated_data.pop('division_id')
-        # 在添加 tag 前要保存 hole，否则没有id
-        hole = Hole.objects.create(division_id=division_id)
-        # 创建 tag 并添加至 hole
-        for tag_name in tags:
-            tag, created = Tag.objects.get_or_create(name=tag_name['name'])
-            hole.tags.add(tag)
-        return hole
-
     def update(self, instance, validated_data):
         tags = validated_data.get('tags')
         if tags:
@@ -317,6 +386,28 @@ class HoleSerializer(serializers.ModelSerializer):
         instance.view = validated_data.get('view', instance.view)
         instance.save()
         return instance
+
+
+class HoleCreateSerializer(HoleSerializer):
+    tags = TagSerializer(many=True)
+
+    def create(self, validated_data):
+        # 在添加外键前要保存 hole，否则没有id
+        hole = Hole.objects.create(division_id=validated_data.get('division_id'))
+        self.context.update({'hole': hole})
+        floor_serializer = FloorSerializer(
+            data=self.context.get('request_data'),
+            context=self.context
+        )
+        floor_serializer.is_valid(raise_exception=True)
+        floor_serializer.save()
+
+        # 创建 tag 并添加至 hole
+        for tag_name in validated_data.get('tags'):
+            tag, created = Tag.objects.get_or_create(name=tag_name['name'])
+            hole.tags.add(tag)
+        self.context.get('user').favorites.add(hole)  # 自动收藏自己发的树洞
+        return hole
 
 
 class ReportSerializer(serializers.ModelSerializer):
