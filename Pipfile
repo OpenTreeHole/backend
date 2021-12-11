@@ -19,6 +19,7 @@ markdown = "*"
 mysqlclient = "*"
 django = "~=3.1.13"
 pycryptodome = "*"
+requests = "*"
 
 [dev-packages]
 django-silk = "*"
