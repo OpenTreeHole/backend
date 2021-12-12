@@ -101,7 +101,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
-                        "payload": urllib.parse.urlencode(data),
+                        "payload": urllib.parse.urlencode({"data": data, "code": code}),
                     }).json()
 
                 # 清除过期token
