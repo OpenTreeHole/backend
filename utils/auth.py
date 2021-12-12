@@ -2,6 +2,7 @@
 注册、登录、用户管理
 """
 import base64
+import pyotp
 import hashlib
 import time
 
@@ -9,9 +10,11 @@ from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
 from django.conf import settings
 
+apikey_verifier_totp = pyotp.TOTP(str(base64.b32encode(bytearray(settings.REGISTER_API_KEY_SEED, 'ascii')).decode('utf-8')), digest=hashlib.sha256, interval=5, digits=16)
+
 
 def check_api_key(key_to_check):
-    return key_to_check == settings.REGISTER_API_KEY_SEED
+    return apikey_verifier_totp.verify(key_to_check, valid_window=1)
 
 
 def get_key(key_file):

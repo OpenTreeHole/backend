@@ -20,6 +20,7 @@ mysqlclient = "*"
 django = "~=3.1.13"
 pycryptodome = "*"
 requests = "*"
+pyotp = "*"
 
 [dev-packages]
 django-silk = "*"
