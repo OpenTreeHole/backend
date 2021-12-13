@@ -1,4 +1,5 @@
 import collections
+import json
 import urllib.parse
 
 from apns2.client import APNsClient
@@ -23,9 +24,8 @@ if settings.APNS_KEY_PATH:
             use_sandbox=(settings.HOLE_ENV != "production"),
             use_alternative_port=settings.APNS_USE_ALTERNATIVE_PORT
         )
-        print('APNS Client Initialized')
     except Exception as e:
-        print(e)
+        print("[E] An error occurred in APNS subroutine initialization", e)
 
 
 @shared_task
@@ -101,7 +101,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
-                        "payload": urllib.parse.urlencode(data),
+                        "payload": urllib.parse.urlencode(json.dumps({"data": data, "code": code})),
                     }).json()
 
                 # 清除过期token
@@ -118,4 +118,3 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                     pass
             except Exception as e:
                 print("[E] An error occurred in MiPush subroutine:", e)
-
