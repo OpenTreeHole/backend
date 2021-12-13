@@ -691,14 +691,18 @@ class PenaltyApi(APIView):
         except (ValueError, TypeError):
             return Response(status=status.HTTP_400_BAD_REQUEST)
         if penalty_level > 0:
-            user.permission['offense_count'] += 1
-            penalty_multiplier = 1
-            if penalty_level == 2:
-                penalty_multiplier = 5
-            elif penalty_level == 3:
-                penalty_multiplier = 999
-            new_penalty_date = datetime.now(timezone.utc) + timedelta(days=int(user.permission['offense_count']) * penalty_multiplier)
-            user.permission['silent'].update({division_id: new_penalty_date.isoformat()})
+            penalty_multiplier = {
+                1: 1,
+                2: 5,
+                3: 999
+            }.get(penalty_level, 1)
+
+            offense_count = user.permission.get('offense_count', 0)
+            offense_count += 1
+            user.permission['offense_count'] = offense_count
+
+            new_penalty_date = datetime.now(timezone.utc) + timedelta(days=offense_count * penalty_multiplier)
+            user.permission['silent'][str(division_id)] = new_penalty_date.isoformat()
 
             new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))
 
