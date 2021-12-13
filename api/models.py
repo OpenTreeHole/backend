@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
@@ -47,7 +47,7 @@ class Floor(models.Model):
     history:
         'content': floor.content,                               # 原内容
         'altered_by': request.user.pk,                          # 修改者 id
-        'altered_time': datetime.now(timezone.utc).isoformat()  # 修改时间
+        'altered_time': datetime.now(settings.TIMEZONE).isoformat()  # 修改时间
     """
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
     content = models.TextField()
@@ -170,12 +170,12 @@ class User(AbstractBaseUser):
 
     @property
     def is_admin(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(settings.TIMEZONE)
         expire_time = parse_datetime(self.permission['admin'])
         return expire_time > now
 
     def is_silenced(self, division_id):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(settings.TIMEZONE)
         silent = self.permission['silent']
         division = str(division_id)  # JSON 序列化会将字典的 int 索引转换成 str
         if not silent.get(division):  # 未设置禁言，返回 False

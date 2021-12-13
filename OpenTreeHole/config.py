@@ -7,6 +7,9 @@ import uuid
 from json import JSONDecodeError
 from pathlib import Path
 
+import pytz
+from pytz import UnknownTimeZoneError
+
 
 def get_int_from_env(name: str, value: int) -> int:
     try:
@@ -52,6 +55,10 @@ TAG_COLORS = get_array_from_env(
 )
 # 时区配置
 TZ = os.environ.get('TZ', 'Asia/Shanghai')
+try:
+    TIMEZONE = pytz.timezone(TZ)
+except UnknownTimeZoneError:
+    TIMEZONE = pytz.timezone('utc')
 
 # 缓存配置
 HOLE_CACHE_SECONDS = get_int_from_env('HOLE_CACHE_SECONDS', 10 * 60)

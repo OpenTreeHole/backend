@@ -1,7 +1,7 @@
 import base64
 import secrets
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 import magic
 from django.conf import settings
@@ -357,7 +357,7 @@ class FloorsApi(APIView):
         floor.history.append({
             'content': floor.content,
             'altered_by': request.user.pk,
-            'altered_time': datetime.now(timezone.utc).isoformat()
+            'altered_time': datetime.now(settings.TIMEZONE).isoformat()
         })
         if request.user == floor.user:  # 作者删除
             floor.content = '该内容已被作者删除'
@@ -484,7 +484,7 @@ class ReportsApi(APIView):
             floor.history.append({
                 'content': floor.content,
                 'altered_by': request.user.pk,
-                'altered_time': datetime.now(timezone.utc).isoformat()
+                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
             })
             floor.content = delete_reason
             floor.deleted = True
@@ -492,7 +492,7 @@ class ReportsApi(APIView):
             permission = floor.user.permission
             current_time_str = permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
             current_time = parse_datetime(current_time_str)
-            expected_time = datetime.now(timezone.utc) + timedelta(days=request.data.get('silent'))
+            expected_time = datetime.now(settings.TIMEZONE) + timedelta(days=request.data.get('silent'))
             permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
             floor.user.save()
 
@@ -701,7 +701,7 @@ class PenaltyApi(APIView):
             offense_count += 1
             user.permission['offense_count'] = offense_count
 
-            new_penalty_date = datetime.now(timezone.utc) + timedelta(days=offense_count * penalty_multiplier)
+            new_penalty_date = datetime.now(settings.TIMEZONE) + timedelta(days=offense_count * penalty_multiplier)
             user.permission['silent'][str(division_id)] = new_penalty_date.isoformat()
 
             new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))

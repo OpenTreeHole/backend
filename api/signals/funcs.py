@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -85,7 +85,7 @@ def notify_when_reported(sender, instance, created, **kwargs):
             message = f'你的帖子#{instance.hole}(##{instance.floor})被举报了'
             send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
-        queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(timezone.utc).isoformat()).values_list('id', flat=True)
+        queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat()).values_list('id', flat=True)
         for admin_id in list(queryset):
             message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor})被举报了'
             send_notifications.delay(admin_id, message, data, 'report')

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timezone
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -259,7 +259,7 @@ class FloorUpdateSerializer(FloorSerializer):
             instance.history.append({
                 'content': instance.content,
                 'altered_by': user.pk,
-                'altered_time': datetime.now(timezone.utc).isoformat()
+                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
             })
             instance.content = content
             mentions = self._find_mentions(content)
@@ -300,7 +300,7 @@ class HoleSerializer(serializers.ModelSerializer):
     )
     start_time = serializers.DateTimeField(
         required=False, write_only=True,
-        default=lambda: datetime.now(timezone.utc)  # 使用函数返回值，否则指向的是同一个对象
+        default=lambda: datetime.now(settings.TIMEZONE)  # 使用函数返回值，否则指向的是同一个对象
     )
 
     class Meta:

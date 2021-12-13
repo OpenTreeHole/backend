@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -375,7 +375,7 @@ class HoleTests(APITestCase):
     def test_get_by_time(self):
         time.sleep(1)
         r = self.client.get('/holes', {
-            'start_time': datetime.now(timezone.utc).isoformat(),
+            'start_time': datetime.now(settings.TIMEZONE).isoformat(),
             'length': 3,
         })
         self.assertEqual(r.status_code, 200)
@@ -383,7 +383,7 @@ class HoleTests(APITestCase):
 
     def test_get_by_tag(self):
         r = self.client.get('/holes', {
-            'start_time': datetime.now(timezone.utc).isoformat(),
+            'start_time': datetime.now(settings.TIMEZONE).isoformat(),
             'length': 3,
             'tag': 'tag A1'
         })
@@ -708,7 +708,7 @@ class ReportTests(APITestCase):
         self.assertEqual(floor.deleted, True)
         self.assertEqual(floor.content, 'test delete')
         user = User.objects.get(identifier=many_hashes(USERNAME))
-        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
+        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(settings.TIMEZONE) < timedelta(days=3, minutes=1))
         r = self.client.get('/reports/1')
         self.assertEqual(r.json()['dealed_by'], self.admin.nickname)
 
