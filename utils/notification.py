@@ -1,7 +1,7 @@
 import collections
-import json
 import urllib.parse
 
+import requests
 from apns2.client import APNsClient
 from apns2.payload import Payload as APNsPayload
 from apns2.payload import PayloadAlert
@@ -11,7 +11,6 @@ from django.conf import settings
 from OpenTreeHole.config import MIPUSH_APP_SECRET
 from api.models import Message
 from api.serializers import MessageSerializer
-import requests
 # APNS global definition
 from ws.utils import send_websocket_message_to_group
 
@@ -70,7 +69,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         apns_payload = APNsPayload(
             alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
             sound="default",
-            # badge=1,
+            badge=1,
             thread_id=instance.code,
             custom=payload
         )
@@ -95,13 +94,15 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
 
         if MIPUSH_APP_SECRET:
             try:
-                response_json = requests.post("https://api.xmpush.xiaomi.com/v2/message/regid",
-                                              headers={"Authorization": f"key={MIPUSH_APP_SECRET}"}, data={
+                response_json = requests.post(
+                    "https://api.xmpush.xiaomi.com/v2/message/regid",
+                    headers={"Authorization": f"key={MIPUSH_APP_SECRET}"},
+                    data={
                         "registration_id": ','.join(user.push_notification_tokens['mipush'].values()),
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
-                        "payload": urllib.parse.urlencode(json.dumps({"data": data, "code": code})),
+                        "payload": urllib.parse.urlencode({"data": data, "code": code}),
                     }).json()
 
                 # 清除过期token
