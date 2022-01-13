@@ -87,7 +87,7 @@ def notify_when_reported(sender, instance, created, **kwargs):
         # 通知管理员
         queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat()).values_list('id', flat=True)
         for admin_id in list(queryset):
-            message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor})被举报了'
+            message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
             send_notifications.delay(admin_id, message, data, 'report')
 
 
