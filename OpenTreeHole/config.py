@@ -65,7 +65,7 @@ HOLE_CACHE_SECONDS = get_int_from_env('HOLE_CACHE_SECONDS', 10 * 60)
 FLOOR_CACHE_SECONDS = get_int_from_env('FLOOR_CACHE_SECONDS', 10 * 60)
 
 # 访问速率限制
-THROTTLE_BURST = os.environ.get('THROTTLE_BURST', '10/min')
+THROTTLE_BURST = os.environ.get('THROTTLE_BURST', '60/min')
 THROTTLE_SUSTAINED = os.environ.get('THROTTLE_SUSTAINED', '1000/day')
 THROTTLE_EMAIL = os.environ.get('THROTTLE_EMAIL', '30/day')
 THROTTLE_UPLOAD = os.environ.get('THROTTLE_UPLOAD', '30/day')
