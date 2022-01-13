@@ -6,9 +6,11 @@ WORKDIR /www/backend
 
 RUN apt update \
     && apt install -y default-libmysqlclient-dev python3-dev libmagic1 \
-    && pip3 install pipenv setuptools && ls /usr/local/lib/python3.9/site-packages/setuptools
+    && pip3 install pipenv
 
-RUN pipenv install && ls .venv/lib/python3.9/site-packages/setuptools
+RUN pipenv install \
+    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages
+
 COPY Pipfile /www/backend/
 
 RUN pipenv install --dev --skip-lock
