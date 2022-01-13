@@ -6,7 +6,7 @@ WORKDIR /www/backend
 
 RUN apt update \
     && apt install -y default-libmysqlclient-dev python3-dev libmagic1 \
-    && pip3 install pipenv setuptools
+    && pip3 install pipenv setuptools && ls /usr/local/lib/python3.9/site-packages/setuptools
 
 RUN pipenv install && ls .venv/lib/python3.9/site-packages/setuptools
 COPY Pipfile /www/backend/
