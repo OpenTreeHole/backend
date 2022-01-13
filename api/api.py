@@ -532,7 +532,7 @@ class ImagesApi(APIView):
         }
         body = {
             'content': base64.b64encode(image.read()).decode('utf-8'),
-            'message': f'upload image by user {request.user.pk}',
+            'message': f'upload image',
             'branch': settings.GITHUB_BRANCH,
         }
         post_image_to_github.delay(url=upload_url, headers=headers, body=body, user_id=request.user.id)
