@@ -6,7 +6,6 @@ WORKDIR /www/backend
 
 RUN apt update \
     && apt install -y default-libmysqlclient-dev python3-dev libmagic1 \
-    && pip3 install --upgrade setuptools \
     && pip3 install --no-cache-dir pipenv
 
 COPY Pipfile /www/backend/
