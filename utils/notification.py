@@ -9,7 +9,7 @@ from celery import shared_task
 from django.conf import settings
 
 from OpenTreeHole.config import MIPUSH_APP_SECRET
-from api.models import Message
+from api.models import Message, PushToken
 from api.serializers import MessageSerializer
 # APNS global definition
 from ws.utils import send_websocket_message_to_group
@@ -73,10 +73,8 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             thread_id=instance.code,
             custom=payload
         )
-        token_dict = user.push_notification_tokens['apns']
-        for apns_device in token_dict:
-            apns_notifications.append(Notification(payload=apns_payload, token=token_dict[apns_device]))
-            apns_user_token_record.update({token_dict[apns_device]: user})
+        for push_token in PushToken.objects.filter(user_id=user_id, service='apns'):
+            apns_notifications.append(Notification(payload=apns_payload, token=push_token['token']))
         # 发送数据
         response = APNS.send_notification_batch(
             notifications=apns_notifications,
@@ -85,12 +83,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         # 清除过期token
         for token in response:
             if response[token] == 'BadDeviceToken':
-                user = apns_user_token_record[token]
-                for device in user.push_notification_tokens['apns']:
-                    if user.push_notification_tokens['apns'][device] == token:
-                        del user.push_notification_tokens['apns'][device]
-                        break
-                user.save(update_fields=['push_notification_tokens'])
+                PushToken.objects.filter(user_id=user_id, token=token).delete()
 
         if MIPUSH_APP_SECRET:
             try:
@@ -98,7 +91,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                     "https://api.xmpush.xiaomi.com/v2/message/regid",
                     headers={"Authorization": f"key={MIPUSH_APP_SECRET}"},
                     data={
-                        "registration_id": ','.join(user.push_notification_tokens['mipush'].values()),
+                        "registration_id": ','.join(PushToken.objects.filter(user_id=user_id, device='mipush').values_list('token', flat=True)),
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
@@ -110,11 +103,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                     bad_ids = response_json['data']['bad_regids']
                     if bad_ids:
                         for bad_id in bad_ids.split(','):
-                            for device in user.push_notification_tokens['mipush']:
-                                if user.push_notification_tokens['mipush'][device] == bad_id:
-                                    del user.push_notification_tokens['mipush'][device]
-                                    break
-                        user.save(update_fields=['push_notification_tokens'])
+                            PushToken.objects.filter(user_id=user_id, token=bad_id).delete()
                 except KeyError:
                     pass
             except Exception as e:
