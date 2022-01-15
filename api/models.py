@@ -201,6 +201,13 @@ class Message(models.Model):
     def __str__(self):
         return self.message
 
+
+class PushToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    service = models.CharField(max_length=16)  # apns or mipush
+    device_id = models.CharField(max_length=128)
+    token = models.CharField(max_length=128)
+
 # class RegisteredEmail(models.Model):
 #     """
 #     The purpose of this model is to store all registered emails.

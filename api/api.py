@@ -18,9 +18,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, FloorUpdateSerializer, HoleCreateSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, FloorUpdateSerializer, HoleCreateSerializer, \
+    PushTokenSerializer
 from api.signals import modified_by_admin, new_penalty
 from api.tasks import send_email, post_image_to_github
 from utils.auth import check_api_key, many_hashes
@@ -654,27 +655,22 @@ class UsersApi(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
-    def post(self, request, **kwargs):
-        # This is (currently) used for Push notification token registration
-        user_id = kwargs.get('user_id')
-        if user_id:
-            user = get_object_or_404(User, pk=user_id)
-            self.check_object_permissions(request, user)
-        else:
-            user = request.user
 
-        if ('service' not in request.data) or (request.data['service'] != 'apns' and request.data['service'] != 'mipush') or ('token' not in request.data) or (
-                'device_id' not in request.data):
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+class PushTokensAPI(APIView):
+    def get(self, request):
+        tokens = PushToken.objects.filter(user=request.user)
+        return Response(PushTokenSerializer(tokens, many=True))
 
-        service = request.data['service']  # 'apns' or 'mipush'
-        token = request.data['token']
-        device_id = request.data['device_id']
+    def post(self, request):
+        serializer = PushTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, 201)
 
-        user.push_notification_tokens[service].update({device_id: token})
-        user.save(update_fields=['push_notification_tokens'])
-
-        return Response(status=status.HTTP_200_OK)
+    def delete(self, request):
+        device_id = request.data.get('device_id', '')
+        PushToken.objects.filter(user=request.user, device_id=device_id).delete()
+        return Response(None, 204)
 
 
 class PenaltyApi(APIView):

@@ -43,6 +43,7 @@ urlpatterns = [
     path('messages/<int:message_id>', MessagesApi.as_view()),
     path('users/<int:user_id>', UsersApi.as_view()),
     path('users', UsersApi.as_view()),
+    path('users/push-tokens', PenaltyApi.as_view()),
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
     path('penalty', PenaltyApi.as_view()),

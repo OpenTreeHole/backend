@@ -8,7 +8,7 @@ from django.core.cache import cache
 from django.db.models import Case, When
 from rest_framework import serializers
 
-from api.models import Division, Tag, Hole, Floor, Report, Message
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
 from api.signals import mention_to
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
@@ -36,6 +36,21 @@ class UserSerializer(serializers.ModelSerializer):
             if s not in config:
                 raise serializers.ValidationError(f'字段 {s} 不存在')
         return config
+
+
+class PushTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushToken
+        fields = ['service', 'device_id', 'token']
+
+    def validate_service(self, service):
+        li = ['apns', 'mipush']
+        if service not in li:
+            raise serializers.ValidationError(f'字段需在 {li} 中')
+        return service
+
+    def create(self, validated_data):
+        return PushToken.objects.create(**validated_data)
 
 
 class BaseEmailSerializer(serializers.Serializer):
