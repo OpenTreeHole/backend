@@ -5,12 +5,11 @@ ENV PIPENV_VENV_IN_PROJECT="enabled"
 WORKDIR /www/backend
 
 RUN apt update \
-    && apt install -y default-libmysqlclient-dev python3-dev libmagic1 \
+    && apt install -y default-libmysqlclient-dev python3-dev libmagic1 python3-distutils \
     && pip3 install pipenv
 
 RUN pipenv install \
-    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages \
-    && ls .venv/lib/python3.9/site-packages/_distutils_hack
+    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages
 
 COPY Pipfile /www/backend/
 
