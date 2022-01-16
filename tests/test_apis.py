@@ -8,7 +8,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Division, Tag, Hole, Floor, Report, Message
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
 from utils.auth import many_hashes
 
 User = get_user_model()
@@ -763,3 +763,32 @@ class MessageTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['message'], 'new')
         self.assertEqual(r.json()['has_read'], True)
+
+
+class PushTokenTests(APITestCase):
+    def setUp(self):
+        self.admin = None
+        self.user = None
+        basic_setup(self)
+        PushToken.objects.create(user=self.user, service='apns', device_id='1', token='a')
+        PushToken.objects.create(user=self.user, service='mipush', device_id='2', token='b')
+
+    def test_get(self):
+        r = self.client.get('/users/push-tokens')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), PushToken.objects.count())
+
+    def test_post(self):
+        data = {
+            'service': 'apns',
+            'device_id': '3',
+            'token': 'c'
+        }
+        r = self.client.post('/users/push-tokens', data=data)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json(), data)
+
+    def test_delete(self):
+        r = self.client.delete('/users/push-tokens', data={'device_id': '1'})
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(PushToken.objects.filter(device_id='1').exists(), False)

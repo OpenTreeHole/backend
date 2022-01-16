@@ -657,13 +657,19 @@ class UsersApi(APIView):
 
 
 class PushTokensAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         tokens = PushToken.objects.filter(user=request.user)
-        return Response(PushTokenSerializer(tokens, many=True))
+        service = request.query_params.get('service')
+        if service:
+            tokens = PushToken.objects.filter(service=service)
+        return Response(PushTokenSerializer(tokens, many=True).data)
 
     def post(self, request):
         serializer = PushTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        serializer.validated_data['user'] = request.user
         serializer.save()
         return Response(serializer.data, 201)
 

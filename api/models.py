@@ -112,6 +112,10 @@ def default_config():
     }
 
 
+def default_push_notification_tokens():
+    pass
+
+
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """
