@@ -668,23 +668,21 @@ class PushTokensAPI(APIView):
             tokens = PushToken.objects.filter(service=service)
         return Response(PushTokenSerializer(tokens, many=True).data)
 
-    def post(self, request):
-        serializer = PushTokenSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.validated_data['user'] = request.user
-        serializer.save()
-        return Response(serializer.data, 201)
-
     def put(self, request):
         device_id = request.data.get('device_id', '')
+        service = request.data.get('service', '')
+        token = request.data.get('token', '')
         push_token = PushToken.objects.filter(device_id=device_id, user=request.user).first()
         if not push_token:
-            raise Http404()
-        push_token.token = request.data.get('token', push_token.token)
-        push_token.service = request.data.get('service', push_token.service)
-        push_token.save()
+            push_token = PushToken.objects.create(device_id=device_id, service=service, token=token, user=request.user)
+            code = 201
+        else:
+            push_token.token = token or push_token.token
+            push_token.service = service or push_token.service
+            push_token.save()
+            code = 200
         serializer = PushTokenSerializer(push_token)
-        return Response(serializer.data, 200)
+        return Response(serializer.data, code)
 
     def delete(self, request):
         device_id = request.data.get('device_id', '')

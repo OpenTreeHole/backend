@@ -770,22 +770,33 @@ class PushTokenTests(APITestCase):
         self.admin = None
         self.user = None
         basic_setup(self)
+        PushToken.objects.create(user=self.admin, service='apns', device_id='0', token='x')
         PushToken.objects.create(user=self.user, service='apns', device_id='1', token='a')
         PushToken.objects.create(user=self.user, service='mipush', device_id='2', token='b')
 
     def test_get(self):
+        self.client.force_authenticate(user=self.admin)
         r = self.client.get('/users/push-tokens')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()), PushToken.objects.count())
+        self.assertEqual(len(r.json()), PushToken.objects.filter(user=self.admin).count())
 
-    def test_post(self):
+    def test_put(self):
         data = {
             'service': 'apns',
             'device_id': '3',
             'token': 'c'
         }
-        r = self.client.post('/users/push-tokens', data=data)
+        r = self.client.put('/users/push-tokens', data=data)
         self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json(), data)
+
+        data = {
+            'service': 'mipush',
+            'device_id': '3',
+            'token': 'd'
+        }
+        r = self.client.put('/users/push-tokens', data=data)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), data)
 
     def test_delete(self):
