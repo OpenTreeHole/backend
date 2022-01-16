@@ -18,3 +18,8 @@ def custom_exception_handler(exc, context):
 class BadRequest(APIException):
     status_code = 400
     default_detail = 'Invalid input.'
+
+
+class Forbidden(APIException):
+    status_code = 403
+    default_detail = 'Forbidden'

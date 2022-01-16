@@ -1,4 +1,3 @@
-import re
 from datetime import datetime
 
 from django.conf import settings
@@ -10,9 +9,10 @@ from rest_framework import serializers
 
 from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
 from api.signals import mention_to
+from utils.apis import find_mentions
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
-from utils.exception import BadRequest
+from utils.exception import BadRequest, Forbidden
 from utils.name import random_name
 
 User = get_user_model()
@@ -174,7 +174,7 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
         read_only_fields = ['floor_id', 'anonyname']
 
     def to_representation(self, instance):
@@ -191,38 +191,23 @@ class FloorSerializer(SimpleFloorSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
+        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
         read_only_fields = ['floor_id', 'history', 'anonyname']
 
     @staticmethod
     def get_queryset(queryset):
         return queryset.prefetch_related('mention')
 
-    @staticmethod
-    def _find_mentions(text: str) -> list:
-        """
-        从文本中解析 mention
-        Returns:  [<Floor>]
-        """
-        s = ' ' + text
-        hole_ids = re.findall(r'[^#]#(\d+)', s)
-        mentions = []
-        if hole_ids:
-            hole_ids = list(map(lambda i: int(i), hole_ids))
-            for id in hole_ids:
-                floor = Floor.objects.filter(hole_id=id).first()
-                if floor:
-                    mentions.append(floor)
-        floor_ids = re.findall(r'##(\d+)', s)
-        if floor_ids:
-            floor_ids = list(map(lambda i: int(i), floor_ids))
-            floors = Floor.objects.filter(id__in=floor_ids)
-            mentions += list(floors)
-        return mentions
+    def validate_special_tag(self, special_tag):
+        user = self.context.get('user')
+        if not user or not user.is_admin:
+            raise Forbidden()
+        return special_tag
 
     def create(self, validated_data):
         content = validated_data.get('content', '')
-        mentions = self._find_mentions(content)
+        special_tag = validated_data.get('special_tag', '')
+        mentions = find_mentions(content)
         user = self.context.get('user')
         hole = self.context.get('hole')
         if not user or not hole:
@@ -233,7 +218,7 @@ class FloorSerializer(SimpleFloorSerializer):
             anonyname = random_name(hole.mapping.values())
             hole.mapping[user.pk] = anonyname
         hole.save()
-        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=user)
+        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=user, special_tag=special_tag)
         floor.mention.set(mentions)
         mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
         return floor
@@ -256,45 +241,14 @@ class FloorSerializer(SimpleFloorSerializer):
 
 class FloorUpdateSerializer(FloorSerializer):
     like = serializers.CharField(required=False)
-    content = serializers.CharField(required=False)
-    anonyname = serializers.CharField(required=False, max_length=16)
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like']
-        read_only_fields = ['floor_id']
-
-    def update(self, instance, validated_data):
-        user = self.context.get('user')
-        if not user:
-            raise BadRequest()
-
-        content = validated_data.get('content')
-        if content:
-            instance.history.append({
-                'content': instance.content,
-                'altered_by': user.pk,
-                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
-            })
-            instance.content = content
-            mentions = self._find_mentions(content)
-            instance.mention.set(mentions)
-            mention_to.send(sender=Floor, instance=instance, mentioned=mentions)
-
-        like = validated_data.get('like')
-        if like:
-            if like == 'add' and user.pk not in instance.like_data:
-                instance.like_data.append(user.pk)
-            elif like == 'cancel' and user.pk in instance.like_data:
-                instance.like_data.remove(user.pk)
-            else:
-                pass
-            instance.like = len(instance.like_data)
-
-        instance.fold = validated_data.get('fold', instance.fold)
-        instance.anonyname = validated_data.get('anonyname', instance.anonyname)
-        instance.save()
-        return instance
+        fields = ['content', 'anonyname', 'fold', 'like', 'special_tag']
+        extra_kwargs = {
+            'content': {'required': False},
+            'anonyname': {'required': False}
+        }
 
 
 class HoleSerializer(serializers.ModelSerializer):

@@ -8,6 +8,8 @@ from io import StringIO
 from django.http import Http404
 from markdown import Markdown
 
+from api.models import Floor
+
 
 def to_shadow_text(content):
     """
@@ -35,6 +37,28 @@ def to_shadow_text(content):
     content = re.sub(r'!\[(.+)]\(.+\)', r'\1', content)
 
     return md.convert(content)
+
+
+def find_mentions(text: str) -> list:
+    """
+    从文本中解析 mention
+    Returns:  [<Floor>]
+    """
+    s = ' ' + text
+    hole_ids = re.findall(r'[^#]#(\d+)', s)
+    mentions = []
+    if hole_ids:
+        hole_ids = list(map(lambda i: int(i), hole_ids))
+        for id in hole_ids:
+            floor = Floor.objects.filter(hole_id=id).first()
+            if floor:
+                mentions.append(floor)
+    floor_ids = re.findall(r'##(\d+)', s)
+    if floor_ids:
+        floor_ids = list(map(lambda i: int(i), floor_ids))
+        floors = Floor.objects.filter(id__in=floor_ids)
+        mentions += list(floors)
+    return mentions
 
 
 def exists_or_404(klass, *args, **kwargs):

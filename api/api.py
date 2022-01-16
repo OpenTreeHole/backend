@@ -20,10 +20,11 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, FloorUpdateSerializer, HoleCreateSerializer, \
-    PushTokenSerializer
-from api.signals import modified_by_admin, new_penalty
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
+    PushTokenSerializer, FloorUpdateSerializer
+from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email, post_image_to_github
+from utils.apis import find_mentions
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
@@ -326,25 +327,45 @@ class FloorsApi(APIView):
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
         floor = get_object_or_404(Floor, pk=floor_id)
-
-        serializer = FloorUpdateSerializer(data=request.data, instance=floor, context={"user": request.user})
+        serializer = FloorUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        # 检查权限
-        fields = serializer.validated_data.keys()
-        if 'like' in fields and len(fields) == 1:
-            # 只进行点赞操作则不检查权限
-            pass
-        elif 'anonyname' in fields:
-            # 要求属主和管理员
-            if not request.user.is_admin:
-                return Response(status=403)
-            self.check_object_permissions(request, floor)
-        else:
-            # 要求属主
-            self.check_object_permissions(request, floor)
+        # 不检查权限
+        like = data.pop('like', '')
+        if like:
+            if like == 'add' and request.user.pk not in floor.like_data:
+                floor.like_data.append(request.user.pk)
+            elif like == 'cancel' and request.user.pk in floor.like_data:
+                floor.like_data.remove(request.user.pk)
+            else:
+                pass
+            floor.like = len(floor.like_data)
 
-        floor = serializer.save()
+        # 属主或管理员
+        if data:
+            self.check_object_permissions(request, floor)
+        content = data.pop('content', '')
+        if content:
+            floor.history.append({
+                'content': floor.content,
+                'altered_by': request.user.id,
+                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
+            })
+            floor.content = content
+            mentions = find_mentions(content)
+            floor.mention.set(mentions)
+            mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
+        floor.fold = data.pop('fold', floor.fold)
+
+        # 仅管理员
+        if data and not request.user.is_admin:
+            return Response(None, 403)
+        floor.anonyname = data.pop('anonyname', floor.anonyname)
+        floor.special_tag = data.pop('special_tag', floor.special_tag)
+
+        floor.save()
+
         if request.user.is_admin and floor.user != request.user:
             modified_by_admin.send(sender=Floor, instance=floor)
         return Response(FloorSerializer(floor, context={'user': request.user}).data)

@@ -62,6 +62,7 @@ class Floor(models.Model):
     deleted = models.BooleanField(default=False)  # 仅作为前端是否显示删除按钮的依据
     history = models.JSONField(default=list)  # 修改记录，字典列表
     fold = models.JSONField(default=list)  # 折叠原因，字符串列表（原因由前端提供）
+    special_tag = models.CharField(max_length=16, default='')  # 额外字段
 
     def __str__(self):
         return f"{self.content[:50]}"
