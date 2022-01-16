@@ -11,10 +11,9 @@ RUN apt update \
 RUN pipenv install \
     && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages
 
-
 COPY Pipfile /www/backend/
 
-RUN pipenv install --dev --skip-lock
+RUN pipenv install --dev
 
 FROM python:3.9-slim
 
