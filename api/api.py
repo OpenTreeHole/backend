@@ -660,6 +660,8 @@ class PushTokensAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        if not request.user.is_admin:
+            return Response(None, 403)
         tokens = PushToken.objects.filter(user=request.user)
         service = request.query_params.get('service')
         if service:
@@ -672,6 +674,17 @@ class PushTokensAPI(APIView):
         serializer.validated_data['user'] = request.user
         serializer.save()
         return Response(serializer.data, 201)
+
+    def put(self, request):
+        device_id = request.data.get('device_id', '')
+        push_token = PushToken.objects.filter(device_id=device_id, user=request.user).first()
+        if not push_token:
+            raise Http404()
+        push_token.token = request.data.get('token', push_token.token)
+        push_token.service = request.data.get('service', push_token.service)
+        push_token.save()
+        serializer = PushTokenSerializer(push_token)
+        return Response(serializer.data, 200)
 
     def delete(self, request):
         device_id = request.data.get('device_id', '')

@@ -194,7 +194,7 @@ class Message(models.Model):
 class PushToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='push_tokens')
     service = models.CharField(max_length=16, db_index=True)  # apns or mipush
-    device_id = models.CharField(max_length=128)
+    device_id = models.CharField(max_length=128, unique=True)
     token = models.CharField(max_length=128)
 
 # class RegisteredEmail(models.Model):
