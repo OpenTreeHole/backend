@@ -9,7 +9,8 @@ RUN apt update \
     && pip3 install pipenv
 
 RUN pipenv install \
-    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages
+    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages \
+    && ls .venv/lib/python3.9/site-packages/_distutils_hack
 
 COPY Pipfile /www/backend/
 
