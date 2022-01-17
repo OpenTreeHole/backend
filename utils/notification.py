@@ -58,7 +58,6 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     if data is None:
         data = {}
     instance = Message.objects.create(user_id=user_id, message=message, data=data, code=code)
-    user = instance.user
     payload = MessageSerializer(instance).data
     # 发送 websocket 通知
     send_websocket_message_to_group(f'user-{user_id}', payload)
@@ -66,7 +65,6 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     if APNS:
         # 准备数据
         apns_notifications = []
-        apns_user_token_record = {}
         apns_payload = APNsPayload(
             alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
             sound="default",
@@ -92,7 +90,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                     "https://api.xmpush.xiaomi.com/v2/message/regid",
                     headers={"Authorization": f"key={MIPUSH_APP_SECRET}"},
                     data={
-                        "registration_id": ','.join(PushToken.objects.filter(user_id=user_id, device='mipush').values_list('token', flat=True)),
+                        "registration_id": ','.join(PushToken.objects.filter(user_id=user_id, service='mipush').values_list('token', flat=True)),
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
