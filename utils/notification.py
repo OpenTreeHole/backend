@@ -72,12 +72,13 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
             custom=payload
         )
         for push_token in PushToken.objects.filter(user_id=user_id, service='apns'):
-            apns_notifications.append(Notification(payload=apns_payload, token=push_token['token']))
+            apns_notifications.append(Notification(payload=apns_payload, token=push_token.token))
         # 发送数据
         response = APNS.send_notification_batch(
             notifications=apns_notifications,
             topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS
         )
+        print('APNS Response', response)
         # 清除过期token
         for token in response:
             if response[token] == 'BadDeviceToken':
@@ -95,7 +96,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                         "description": _generate_subtitle(data, code),
                         "payload": urllib.parse.urlencode({"data": data, "code": code}),
                     }).json()
-
+                print('MiPush Response', response_json)
                 # 清除过期token
                 try:
                     bad_ids = response_json['data']['bad_regids']
