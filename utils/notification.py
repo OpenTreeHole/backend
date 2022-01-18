@@ -63,35 +63,43 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     send_websocket_message_to_group(f'user-{user_id}', payload)
     # 发送 APNS 通知
     if APNS:
-        # 准备数据
-        apns_notifications = []
-        apns_payload = APNsPayload(
-            alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
-            sound="default",
-            badge=1,
-            thread_id=instance.code,
-            custom=payload
-        )
-        for push_token in PushToken.objects.filter(user_id=user_id, service='apns'):
-            apns_notifications.append(Notification(payload=apns_payload, token=push_token.token))
-        # 发送数据
-        response = APNS.send_notification_batch(
-            notifications=apns_notifications,
-            topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS
-        )
-        print('APNS Response', response)
-        # 清除过期token
-        for token in response:
-            if response[token] == 'BadDeviceToken':
-                PushToken.objects.filter(user_id=user_id, token=token).delete()
+        push_tokens = PushToken.objects.filter(user_id=user_id, service='apns').values_list('token', flat=True)
+        # Only send request if token is not empty
+        if push_tokens:
+            # 准备数据
+            apns_notifications = []
+            apns_payload = APNsPayload(
+                alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
+                sound="default",
+                badge=1,
+                thread_id=instance.code,
+                custom=payload
+            )
+            print(push_tokens)
+            for push_token in push_tokens:
+                apns_notifications.append(Notification(payload=apns_payload, token=push_token))
+            print(apns_notifications)
+            # 发送数据
+            response = APNS.send_notification_batch(
+                notifications=apns_notifications,
+                topic=settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS
+            )
+            print('APNS Response', response)
+            # 清除过期token
+            for token in response:
+                if response[token] == 'BadDeviceToken':
+                    PushToken.objects.filter(user_id=user_id, token=token).delete()
 
-        if MIPUSH_APP_SECRET:
+    if MIPUSH_APP_SECRET:
+        push_tokens = PushToken.objects.filter(user_id=user_id, service='mipush').values_list('token', flat=True)
+        # Only send request if token is not empty
+        if push_tokens:
             try:
                 response_json = requests.post(
                     "https://api.xmpush.xiaomi.com/v2/message/regid",
                     headers={"Authorization": f"key={MIPUSH_APP_SECRET}"},
                     data={
-                        "registration_id": ','.join(PushToken.objects.filter(user_id=user_id, service='mipush').values_list('token', flat=True)),
+                        "registration_id": ','.join(push_tokens),
                         "restricted_package_name": settings.PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID,
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
