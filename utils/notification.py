@@ -64,6 +64,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
     # 发送 APNS 通知
     if APNS:
         push_tokens = PushToken.objects.filter(user_id=user_id, service='apns').values_list('token', flat=True)
+        print(push_tokens)
         # Only send request if token is not empty
         if push_tokens:
             # 准备数据
@@ -75,10 +76,8 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                 thread_id=instance.code,
                 custom=payload
             )
-            print(push_tokens)
             for push_token in push_tokens:
                 apns_notifications.append(Notification(payload=apns_payload, token=push_token))
-            print(apns_notifications)
             # 发送数据
             response = APNS.send_notification_batch(
                 notifications=apns_notifications,
