@@ -683,7 +683,11 @@ class PushTokensAPI(APIView):
     def get(self, request):
         if not request.user.is_admin:
             return Response(None, 403)
-        tokens = PushToken.objects.filter(user=request.user)
+        if request.query_params.get('user_id'):
+            user = get_object_or_404(User, pk=request.query_params.get('user_id'))
+        else:
+            user = request.user
+        tokens = PushToken.objects.filter(user=user)
         service = request.query_params.get('service')
         if service:
             tokens = PushToken.objects.filter(service=service)
