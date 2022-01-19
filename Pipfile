@@ -18,15 +18,14 @@ apns2 = "*"
 markdown = "*"
 mysqlclient = "*"
 django = "~=3.1.13"
-django-silk = "*"
 pycryptodome = "*"
+requests = "*"
+pytz = "*"
+pyotp = "*"
 
 [dev-packages]
-eventlet = "*"
-python-magic-bin = "*"
-selenium = "*"
-markdownify = "*"
 django-silk = "*"
+sqlalchemy = "*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"

@@ -1,66 +1,63 @@
-# Open Tree Hole 后端
+# Open Tree Hole Backend
 
-使用 Django 框架
+Backend of OpenTreeHole ---- Anonymous BBS for college students
 
-## 使用须知
+## Features
 
-本项目使用 Docker 持续集成部署
+- White-listed registration ---- for certain community like college students
+- Anonymous: RSA encrypted personal information(email) and random identity
+- Compliance: report, mute, ban, fold NSFW contents
+- Push notifications: web(websocket), iOS and Android
+- Balance between performance and development efficiency: stress test 300~400 qps
 
-规则：添加 tag 时触发构建，如果 tag 的后缀为 alpha，发布 dev-latest 镜像，否则发布 latest 镜像
+## Install
 
-### 使用 docker-compose 安装：
+This installation is just for backend program. If you want to deploy the whole OpenTreeHole project, please visit [Deploy Repo](https://github.com/OpenTreeHole/deploy).
 
-1. 下载 [docker-compose.yaml](https://github.com/OpenTreeHole/backend/blob/master/docker-compose.yaml)
+This project continuously integrates with docker. Go check it out if you don't have docker locally installed.
 
-2. 填写 `environment` 块下的若干环境变量，完整的列表及说明请参见 [配置文件](https://github.com/OpenTreeHole/backend/blob/master/OpenTreeHole/config.py)
+```shell
+docker run -d -p 80:80 shi2002/open_tree_hole_backend
+```
 
-   注意：环境变量**不应**以引号包裹，否则会无法解析
+Note: this project is runnable with zero-configurations, for full configuration, visit [Configuration Doc](https://github.com/OpenTreeHole/deploy/wiki/配置文档).
 
-3. 运行 `docker-compose up -d`
+## Usage
 
-若成功，项目可以在 80 端口访问
+Please refer to [API Docs](https://github.com/OpenTreeHole/backend/wiki/API-文档).
 
-### 注意：
+## Badge
 
-- 域名和 CORS 等配置应在 nginx 等反向代理服务器中完成，请自行配置相关项
+[![build](https://github.com/OpenTreeHole/backend/actions/workflows/master.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/master.yaml)
+[![dev build](https://github.com/OpenTreeHole/backend/actions/workflows/dev.yaml/badge.svg)](https://github.com/OpenTreeHole/backend/actions/workflows/dev.yaml)
 
-- 项目初始化时会自动创建管理员账户，邮箱为 admin@opentreehole.org，密码为 admin，须尽快登录至管理后台修改管理员信息
+[![stars](https://img.shields.io/github/stars/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/stargazers)
+[![issues](https://img.shields.io/github/issues/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/issues)
+[![pull requests](https://img.shields.io/github/issues-pr/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/pulls)
 
-## 开发须知
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
 
-0. 克隆本仓库并安装依赖
+### Powered by
 
-   ```shell
-   git clone git@github.com:OpenTreeHole/backend.git OpenTreeHole
-   cd OpenTreeHole
-   # 安装系统依赖（以 Debian 为例）
-   sudo apt install python3 python3-pip redis-server libmagic1
-   pip3 install pipenv
-   # 安装 python 依赖
-   pipenv install --dev
-   # 执行数据库迁移并预加载数据
-   pipenv shell
-   python manage.py migrate
-   python start.py
-   # 运行开发服务器
-   python manage.py runserver  
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Django](https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white)
+![DjangoREST](https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray)
 
-1. 设置环境变量 `HOLE_ENV`
+## Contributing
 
-   开发环境为 `development`，生产环境为 `production`
-   ```shell
-   # *nix
-   export HOLE_ENV=development
-   # windows
-   此电脑 -> 属性 -> 高级系统设置 -> 高级 -> 环境变量 -> 用户变量 -> 新建
+Feel free to dive in! [Open an issue](https://github.com/OpenTreeHole/backend/issues/new) or submit PRs.
 
-2. 在 OpenTreeHole/OpenTreeHole/config.py 中填写需要的配置, 或设置同名的环境变量以覆盖
+Full contributing docs and requirements is available at [wiki](https://github.com/OpenTreeHole/backend/wiki/开发).
 
+### Contributors
 
-3. 启动celery
+This project exists thanks to all the people who contribute.
 
-   ```shell
-   celery -A OpenTreeHole worker -l info -P eventlet
-   ```
+<a href="https://github.com/OpenTreeHole/backend/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=OpenTreeHole/backend" />
+</a>
 
-4. 采用**测试导向**开发模式，首先编写单元测试（在 /tests 目录），在**新分支**上开发，确保通过测试后提交至 `dev` 分支
+## Licence
+
+[![license](https://img.shields.io/github/license/OpenTreeHole/backend)](https://github.com/OpenTreeHole/backend/blob/dev/LICENSE)
+© OpenTreeHole

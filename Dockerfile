@@ -1,31 +1,40 @@
-FROM debian:buster
+FROM python:3.9 as builder
 
-MAINTAINER jsclndnz@gmail.com
+ENV PIPENV_VENV_IN_PROJECT="enabled"
 
-ENV HOLE_ENV=production REDIS_URL=redis://redis:6379 DEBIAN_FRONTEND=noninteractive
+WORKDIR /www/backend
 
 RUN apt update \
-    && apt install -y lsb-release curl wget gnupg python3 python3-pip python3-dev libmagic1 \
-    && curl -sLo mysql.deb https://dev.mysql.com/get/mysql-apt-config_0.8.19-1_all.deb \
-    && DEBIAN_FRONTEND=noninteractive dpkg -i mysql.deb \
-    && rm mysql.deb \
-    && apt update \
-    && apt install -y libmysqlclient-dev \
-    && apt remove -y lsb-release curl wget gnupg \
-    && apt autoremove -y \
-    && apt clean \
-    && pip3 install --no-cache-dir pipenv
-    
-WORKDIR /www/backend
+    && apt install -y default-libmysqlclient-dev python3-dev libmagic1 python3-distutils \
+    && pip3 install pipenv
+
+RUN pipenv install \
+    && cp -r /usr/local/lib/python3.9/site-packages/_distutils_hack .venv/lib/python3.9/site-packages
 
 COPY Pipfile /www/backend/
 
-RUN pipenv install --skip-lock
+RUN pipenv install --dev
+
+FROM python:3.9-slim
+
+MAINTAINER jsclndnz@gmail.com
+
+RUN apt update \
+    && apt install -y --no-install-recommends default-libmysqlclient-dev libmagic1 \
+    && apt autoremove && apt clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /www/backend
+
+COPY --from=builder /www/backend/.venv /www/backend/.venv
 
 COPY . /www/backend
 
+ENV PATH="/www/backend/.venv/bin:$PATH"
+
 EXPOSE 80
 
-RUN chmod +x start.sh
+RUN chmod +x start.sh \
+# APNS 证书问题临时解决方案，安全性低
+    && echo "CipherString=DEFAULT@SECLEVEL=1" >> /etc/ssl/openssl.cnf
 
 ENTRYPOINT ["./start.sh"]

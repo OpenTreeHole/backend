@@ -1,4 +1,8 @@
 #!/bin/sh
-pipenv run python manage.py migrate
-pipenv run python start.py
-pipenv run gunicorn -c gconfig.py OpenTreeHole.asgi
+python3 manage.py migrate
+python3 start.py
+if [ "$1" = "test" ]; then
+  python3 manage.py test
+else
+  gunicorn -c gconfig.py OpenTreeHole.asgi
+fi

@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -8,7 +8,8 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Division, Tag, Hole, Floor, Report, Message
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
+from utils.auth import many_hashes
 
 User = get_user_model()
 
@@ -79,8 +80,8 @@ class PermissionTests(APITestCase):
         r = self.client.delete('/holes/1')
         self.assertEqual(r.status_code, 403)
 
-        r = self.client.put('/floors/1')
-        self.assertEqual(r.status_code, 403)
+        # r = self.client.put('/floors/1')
+        # self.assertEqual(r.status_code, 403)
 
         r = self.client.delete('/floors/1')
         self.assertEqual(r.status_code, 403)
@@ -98,7 +99,7 @@ class PermissionTests(APITestCase):
         self.assertEqual(r.status_code, 200)
 
         r = self.client.delete('/floors/1')
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
 
     def test_silent(self):
         silent_user = User.objects.create_user('silented user')
@@ -111,7 +112,7 @@ class PermissionTests(APITestCase):
             'content': CONTENT,
             'division_id': 1,
             'hole_id': 1,
-            'tag_names': ['tag'],
+            'tags': [{'name': 'tag'}],
         }
         r = self.client.post('/holes', data)
         self.assertEqual(r.status_code, 403)
@@ -175,94 +176,83 @@ class LoginLogoutTests(APITestCase):
         self.assertNotEqual(Token.objects.get(user=self.user).key, token)
 
 
-class RegisterTests(APITestCase):
+class VerifyTests(APITestCase):
     email = EMAIL
     another_email = 'another@test.com'
     wrong_email = "test@foo.com"
     password = "fsdvkhjng"
-    simple_password = '123456'
-    new_password = 'jwhkerbb4v5'
-    verification = None
 
     def setUp(self):
         User.objects.create_user(self.another_email, password=self.password)
 
-    def register_verify(self):
-        # 正确校验
+    def test_verify(self):
+        # 新用户校验
         r = self.client.get("/verify/email", {"email": self.email})
-        self.assertEqual(r.status_code, 200)
-        self.assertIsNotNone(r.json()['message'])
-        self.assertIsNotNone(cache.get(self.email))
-        self.verification = cache.get(self.email)
+        self.assertEqual(r.status_code, 202)
+        self.assertIn('message', r.json())
+        # 验证码为六位字符串
+        code = cache.get(self.email)
+        self.assertEqual(type(code), str)
+        self.assertEqual(len(code), 6)
+
+        # 老用户校验
+        r = self.client.get("/verify/email", {"email": self.another_email})
+        self.assertEqual(r.status_code, 202)
+        # 验证码为六位字符串
+        code = cache.get(self.email)
+        self.assertEqual(type(code), str)
+        self.assertEqual(len(code), 6)
 
         # 错误域名
         r = self.client.get("/verify/email", {"email": self.wrong_email})
         self.assertEqual(r.status_code, 400)
-        self.assertEqual('邮箱不在白名单内！', r.data['message'])
+        self.assertIn('email', r.json())
         self.assertIsNone(cache.get(self.wrong_email))
 
-        # # 重复邮箱
-        # r = self.client.get("/verify/email", {"email": self.another_email})
-        # self.assertEqual(r.status_code, 400)
-        # self.assertEqual("该用户已注册！", r.data['message'])
-        # self.assertIsNone(cache.get(self.another_email))
 
-    def register(self):
-        expected_users = User.objects.count() + 1
-        # 正确注册
+class RegisterTests(APITestCase):
+    email = EMAIL
+    wrong_email = "test@foo.com"
+    password = "fsdvkhjng"
+    simple_password = '123456'
+    new_password = 'jwhkerbb4v5'
+    verification = '123456'
+    expected_users = User.objects.count() + 1
+    another_email = 'another@test.com'
+
+    def setUp(self):
+        User.objects.create_user(self.another_email, password=self.password)
+
+    # 正确注册
+    def test_register(self):
+        cache.set(self.email, self.verification)
         r = self.client.post("/register", {
             "email": self.email,
             "password": self.password,
             'verification': self.verification
         })
         self.assertEqual(r.status_code, 201)
-        self.assertIsNotNone(r.data['message'])
-        user = User.objects.get(email=self.email)
+        self.assertIn('注册', r.data['message'])
+        user = User.objects.get(identifier=many_hashes(self.email))
         Token.objects.get(user=user)
+        self.assertIsNone(cache.get(self.email))  # 校验成功后验证码失效
 
         # 重复注册
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
         r = self.client.post("/register", {
             "email": self.email,
             "password": self.password,
             'verification': self.verification
         })
         self.assertEqual(r.status_code, 400)
-        # self.assertEqual(r.json(), {"message": "该用户已注册！"})
-        self.assertEqual(User.objects.count(), expected_users)
+        self.assertIn('已注册', r.json()['message'])
+        self.assertEqual(User.objects.count(), num)
 
-        # 未提供验证码
-        r = self.client.post("/register", {
-            "email": self.email,
-            "password": self.password,
-            # 'verification': self.verification
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual(r.data['message'], '验证码不能为空！')
-        self.assertEqual(User.objects.count(), expected_users)
-
-        # 简单密码
-        r = self.client.post("/register", {
-            "email": self.email,
-            "password": self.simple_password,
-            'verification': self.verification,
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertIn('密码', r.data['message'])
-        self.assertEqual(User.objects.count(), expected_users)
-
-        # 错误邮箱
-        r = self.client.post("/register", {
-            "email": self.wrong_email,
-            "password": self.password,
-            'verification': self.verification,
-        })
-        self.assertEqual(r.status_code, 400)
-        self.assertEqual('注册校验未通过！', r.data['message'])
-        self.assertEqual(User.objects.count(), expected_users)
-
-    def modify_password(self):
+    def test_modify_password(self):
+        cache.set(self.another_email, self.verification)
         r = self.client.put("/register", {
-            "email": self.email,
+            "email": self.another_email,
             "password": self.new_password,
             'verification': self.verification
         })
@@ -270,15 +260,58 @@ class RegisterTests(APITestCase):
         self.assertEqual(r.json(), {'message': '已重置密码'})
 
         r = self.client.post('/login', {
-            'email': EMAIL,
+            'email': self.another_email,
             'password': self.new_password,
         })
         self.assertEqual(r.status_code, 200)
 
-    def test(self):
-        self.register_verify()
-        self.register()
-        self.modify_password()
+    def test_wrong_email(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.wrong_email,
+            "password": self.password,
+            'verification': self.verification,
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('email', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_simple_password(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.simple_password,
+            'verification': self.verification,
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('password', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_no_verification(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.password,
+            # 'verification': self.verification
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('verification', r.json())
+        self.assertEqual(User.objects.count(), num)
+
+    def test_wrong_verification(self):
+        cache.set(self.email, self.verification)
+        num = User.objects.count()
+        r = self.client.post("/register", {
+            "email": self.email,
+            "password": self.password,
+            'verification': 000000
+        })
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('verification', r.json())
+        self.assertEqual(User.objects.count(), num)
 
 
 class DivisionTests(APITestCase):
@@ -328,7 +361,7 @@ class HoleTests(APITestCase):
         r = self.client.post('/holes', {
             'content': self.content,
             'division_id': 1,
-            'tag_names': ['tag1', 'tag2', 'tag3']
+            'tags': [{'name': 'tag1'}, {'name': 'tag2'}, {'name': 'tag3'}]
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
@@ -337,11 +370,12 @@ class HoleTests(APITestCase):
         self.assertEqual(hole.tags.count(), 3)
         for tag in hole.tags.all():
             self.assertEqual(tag.temperature, 1)
+        self.assertTrue(self.user.favorites.filter(pk=hole.id).exists())
 
     def test_get_by_time(self):
         time.sleep(1)
         r = self.client.get('/holes', {
-            'start_time': datetime.now(timezone.utc).isoformat(),
+            'start_time': datetime.now(settings.TIMEZONE).isoformat(),
             'length': 3,
         })
         self.assertEqual(r.status_code, 200)
@@ -349,7 +383,7 @@ class HoleTests(APITestCase):
 
     def test_get_by_tag(self):
         r = self.client.get('/holes', {
-            'start_time': datetime.now(timezone.utc).isoformat(),
+            'start_time': datetime.now(settings.TIMEZONE).isoformat(),
             'length': 3,
             'tag': 'tag A1'
         })
@@ -364,16 +398,14 @@ class HoleTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
         r = self.client.put('/holes/1', {
             'view': 2,
-            'tag_names': ['tag A1', 'tag B1']
+            'tags': [{'name': 'tag A1'}, {'name': 'tag B1'}]
         })
         self.client.force_authenticate(user=self.user)
         self.assertEqual(r.status_code, 200)
         hole = Hole.objects.get(pk=1)
         self.assertEqual(hole.view, 2)
-        tag_names = set()
-        for tag in hole.tags.all():
-            tag_names.add(tag.name)
-        self.assertEqual(tag_names, {'tag A1', 'tag B1'})
+        tags = set(hole.tags.values_list('name', flat=True))
+        self.assertEqual(tags, {'tag A1', 'tag B1'})
 
 
 class FloorTests(APITestCase):
@@ -384,17 +416,33 @@ class FloorTests(APITestCase):
         basic_setup(self)
 
     def test_post(self):
-        hole = Hole.objects.get(pk=1)
-        mention = list(hole.floor_set.order_by('id')[:2].values_list('id', flat=True))
+        old_reply = Hole.objects.get(id=1).reply
+        floor_id = Floor.objects.filter(hole_id=1)[2].id
+        mention_ids = [1, floor_id]
+        content = f'reply #1 ##{floor_id}'
         r = self.client.post('/floors', {
-            'content': CONTENT,
-            'hole_id': 1,
-            'mention': mention,
+            'content': content,
+            'hole_id': 1
         })
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.data['message'], '发表成功！')
-        floor = Floor.objects.get(content=CONTENT)
-        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention)
+        floor = Floor.objects.get(content=content)
+        self.assertEqual(Hole.objects.get(id=1).reply, old_reply + 1)  # reply
+        # mention
+        new_mention_ids = list(map(lambda i: i['floor_id'], r.json()['data']['mention']))
+        self.assertEqual(new_mention_ids, mention_ids)
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention_ids)
+        # 清缓存
+        r = self.client.get('/holes')
+        self.assertEqual(r.json()[0]['floors']['last_floor']['floor_id'], floor.id)
+
+    def test_wrong_mention(self):
+        r = self.client.post('/floors', {
+            'content': '#1234567 ##7654321',
+            'hole_id': 1
+        })
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json()['data']['mention'], [])
 
     def test_get(self):
         r = self.client.get('/floors', {
@@ -414,12 +462,11 @@ class FloorTests(APITestCase):
 
     def test_search(self):
         r = self.client.get('/floors', {
-            'hole_id': 1,
             's': 'no.2'
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(r.json()), 1)
-        self.assertEqual('**Hole#1; Floor No.2**', r.json()[0]['content'])
+        self.assertEqual(len(r.json()), 6)
+        self.assertEqual('**Hole#6; Floor No.2**', r.json()[0]['content'])
 
     def test_wrong_search(self):
         r = self.client.get('/floors', {
@@ -442,17 +489,16 @@ class FloorTests(APITestCase):
     def test_put(self):
         original_content = Floor.objects.get(pk=1).content
         r = self.client.put('/floors/1', {
-            'content': 'Modified',
+            'content': 'Modified replay ##1 ##2 ##3',
             'like': 'add',
-            'fold': ['fold1', 'fold2'],
-            'mention': [1, 2, 3]
+            'fold': ['fold1', 'fold2']
         })
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()['content'], 'Modified')
+        self.assertEqual(r.json()['content'], 'Modified replay ##1 ##2 ##3')
         self.assertEqual(r.json()['like'], 1)
         self.assertEqual(r.json()['liked'], True)
         floor = Floor.objects.get(pk=1)
-        self.assertEqual(floor.content, 'Modified')
+        self.assertEqual(floor.content, 'Modified replay ##1 ##2 ##3')
         self.assertEqual(floor.like, 1)
         self.assertIn(self.user.pk, floor.like_data)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
@@ -463,12 +509,27 @@ class FloorTests(APITestCase):
         r = self.client.put('/floors/1', {'like': 'cancel'})
         self.assertEqual(r.json()['like'], 0)
         self.assertEqual(r.json()['liked'], False)
+        # # 清缓存
+        # r = self.client.get('/holes')
+        # print(r.json()[0])
+        # self.assertEqual(r.json()[0]['floors']['first_floor']['floor_id'], 1)
+        # mention
+        floor_id = Floor.objects.filter(hole_id=1)[2].id
+        mention_ids = [1, floor_id]
+        content = f'reply #1 ##{floor_id}'
+        r = self.client.put('/floors/1', {
+            'content': content
+        })
+        floor = Floor.objects.get(content=content)
+        self.assertEqual(list(floor.mention.values_list('id', flat=True)), mention_ids)
+        new_mention_ids = list(map(lambda i: i['floor_id'], r.json()['mention']))
+        self.assertEqual(new_mention_ids, mention_ids)
 
     def test_delete(self):
         original_content = Floor.objects.get(pk=2).content
         r = self.client.delete('/floors/2')
         floor = Floor.objects.get(pk=2)
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data['content'], '该内容已被作者删除')
         self.assertEqual(Floor.objects.get(pk=2).deleted, True)
         self.assertEqual(floor.history[0]['altered_by'], self.user.pk)
@@ -560,8 +621,8 @@ class UserTests(APITestCase):
         def post():
             r = self.client.post('/user/favorites', {'hole_id': 1})
             self.assertEqual(r.status_code, 201)
-            self.assertEqual(r.json(), {'message': '收藏成功'})
-            self.assertEqual(User.objects.get(email=USERNAME).favorites.filter(pk=1).exists(), True)
+            self.assertEqual(r.json(), {'message': '收藏成功', 'data': [1]})
+            self.assertEqual(User.objects.get(identifier=many_hashes(USERNAME)).favorites.filter(pk=1).exists(), True)
 
         def get():
             r = self.client.get('/user/favorites')
@@ -571,16 +632,16 @@ class UserTests(APITestCase):
         def put():
             r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
             self.assertEqual(r.status_code, 200)
-            self.assertEqual(r.json(), {'message': '修改成功'})
-            ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
+            self.assertEqual(r.json(), {'message': '修改成功', 'data': [2, 3]})
+            ids = User.objects.get(identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
             self.assertEqual([2, 3], list(ids))
 
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
-            self.assertEqual(r.status_code, 204)
-            self.assertEqual(r.data, {'message': '删除成功'})
-            ids = User.objects.get(email=USERNAME).favorites.values_list('id', flat=True)
-            self.assertNotIn(2, ids)
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.json(), {'message': '删除成功', 'data': [3]})
+            ids = User.objects.get(identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
+            self.assertEqual([3], list(ids))
 
         post()
         put()
@@ -637,19 +698,17 @@ class ReportTests(APITestCase):
     def test_delete(self):
         self.client.force_authenticate(user=self.admin)
         r = self.client.delete('/reports/1', {
-            'deal': {
-                'fold': ['fold 1', 'fold 2'],
-                'delete': 'test delete',
-                'silent': 3,
-            }
+            'fold': ['fold 1', 'fold 2'],
+            'delete': 'test delete',
+            'silent': 3
         })
-        self.assertEqual(r.status_code, 204)
+        self.assertEqual(r.status_code, 200)
         floor = Floor.objects.get(pk=1)
         self.assertEqual(floor.fold, ['fold 1', 'fold 2'])
         self.assertEqual(floor.deleted, True)
         self.assertEqual(floor.content, 'test delete')
-        user = User.objects.get(email=USERNAME)
-        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(timezone.utc) < timedelta(days=3, minutes=1))
+        user = User.objects.get(identifier=many_hashes(USERNAME))
+        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(settings.TIMEZONE) < timedelta(days=3, minutes=1))
         r = self.client.get('/reports/1')
         self.assertEqual(r.json()['dealed_by'], self.admin.nickname)
 
@@ -690,7 +749,7 @@ class MessageTests(APITestCase):
     def test_get_many(self):
         r = self.client.get('/messages', {
             'not_read': True,
-            'start_time': '1970-01-01T00:00:00+00:00'
+            'start_time': VERY_LONG_TIME
         })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(r.json()), 1)
@@ -704,3 +763,43 @@ class MessageTests(APITestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()['message'], 'new')
         self.assertEqual(r.json()['has_read'], True)
+
+
+class PushTokenTests(APITestCase):
+    def setUp(self):
+        self.admin = None
+        self.user = None
+        basic_setup(self)
+        PushToken.objects.create(user=self.admin, service='apns', device_id='0', token='x')
+        PushToken.objects.create(user=self.user, service='apns', device_id='1', token='a')
+        PushToken.objects.create(user=self.user, service='mipush', device_id='2', token='b')
+
+    def test_get(self):
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.get('/users/push-tokens')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), PushToken.objects.filter(user=self.admin).count())
+
+    def test_put(self):
+        data = {
+            'service': 'apns',
+            'device_id': '3',
+            'token': 'c'
+        }
+        r = self.client.put('/users/push-tokens', data=data)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json(), data)
+
+        data = {
+            'service': 'mipush',
+            'device_id': '3',
+            'token': 'd'
+        }
+        r = self.client.put('/users/push-tokens', data=data)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), data)
+
+    def test_delete(self):
+        r = self.client.delete('/users/push-tokens', data={'device_id': '1'})
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(PushToken.objects.filter(device_id='1').exists(), False)

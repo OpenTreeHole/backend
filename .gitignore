@@ -1,8 +1,9 @@
-config.bak
 Pipfile.lock
 try.*
-db.sqlite3
+*.sqlite3
+*.txt
 .idea
 
 data.json
 migrate.py
+apns.pem

@@ -1,15 +1,16 @@
-name: alpha-release
+name: dev build
 
 on:
   push:
-    tags:
-      - v*.*.*-alpha
+    branches:
+      - dev
 
 env:
   APP_NAME: open_tree_hole_backend
+  TEST_TAG: app:test
 
 jobs:
-  docker:
+  test_and_build:
     runs-on: ubuntu-latest
     steps:
       - name: Get tag version
@@ -24,11 +25,18 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
-        id: docker_build
+      - name: Build and export to Docker
         uses: docker/build-push-action@v2
         with:
+          load: true
+          tags: ${{ env.TEST_TAG }}
+      - name: Test
+        run: docker run --rm ${{ env.TEST_TAG }} test
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          platforms: linux/amd64  # 开发版本不构建 arm 镜像（太慢了）
           push: true
           tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:dev
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:${{ steps.tag.outputs.tag }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME}}:dev-latest

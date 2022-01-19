@@ -68,10 +68,10 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer'
     ],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
     'DEFAULT_THROTTLE_CLASSES': [
-        'api.throttles.BurstRateThrottle',
-        'api.throttles.SustainedRateThrottle',
+        'utils.throttles.BurstRateThrottle',
+        'utils.throttles.SustainedRateThrottle',
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
@@ -81,3 +81,7 @@ REST_FRAMEWORK = {
         'upload': THROTTLE_UPLOAD
     }
 }
+
+# celery 使用 redis
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL

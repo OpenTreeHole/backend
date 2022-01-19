@@ -1,16 +1,14 @@
 import base64
-import random
 import secrets
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
-from django.contrib.auth.password_validation import validate_password
 from django.core.cache import cache
-from django.core.exceptions import ValidationError
-from django.db.models import F
+from django.db import transaction, IntegrityError
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -20,23 +18,22 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division
-from api.notification import MessageSender
-from api.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
-    AdminOrPostOnly, OwenerOrAdminCanSee
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer
-from api.signals import modified_by_admin
-from api.tasks import mail, post_image_to_github
-# 发送 csrf 令牌
-# from django.views.decorators.csrf import ensure_csrf_cookie
-# @method_decorator(ensure_csrf_cookie)
-from api.utils import encrypt_email
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
+    PushTokenSerializer, FloorUpdateSerializer
+from api.signals import modified_by_admin, new_penalty, mention_to
+from api.tasks import send_email, post_image_to_github
+from utils.apis import find_mentions
+from utils.auth import check_api_key, many_hashes
+from utils.notification import send_notifications
+from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
+    AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 
 
 @api_view(["GET"])
 def index(request):
-    MessageSender(request.user, {'message': 'hi'}).commit()
+    send_notifications.delay(request.user.id, 'hi')
     return Response({"message": "Hello world!"})
 
 
@@ -46,7 +43,7 @@ def login(request):
     email = request.data.get("email")
     password = request.data.get("password")
 
-    user = get_object_or_404(User, email=encrypt_email(email))
+    user = get_object_or_404(User, identifier=many_hashes(email))
     if check_password(password, user.password):
         token, created = Token.objects.get_or_create(user=user)
         return Response({"token": token.key, "message": "登录成功！"})
@@ -65,79 +62,128 @@ def logout(request):
 class VerifyApi(APIView):
     throttle_scope = 'email'
 
+    @staticmethod
+    def _set_verification_code(email: str) -> str:
+        """
+        设置验证码并返回
+        """
+        verification = secrets.randbelow(1000000)
+        verification = str(verification).zfill(6)
+        cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
+        return verification
+
     def get(self, request, **kwargs):
         method = kwargs.get("method")
 
+        serializer = EmailSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('email')
+
         if method == "email":
-            email = request.query_params.get("email")
-            domain = email[email.find("@") + 1:]
-            # 检查邮箱是否在白名单内
-            if domain not in settings.EMAIL_WHITELIST:
-                return Response({"message": "邮箱不在白名单内！"}, 400)
-            # 仅当用户未注册时发送邮件
-            if not User.objects.filter(email=encrypt_email(email)).exists():
-                # 设置验证码并发送验证邮件
-                verification = secrets.randbelow(1000000)
-                print(str(verification).zfill(6))
-                cache.set(email, verification, settings.VALIDATION_CODE_EXPIRE_TIME * 60)
-                mail.delay(
+            # 设置验证码并发送验证邮件
+            verification = self._set_verification_code(email)
+            base_content = (
+                f'您的验证码是: {verification}\r\n'
+                f'验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n'
+                '如果您意外地收到了此邮件，请忽略它'
+            )
+            if not User.objects.filter(identifier=many_hashes(email)).exists():  # 用户不存在，注册邮件
+                send_email.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
-                    content=f'欢迎注册 {settings.SITE_NAME}，您的验证码是: {str(verification).zfill(6)}\r\n验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n如果您意外地收到了此邮件，请忽略它',
-                    receivers=[email]
+                    content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
+                    receivers=[email],
+                    uuid=uuid
                 )
-            return Response({'message': '如果您未注册，则会收到包含验证码的验证邮件，请查收；如果您已注册，则不会收到验证邮件，请找回密码。'})
+            else:  # 用户存在，重置密码
+                send_email.delay(
+                    subject=f'{settings.SITE_NAME} 重置密码',
+                    content=f'您正在重置密码，{base_content}',
+                    receivers=[email],
+                    uuid=uuid
+                )
+            return Response({'message': '处理中'}, 202)
+        elif method == "apikey":
+            apikey = request.query_params.get("apikey")
+            check_register = request.query_params.get("check_register")
+            if not check_api_key(apikey):
+                return Response({"message": "API Key 不正确！"}, 403)
+            if not User.objects.filter(identifier=many_hashes(email)).exists():
+                if check_register:
+                    return Response({"message": "用户未注册！"}, 200)
+                else:
+                    verification = self._set_verification_code(email)
+                    return Response({'message': '验证成功', 'code': verification}, 200)
+            return Response({'message': '用户已注册'}, 409)
         else:
-            return Response({}, 502)
+            return Response({}, 404)
 
 
 class RegisterApi(APIView):
     def post(self, request):
         # TODO: Sanitize input needed?
-        email = request.data.get("email")
-        password = request.data.get("password")
-        verification = request.data.get("verification")
-        if not verification:
-            return Response({"message": "验证码不能为空！"}, 400)
-        if not cache.get(email) or not cache.get(email) == verification:
-            return Response({"message": "注册校验未通过！"}, 400)
-        # 校验密码可用性
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            return Response({'message': '\n'.join(e)}, 400)
-        # 校验用户名是否已存在
-        if User.objects.filter(email=email).exists():
-            return Response({"message": "该用户已注册！如果忘记密码，请使用忘记密码功能找回。"}, 400)
-
-        user = User.objects.create_user(email=encrypt_email(email), password=password)
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
         token = Token.objects.get(user=user).key
-        # RegisteredEmail.objects.create(email_cleartext=email).save()
+
+        password = serializer.validated_data.get('password')
+        email = serializer.validated_data.get('email')
+        # 迁移用户收藏
+        old_favorites = OldUserFavorites.objects.filter(uid=email[:11]).first()
+        if old_favorites:
+            try:
+                user.favorites.set(old_favorites.favorites)
+            except IntegrityError:
+                pass
+
+        # 发送密码邮件
+        send_email.delay(
+            subject=f'{settings.SITE_NAME} 密码存档',
+            content=(
+                f'您已成功注册{settings.SITE_NAME}，您选择了随机设置密码，密码如下：'
+                f'\r\n\r\n{password}\r\n\r\n'
+                '提示：服务器中仅存储加密后的密码，无须担心安全问题'
+            ),
+            receivers=[email]
+        )
         return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
-        verification = request.data.get("verification")
-
-        # 校验验证码
-        if not verification:
-            return Response({"message": "验证码不能为空！"}, 400)
-        if not cache.get(email) or not cache.get(email) == verification:
-            return Response({"message": "注册校验未通过！"}, 400)
-        # 校验密码可用性
-        try:
-            validate_password(password)
-        except ValidationError as e:
-            return Response({'message': '\n'.join(e)}, 400)
-        # 校验用户名是否不存在
-        users = User.objects.filter(email=encrypt_email(email))
-        if not users:
-            return Response({"message": "该用户不存在"}, 400)
-        user = users[0]
-
-        user.set_password(password)
-        user.save()
+        email = request.data.get('email')
+        user = get_object_or_404(User, identifier=many_hashes(email))
+        serializer = RegisterSerializer(instance=user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({"message": "已重置密码"}, 200)
+
+
+class EmailApi(APIView):
+    throttle_scope = 'email'
+
+    def post(self, request, **kwargs):
+        serializer = BaseEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('uuid')
+
+        if kwargs.get('type') == 'password':
+            password = request.data.get('password')
+            if not password:
+                return Response({'message': 'password 字段不存在'}, 400)
+            send_email.delay(
+                subject=f'{settings.SITE_NAME} 密码存档',
+                content=(
+                    f'您已成功注册{settings.SITE_NAME}，您选择了随机设置密码，密码如下：'
+                    f'\r\n\r\n{password}\r\n\r\n'
+                    '提示：服务器中仅存储加密后的密码，无须担心安全问题'
+                ),
+                receivers=[email],
+                uuid=uuid
+            )
+            return Response({'message': '处理中'}, 202)
+        else:
+            raise Http404()
 
 
 class DivisionsApi(APIView):
@@ -153,6 +199,7 @@ class DivisionsApi(APIView):
         serializer = DivisionSerializer(query_set, many=not division_id, context={'user': request.user})
         return Response(serializer.data)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         division_id = kwargs.get('division_id')
         division = get_object_or_404(Division, id=division_id)
@@ -172,39 +219,6 @@ class DivisionsApi(APIView):
         return Response(serializer.data)
 
 
-def add_a_floor(request, hole, category):
-    """
-    增加一条回复帖
-    Args:
-        request:
-        hole:       hole对象
-        category:   指定返回值为 floor 或 hole
-
-    Returns:        floor or hole
-
-    """
-    # 校验 content
-    serializer = FloorSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    content = serializer.validated_data.get('content')
-    mention = request.data.get('mention', [])
-    # 获取匿名信息，如没有则随机选取一个，并判断有无重复
-    anonyname = hole.mapping.get(str(request.user.pk))  # 存在数据库中的字典里的数据类型都是 string
-    if not anonyname:
-        while True:
-            anonyname = random.choice(settings.NAME_LIST)
-            if anonyname in hole.mapping.values():
-                pass
-            else:
-                hole.mapping[request.user.pk] = anonyname
-                break
-    # 创建 floor 并增加 hole 的楼层数
-    floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=request.user)
-    floor.mention.set(mention)
-    hole.save()
-    return hole if category == 'hole' else floor
-
-
 class HolesApi(APIView):
     permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OnlyAdminCanModify]
 
@@ -221,13 +235,19 @@ class HolesApi(APIView):
         hole_id = kwargs.get('hole_id')
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id)
-            Hole.objects.filter(pk=hole_id).update(view=F('view') + 1)  # 增加主题帖的浏览量
+            # 缓存中增加主题帖的浏览量
+            cached = cache.get('hole_views', {})
+            view = cached.get(hole_id, 0)
+            cached[hole_id] = view + 1
+            cache.set('hole_views', cached)
+
             serializer = HoleSerializer(hole, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
-                'simple_floors': True  # 使用 SimpleFloorSerializer
+                'simple': False  # 不使用缓存
             })
             return Response(serializer.data)
+
         # 获取多个
         else:
             tag_name = request.query_params.get('tag')
@@ -245,47 +265,30 @@ class HolesApi(APIView):
             serializer = HoleSerializer(queryset, many=True, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
-                'simple_floors': True  # 使用 SimpleFloorSerializer
+                'simple': True  # 使用 SimpleFloorSerializer
             })
             return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request):
-        serializer = HoleSerializer(data=request.data)
+        serializer = HoleCreateSerializer(data=request.data, context={'request_data': request.data, 'user': request.user})
         serializer.is_valid(raise_exception=True)
-        tag_names = serializer.validated_data.get('tag_names')
+        # 检查权限
         division_id = serializer.validated_data.get('division_id')
         self.check_object_permissions(request, division_id)
 
-        # 实例化 Hole
-        hole = Hole(division_id=division_id)
-        hole.save()  # 在添加 tag 前要保存 hole，否则没有id
-
-        # 创建 tag 并添加至 hole
-        for tag_name in tag_names:
-            tag, created = Tag.objects.get_or_create(name=tag_name)
-            hole.tags.add(tag)
-
-        hole = add_a_floor(request, hole, category='hole')
-        serializer = HoleSerializer(hole, context={"user": request.user})
+        serializer.save()
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         hole_id = kwargs.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
-        serializer = HoleSerializer(data=request.data)
+
+        serializer = HoleSerializer(hole, data=request.data)
         serializer.is_valid(raise_exception=True)
-        tag_names = serializer.validated_data.get('tag_names')
-        view = serializer.validated_data.get('view')
+        hole = serializer.save()
 
-        if tag_names:
-            hole.tags.clear()
-            for tag_name in tag_names:
-                tag, created = Tag.objects.get_or_create(name=tag_name)
-                hole.tags.add(tag)
-        if view:
-            hole.view = view
-
-        hole.save()
         serializer = HoleSerializer(hole, context={"user": request.user})
         return Response(serializer.data)
 
@@ -304,49 +307,53 @@ class FloorsApi(APIView):
             floor = get_object_or_404(Floor, pk=floor_id)
             serializer = FloorSerializer(floor, context={"user": request.user})
             return Response(serializer.data)
-        # 获取多个（给定 hole下）
-        hole_id = int(request.query_params.get('hole_id'))
-        search = request.query_params.get('s')
-        query_set = Floor.objects.filter(hole_id=hole_id)
-        if search:
-            query_set = query_set.filter(shadow_text__icontains=search).order_by('-pk')
+        # 获取多个
+        serializer = FloorGetSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        hole_id = serializer.validated_data.get('hole_id')
+        search = serializer.validated_data.get('s')
+        start_floor = serializer.validated_data.get('start_floor')
+        length = serializer.validated_data.get('length')
+        reverse = serializer.validated_data.get('reverse')
+
+        if search:  # 搜索
+            query_set = Floor.objects.filter(shadow_text__icontains=search)
+            if not reverse:  # 搜索默认降序，reverse 反转
+                query_set = query_set.order_by('-pk')
+        else:  # 主题帖下
+            query_set = Floor.objects.filter(hole_id=hole_id)
+            if reverse:  # 主题帖默认升序，reverse 反转
+                query_set = query_set.order_by('-pk')
+
+        if length == 0:
+            query_set = query_set[start_floor:]
         else:
-            start_floor = request.query_params.get('start_floor')
-            length = request.query_params.get('length')
-            start_floor = int(start_floor) if start_floor else 0
-            length = int(length) if length else 10
-            if length:
-                query_set = query_set[start_floor: start_floor + length]
-            else:
-                query_set = query_set[start_floor:]
+            query_set = query_set[start_floor: start_floor + length]
+
         query_set = FloorSerializer.get_queryset(query_set)
         serializer = FloorSerializer(query_set, many=True, context={"user": request.user})
         return Response(serializer.data)
 
+    @transaction.atomic
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(add_a_floor(request, hole, category='floor'), context={"user": request.user})
+        serializer = FloorSerializer(data=request.data, context={'user': request.user, 'hole': hole})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
 
+    @transaction.atomic
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
-        content = request.data.get('content')
-        like = request.data.get('like')
-        fold = request.data.get('fold')
-        mention = request.data.get('mention')
-        anonyname = request.data.get('anonyname')
         floor = get_object_or_404(Floor, pk=floor_id)
-        self.check_object_permissions(request, floor)
+        serializer = FloorUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
 
-        if content and content.strip():
-            floor.history.append({
-                'content': floor.content,
-                'altered_by': request.user.pk,
-                'altered_time': datetime.now(timezone.utc).isoformat()
-            })
-            floor.content = content
+        # 不检查权限
+        like = data.pop('like', '')
         if like:
             if like == 'add' and request.user.pk not in floor.like_data:
                 floor.like_data.append(request.user.pk)
@@ -355,19 +362,36 @@ class FloorsApi(APIView):
             else:
                 pass
             floor.like = len(floor.like_data)
-        if mention:
-            floor.mention.set(mention)
-        if fold:
-            floor.fold = fold
-        if anonyname and request.user.is_admin:
-            floor.anonyname = anonyname
+
+        # 属主或管理员
+        if data:
+            self.check_object_permissions(request, floor)
+        content = data.pop('content', '')
+        if content:
+            floor.history.append({
+                'content': floor.content,
+                'altered_by': request.user.id,
+                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
+            })
+            floor.content = content
+            mentions = find_mentions(content)
+            floor.mention.set(mentions)
+            mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
+        floor.fold = data.pop('fold', floor.fold)
+
+        # 仅管理员
+        if data and not request.user.is_admin:
+            return Response(None, 403)
+        floor.anonyname = data.pop('anonyname', floor.anonyname)
+        floor.special_tag = data.pop('special_tag', floor.special_tag)
 
         floor.save()
+
         if request.user.is_admin and floor.user != request.user:
             modified_by_admin.send(sender=Floor, instance=floor)
-        serializer = FloorSerializer(floor, context={"user": request.user})
-        return Response(serializer.data)
+        return Response(FloorSerializer(floor, context={'user': request.user}).data)
 
+    @transaction.atomic
     def delete(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
         delete_reason = request.data.get('delete_reason')
@@ -376,7 +400,7 @@ class FloorsApi(APIView):
         floor.history.append({
             'content': floor.content,
             'altered_by': request.user.pk,
-            'altered_time': datetime.now(timezone.utc).isoformat()
+            'altered_time': datetime.now(settings.TIMEZONE).isoformat()
         })
         if request.user == floor.user:  # 作者删除
             floor.content = '该内容已被作者删除'
@@ -385,13 +409,20 @@ class FloorsApi(APIView):
         floor.deleted = True
         floor.save()
         serializer = FloorSerializer(floor, context={"user": request.user})
-        return Response(serializer.data, 204)
+        return Response(serializer.data, 200)
 
 
 class TagsApi(APIView):
     permission_classes = [IsAuthenticated, AdminOrReadOnly]
 
-    def get(self, request):
+    def get(self, request, **kwargs):
+        # 获取单个
+        tag_id = kwargs.get('tag_id')
+        if tag_id:
+            tag = get_object_or_404(Tag, pk=tag_id)
+            serializer = TagSerializer(tag)
+            return Response(serializer.data)
+        # 获取列表
         search = request.query_params.get('s')
         query_set = Tag.objects.order_by('-temperature')
         if search:
@@ -402,23 +433,17 @@ class TagsApi(APIView):
     def post(self, request):
         serializer = TagSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        name = serializer.validated_data.get('name')
-        tag = Tag.objects.create(name=name, temperature=0)
-        serializer = TagSerializer(tag)
+        serializer.save()
         return Response(serializer.data, 201)
 
     def put(self, request, **kwargs):
-        serializer = TagSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        name = serializer.validated_data.get('name')
-        temperature = serializer.validated_data.get('temperature')
         tag_id = kwargs.get('tag_id')
         tag = get_object_or_404(Tag, pk=tag_id)
-        if name:
-            tag.name = name
-        if temperature:
-            tag.temperature = temperature
-        serializer = TagSerializer(tag)
+
+        serializer = TagSerializer(instance=tag, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
         return Response(serializer.data)
 
     def delete(self, request, **kwargs):
@@ -433,29 +458,26 @@ class FavoritesApi(APIView):
 
     def get(self, request):
         query_set = request.user.favorites.all()
-        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple_floors': True})
+        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple': True})
         return Response(serializer.data)
 
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.add(hole)
-        request.user.save()
-        return Response({'message': '收藏成功'}, 201)
+        return Response({'message': '收藏成功', 'data': request.user.favorites.values_list('id', flat=True)}, 201)
 
     def put(self, request):
         hole_ids = request.data.get('hole_ids')
         holes = Hole.objects.filter(pk__in=hole_ids)
         request.user.favorites.set(holes)
-        request.user.save()
-        return Response({'message': '修改成功'}, 200)
+        return Response({'message': '修改成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
     def delete(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.remove(hole)
-        request.user.save()
-        return Response({'message': '删除成功'}, 204)
+        return Response({'message': '删除成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
 
 class ReportsApi(APIView):
@@ -495,26 +517,25 @@ class ReportsApi(APIView):
         report_id = kwargs.get('report_id')
         report = get_object_or_404(Report, pk=report_id)
         floor = report.floor
-        deal = request.data.get('deal')
 
-        if deal.get('not_deal'):
+        if request.data.get('not_deal'):
             pass
-        if deal.get('fold'):
-            floor.fold = deal.get('fold')
-        if deal.get('delete'):
-            delete_reason = deal.get('delete')
+        if request.data.get('fold'):
+            floor.fold = request.data.get('fold')
+        if request.data.get('delete'):
+            delete_reason = request.data.get('delete')
             floor.history.append({
                 'content': floor.content,
                 'altered_by': request.user.pk,
-                'altered_time': datetime.now(timezone.utc).isoformat()
+                'altered_time': datetime.now(settings.TIMEZONE).isoformat()
             })
             floor.content = delete_reason
             floor.deleted = True
-        if deal.get('silent'):
+        if request.data.get('silent'):
             permission = floor.user.permission
             current_time_str = permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
             current_time = parse_datetime(current_time_str)
-            expected_time = datetime.now(timezone.utc) + timedelta(days=deal.get('silent'))
+            expected_time = datetime.now(settings.TIMEZONE) + timedelta(days=request.data.get('silent'))
             permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
             floor.user.save()
 
@@ -522,7 +543,7 @@ class ReportsApi(APIView):
         report.dealed_by = request.user
         report.dealed = True
         report.save()
-        return Response({'message': '举报处理成功'}, 204)
+        return Response({'message': '举报处理成功'}, 200)
 
     def put(self, request):
         pass
@@ -546,7 +567,7 @@ class ImagesApi(APIView):
 
         # 准备数据
         date_str = datetime.now().strftime('%Y-%m-%d')
-        uid = uuid.uuid1()
+        uid = uuid.uuid4()
         file_type = mime.split('/')[1]
         upload_url = f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{file_type}'
         headers = {
@@ -554,13 +575,13 @@ class ImagesApi(APIView):
         }
         body = {
             'content': base64.b64encode(image.read()).decode('utf-8'),
-            'message': f'upload image by user {request.user.pk}',
+            'message': f'upload image',
             'branch': settings.GITHUB_BRANCH,
         }
-        post_image_to_github.delay(url=upload_url, headers=headers, body=body)
+        post_image_to_github.delay(url=upload_url, headers=headers, body=body, user_id=request.user.id)
 
         result_url = f'https://cdn.jsdelivr.net/gh/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}@{settings.GITHUB_BRANCH}/{date_str}/{uid}.{file_type}'
-        return Response({'url': result_url, 'message': '图片已上传'}, 202)
+        return Response({'url': result_url, 'message': '处理中'}, 202)
 
 
 class MessagesApi(APIView):
@@ -603,9 +624,9 @@ class MessagesApi(APIView):
             if not_read:
                 query_set = query_set.filter(has_read=False)
             if start_time:
-                query_set = query_set.filter(time_created__gt=start_time)
-
-            serializer = MessageSerializer(query_set, many=True)
+                query_set = query_set.filter(time_created__lt=start_time)
+            length = settings.FLOOR_PREFETCH_LENGTH
+            serializer = MessageSerializer(query_set[:length], many=True)
             return Response(serializer.data)
 
     def put(self, request, **kwargs):
@@ -676,24 +697,74 @@ class UsersApi(APIView):
         serializer = UserSerializer(user)
         return Response(serializer.data)
 
-    def post(self, request, **kwargs):
-        # This is (currently) used for Push notification token registration
-        user_id = kwargs.get('user_id')
-        if user_id:
-            user = get_object_or_404(User, pk=user_id)
-            self.check_object_permissions(request, user)
+
+class PushTokensAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_admin:
+            return Response(None, 403)
+        if request.query_params.get('user_id'):
+            user = get_object_or_404(User, pk=request.query_params.get('user_id'))
         else:
             user = request.user
+        tokens = PushToken.objects.filter(user=user)
+        service = request.query_params.get('service')
+        if service:
+            tokens = PushToken.objects.filter(service=service)
+        return Response(PushTokenSerializer(tokens, many=True).data)
 
-        if ('service' not in request.data) or (request.data['service'] != 'apns' and request.data['service'] != 'mipush') or ('token' not in request.data) or (
-                'device_id' not in request.data):
+    def put(self, request):
+        device_id = request.data.get('device_id', '')
+        service = request.data.get('service', '')
+        token = request.data.get('token', '')
+        push_token = PushToken.objects.filter(device_id=device_id, user=request.user).first()
+        if not push_token:
+            push_token = PushToken.objects.create(device_id=device_id, service=service, token=token, user=request.user)
+            code = 201
+        else:
+            push_token.token = token or push_token.token
+            push_token.service = service or push_token.service
+            push_token.save()
+            code = 200
+        serializer = PushTokenSerializer(push_token)
+        return Response(serializer.data, code)
+
+    def delete(self, request):
+        device_id = request.data.get('device_id', '')
+        PushToken.objects.filter(user=request.user, device_id=device_id).delete()
+        return Response(None, 204)
+
+
+class PenaltyApi(APIView):
+    permission_classes = [AdminOnly]
+
+    def post(self, request, **kwargs):
+        self.check_object_permissions(request, request.user)
+        floor = get_object_or_404(Floor, pk=kwargs.get('floor_id'))
+        user = floor.user
+
+        try:
+            penalty_level = int(request.data.get('penalty_level'))
+            division_id = request.data.get('division_id')
+        except (ValueError, TypeError):
             return Response(status=status.HTTP_400_BAD_REQUEST)
+        if penalty_level > 0:
+            penalty_multiplier = {
+                1: 1,
+                2: 5,
+                3: 999
+            }.get(penalty_level, 1)
 
-        service = request.data['service']  # 'apns' or 'mipush'
-        token = request.data['token']
-        device_id = request.data['device_id']
+            offense_count = user.permission.get('offense_count', 0)
+            offense_count += 1
+            user.permission['offense_count'] = offense_count
 
-        user.push_notification_tokens[service].update({device_id: token})
-        user.save(update_fields=['push_notification_tokens'])
+            new_penalty_date = datetime.now(settings.TIMEZONE) + timedelta(days=offense_count * penalty_multiplier)
+            user.permission['silent'][str(division_id)] = new_penalty_date.isoformat()
 
-        return Response(status=status.HTTP_200_OK)
+            new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))
+
+        user.save(update_fields=['permission'])
+        serializer = UserSerializer(user)
+        return Response(serializer.data)

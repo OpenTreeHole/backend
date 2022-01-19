@@ -18,12 +18,8 @@ from django.conf import settings
 from django.conf.urls import url
 from django.urls import path, include
 
-from api import consumers
-from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi
-
-websocket_urlpatterns = [
-    path('ws/notification', consumers.NotificationConsumer.as_asgi()),
-]
+from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
+    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi, PushTokensAPI
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -32,6 +28,7 @@ urlpatterns = [
     path('logout', logout),
     path("register", RegisterApi.as_view()),
     path("verify/<str:method>", VerifyApi.as_view()),
+    path('email/<str:type>', EmailApi.as_view()),
     path("holes", HolesApi.as_view()),
     path("holes/<int:hole_id>", HolesApi.as_view()),
     path('floors', FloorsApi.as_view()),
@@ -46,8 +43,11 @@ urlpatterns = [
     path('messages/<int:message_id>', MessagesApi.as_view()),
     path('users/<int:user_id>', UsersApi.as_view()),
     path('users', UsersApi.as_view()),
+    path('users/push-tokens', PushTokensAPI.as_view()),
     path('divisions', DivisionsApi.as_view()),
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
+    path('penalty', PenaltyApi.as_view()),
+    path('penalty/<int:floor_id>', PenaltyApi.as_view()),
 ]
 
 if settings.HOLE_ENV == 'development':
