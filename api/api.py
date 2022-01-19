@@ -126,6 +126,18 @@ class RegisterApi(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token = Token.objects.get(user=user).key
+        # 发送密码邮件
+        password = serializer.validated_data.get('password')
+        email = serializer.validated_data.get('email')
+        send_email.delay(
+            subject=f'{settings.SITE_NAME} 密码存档',
+            content=(
+                f'您已成功注册{settings.SITE_NAME}，您选择了随机设置密码，密码如下：'
+                f'\r\n\r\n{password}\r\n\r\n'
+                '提示：服务器中仅存储加密后的密码，无须担心安全问题'
+            ),
+            receivers=[email]
+        )
         return Response({'message': '注册成功', 'token': token}, 201)
 
     def put(self, request):
