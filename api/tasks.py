@@ -43,7 +43,10 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
             'success': True
         }
     if uuid:
-        send_websocket_message_to_group(uuid, result)
+        try:
+            send_websocket_message_to_group(uuid, result)
+        except:
+            print(uuid, type(uuid))
     return result
 
 
