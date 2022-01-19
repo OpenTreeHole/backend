@@ -7,7 +7,7 @@ import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
@@ -18,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
     PushTokenSerializer, FloorUpdateSerializer
@@ -126,9 +126,18 @@ class RegisterApi(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         token = Token.objects.get(user=user).key
-        # 发送密码邮件
+
         password = serializer.validated_data.get('password')
         email = serializer.validated_data.get('email')
+        # 迁移用户收藏
+        old_favorites = OldUserFavorites.objects.filter(uid=email[:11]).first()
+        if old_favorites:
+            try:
+                user.favorites.set(old_favorites.favorites)
+            except IntegrityError:
+                pass
+
+        # 发送密码邮件
         send_email.delay(
             subject=f'{settings.SITE_NAME} 密码存档',
             content=(
