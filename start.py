@@ -23,5 +23,5 @@ if User.objects.count() == 0:
 if Division.objects.count() == 0:
     Division.objects.create(name='树洞', description='论坛板块')
     Division.objects.create(name='表白墙', description='道出心声')
-    Division.objects.create(name='跳蚤市场', description='二手交易及广告')
     Division.objects.create(name='评教', description='分享一些经验')
+    Division.objects.create(name='站务', description='论坛管理')
