@@ -12,9 +12,6 @@ class MyJsonWebsocketConsumer(AsyncJsonWebsocketConsumer):
         """
         await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
 
-    async def on_send(self, event):
-        await self.send_json(event['content'])
-
 
 def send_websocket_message_to_group(group: str, content: dict):
     """
