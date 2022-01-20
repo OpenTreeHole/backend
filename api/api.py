@@ -1,9 +1,6 @@
-import base64
 import secrets
-import uuid
 from datetime import datetime, timedelta
 
-import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
@@ -23,7 +20,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, Repo
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
     PushTokenSerializer, FloorUpdateSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
-from api.tasks import send_email, post_image_to_github
+from api.tasks import send_email
 from utils.apis import find_mentions
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
@@ -551,37 +548,9 @@ class ReportsApi(APIView):
 
 class ImagesApi(APIView):
     permission_classes = [IsAuthenticated]
-    throttle_scope = 'upload'
 
     def post(self, request):
-        # 校验图片
-        image = request.data.get('image')
-        if not image:
-            return Response({'message': '内容不能为空'}, 400)
-        if image.size > settings.MAX_IMAGE_SIZE * 1024 * 1024:
-            return Response({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB'}, 400)
-        mime = magic.from_buffer(image.read(min([image.size, 2048])), mime=True)
-        image.seek(0)
-        if mime.split('/')[0] != 'image':
-            return Response({'message': '请上传图片格式'}, 400)
-
-        # 准备数据
-        date_str = datetime.now().strftime('%Y-%m-%d')
-        uid = uuid.uuid4()
-        file_type = mime.split('/')[1]
-        upload_url = f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{file_type}'
-        headers = {
-            'Authorization': f'token {settings.GITHUB_TOKEN}'
-        }
-        body = {
-            'content': base64.b64encode(image.read()).decode('utf-8'),
-            'message': f'upload image',
-            'branch': settings.GITHUB_BRANCH,
-        }
-        post_image_to_github.delay(url=upload_url, headers=headers, body=body, user_id=request.user.id)
-
-        result_url = f'https://cdn.jsdelivr.net/gh/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}@{settings.GITHUB_BRANCH}/{date_str}/{uid}.{file_type}'
-        return Response({'url': result_url, 'message': '处理中'}, 202)
+        return Response({'message': '该 API 已弃用，请调用 websocket API 以上传图片'}, 405)
 
 
 class MessagesApi(APIView):

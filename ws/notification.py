@@ -28,7 +28,7 @@ class NotificationConsumer(MyJsonWebsocketConsumer):
     async def receive_json(self, content, **kwargs):
         if not self.user.is_authenticated:
             return
-        
+
         action = content.get('action', '')
         id = content.get('id')
         unread = content.get('unread', True)
@@ -47,6 +47,9 @@ class NotificationConsumer(MyJsonWebsocketConsumer):
             await self.send_json({'message': '所有未读消息已清空'})
         else:
             await self.send_json({'message': 'action 字段不合法'})
+
+    async def on_send(self, event):
+        await self.send_json(event['content'])
 
 
 @database_sync_to_async
