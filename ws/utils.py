@@ -1,7 +1,7 @@
 import json
 
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer, AsyncWebsocketConsumer
 from channels.layers import get_channel_layer
 
 
@@ -10,6 +10,11 @@ class MyJsonWebsocketConsumer(AsyncJsonWebsocketConsumer):
         """
         unicode 编码 json 并发给客户端
         """
+        await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
+
+
+class MyWebsocketConsumer(AsyncWebsocketConsumer):
+    async def send_json(self, content, close=False):
         await super().send(text_data=json.dumps(content, ensure_ascii=False), close=close)
 
 
