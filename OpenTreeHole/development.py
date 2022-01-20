@@ -22,7 +22,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'silk.middleware.SilkyMiddleware',
-    "django.middleware.csrf.CsrfViewMiddleware",
 ]
 
 # 开发环境使用 sqlite 数据库
