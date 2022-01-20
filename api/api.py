@@ -631,25 +631,29 @@ class MessagesApi(APIView):
 
     def put(self, request, **kwargs):
         message_id = kwargs.get('message_id')
-        message = get_object_or_404(Message, pk=message_id)
+        if message_id:
+            message = get_object_or_404(Message, pk=message_id)
+            content = request.data.get('message')
+            has_read = request.data.get('has_read')
+            code = request.data.get('code')
+            data = request.data.get('data')
 
-        content = request.data.get('message')
-        has_read = request.data.get('has_read')
-        code = request.data.get('code')
-        data = request.data.get('data')
+            if content:
+                message.message = content.strip()
+            if has_read:
+                message.has_read = has_read
+            if code:
+                message.code = code
+            if data:
+                message.data = data
 
-        if content:
-            message.message = content.strip()
-        if has_read:
-            message.has_read = has_read
-        if code:
-            message.code = code
-        if data:
-            message.data = data
-
-        message.save()
-        serializer = MessageSerializer(message)
-        return Response(serializer.data)
+            message.save()
+            serializer = MessageSerializer(message)
+            return Response(serializer.data)
+        else:
+            clear_all = request.data.get('clear_all')
+            if clear_all:
+                Message.objects.filter(user=request.user).update(has_read=True)
 
     def delete(self, request):
         pass
