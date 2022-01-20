@@ -651,9 +651,11 @@ class MessagesApi(APIView):
             serializer = MessageSerializer(message)
             return Response(serializer.data)
         else:
-            clear_all = request.data.get('clear_all')
+            clear_all = request.data.get('clear_all', False)
             if clear_all:
                 Message.objects.filter(user=request.user).update(has_read=True)
+                return Response(None, 200)
+        return Response({'message': '需要指定操作'}, 400)
 
     def delete(self, request):
         pass
