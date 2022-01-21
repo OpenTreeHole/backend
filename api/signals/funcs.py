@@ -83,14 +83,15 @@ def notify_when_reported(sender, instance, created, **kwargs):
     floor = instance.floor
     if created:
         data = ReportSerializer(instance).data
-        if 'report' in floor.user.config['notify']:
-            message = f'你的帖子#{instance.hole}(##{instance.floor})被举报了'
-            send_notifications.delay(floor.user_id, message, data, 'report')
+        # if 'report' in floor.user.config['notify']:
+        #     message = f'你的帖子#{instance.hole}(##{instance.floor})被举报了'
+        #     send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
-        queryset = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat()).values_list('id', flat=True)
-        for admin_id in list(queryset):
-            message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
-            send_notifications.delay(admin_id, message, data, 'report')
+        admins = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat())
+        for admin in list(admins):
+            if 'admin_report' in admin.config['notify']:
+                message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
+                send_notifications.delay(admin.id, message, data, 'report')
 
 
 # 用户权限发生变化时发送通知
@@ -114,10 +115,11 @@ def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
 # 用户被处罚后发送通知
 @receiver(new_penalty, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, penalty, **kwargs):
-    message = f'你因为帖子##{instance}违规而被处罚'
-    data = {
-        "level": penalty[0],
-        "date": penalty[1],
-        "division_id": penalty[2],
-    }
-    send_notifications.delay(instance.user_id, message, data, 'penalty')
+    if 'report' in instance.user.config['notify']:
+        message = f'你因为帖子##{instance}违规而被处罚'
+        data = {
+            "level": penalty[0],
+            "date": penalty[1],
+            "division_id": penalty[2],
+        }
+        send_notifications.delay(instance.user_id, message, data, 'penalty')
