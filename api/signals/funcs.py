@@ -77,7 +77,7 @@ def notify_when_favorites_updated(sender, instance, created, **kwargs):
             send_notifications.delay(user.id, message, data, 'favorite')
 
 
-# 被举报时通知用户和管理员
+# 被举报时通知管理员
 @receiver(post_save, sender=Report)
 def notify_when_reported(sender, instance, created, **kwargs):
     floor = instance.floor
@@ -88,8 +88,8 @@ def notify_when_reported(sender, instance, created, **kwargs):
         #     send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
         admins = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat())
-        for admin in list(admins):
-            if 'admin_report' in admin.config['notify']:
+        for admin in admins:
+            if 'report' in admin.config['notify']:
                 message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
                 send_notifications.delay(admin.id, message, data, 'report')
 
@@ -115,7 +115,7 @@ def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
 # 用户被处罚后发送通知
 @receiver(new_penalty, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, penalty, **kwargs):
-    if 'report' in instance.user.config['notify']:
+    if 'penalty' in instance.user.config['notify']:
         message = f'你因为帖子##{instance}违规而被处罚'
         data = {
             "level": penalty[0],
