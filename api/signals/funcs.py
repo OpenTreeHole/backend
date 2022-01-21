@@ -88,11 +88,13 @@ def notify_when_reported(sender, instance, created, **kwargs):
         #     message = f'你的帖子#{instance.hole}(##{instance.floor})被举报了'
         #     send_notifications.delay(floor.user_id, message, data, 'report')
         # 通知管理员
-        admins = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat())
-        for admin in admins:
-            if NotifyConfig.reported in admin.config['notify']:
-                message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
-                send_notifications.delay(admin.id, message, data, NotifyType.reported)
+        queryset = get_user_model().objects.filter(
+            permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat(),
+            config__notify__icontains=NotifyConfig.reported
+        ).values_list('id', flat=True)
+        for admin_id in list(queryset):
+            message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
+            send_notifications.delay(admin_id, message, data, NotifyType.reported)
 
 
 # 用户权限发生变化时发送通知
