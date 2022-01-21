@@ -12,6 +12,7 @@ from api.models import Hole, Tag, Floor, Report
 from api.serializers import FloorSerializer, ReportSerializer
 from api.signals import modified_by_admin, mention_to, new_penalty
 from utils.apis import to_shadow_text
+from utils.constants import NotifyType, NotifyConfig
 from utils.notification import send_notifications
 
 
@@ -59,22 +60,22 @@ def notify_when_mentioned(sender, instance, mentioned, **kwargs):
         **kwargs:
     """
     for floor in mentioned:
-        if 'mention' in floor.user.config['notify']:
+        if NotifyConfig.floor_mentioned in floor.user.config['notify']:
             message = f'你在树洞#{floor.hole_id}的帖子##{floor.id}被引用了'
             data = FloorSerializer(instance, context={"user": floor.user}).data
-            send_notifications.delay(floor.user_id, message, data, 'mention')
+            send_notifications.delay(floor.user_id, message, data, NotifyType.floor_mentioned)
 
 
 # 收藏的主题帖有新帖时通知用户
 @receiver(post_save, sender=Floor)
 def notify_when_favorites_updated(sender, instance, created, **kwargs):
     if created:
-        for user in instance.hole.favored_by.filter(config__notify__icontains='favorite'):
+        for user in instance.hole.favored_by.filter(config__notify__icontains=NotifyConfig.favored_hole_replied):
             if user.id == instance.user_id:  # 自己的帖子不发送通知
                 continue
             message = f'你收藏的树洞#{instance.hole_id}有新回复'
             data = FloorSerializer(instance, context={"user": user}).data
-            send_notifications.delay(user.id, message, data, 'favorite')
+            send_notifications.delay(user.id, message, data, NotifyType.favored_hole_replied)
 
 
 # 被举报时通知管理员
@@ -89,19 +90,19 @@ def notify_when_reported(sender, instance, created, **kwargs):
         # 通知管理员
         admins = get_user_model().objects.filter(permission__admin__gt=datetime.now(settings.TIMEZONE).isoformat())
         for admin in admins:
-            if 'report' in admin.config['notify']:
+            if NotifyConfig.reported in admin.config['notify']:
                 message = f'{floor.user}的树洞#{instance.hole}(##{instance.floor_id})被举报了'
-                send_notifications.delay(admin.id, message, data, 'report')
+                send_notifications.delay(admin.id, message, data, NotifyType.reported)
 
 
 # 用户权限发生变化时发送通知
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def notify_when_permission_changed(sender, instance, **kwargs):
     update_fields = kwargs.get('update_fields') if kwargs.get('update_fields') else []
-    if 'permission' in update_fields:
+    if NotifyType.permission_modified in update_fields:
         message = '你的权限被更改了'
         data = instance.permission
-        send_notifications.delay(instance.id, message, data, 'permission')
+        send_notifications.delay(instance.id, message, data, NotifyType.permission_modified)
 
 
 # 用户帖子被修改后发出通知
@@ -109,17 +110,17 @@ def notify_when_permission_changed(sender, instance, **kwargs):
 def notify_when_floor_modified_by_admin(sender, instance, **kwargs):
     message = f'你的帖子##{instance}被修改了'
     data = FloorSerializer(instance, context={"user": instance.user}).data
-    send_notifications.delay(instance.user_id, message, data, 'modify')
+    send_notifications.delay(instance.user_id, message, data, NotifyType.floor_modified)
 
 
 # 用户被处罚后发送通知
 @receiver(new_penalty, sender=Floor)
 def notify_when_floor_modified_by_admin(sender, instance, penalty, **kwargs):
-    if 'penalty' in instance.user.config['notify']:
+    if NotifyConfig.punished in instance.user.config['notify']:
         message = f'你因为帖子##{instance}违规而被处罚'
         data = {
             "level": penalty[0],
             "date": penalty[1],
             "division_id": penalty[2],
         }
-        send_notifications.delay(instance.user_id, message, data, 'penalty')
+        send_notifications.delay(instance.user_id, message, data, NotifyType.punished)

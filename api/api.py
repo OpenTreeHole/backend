@@ -23,6 +23,7 @@ from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
 from utils.apis import find_mentions
 from utils.auth import check_api_key, many_hashes
+from utils.constants import NOTIFY_TYPE
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -662,7 +663,7 @@ class UsersApi(APIView):
                 pass  # 避免没有更改权限时发出信号
             else:
                 user.permission = permission
-                user.save(update_fields=['permission'])  # 发送权限被更改的信号
+                user.save(update_fields=[NOTIFY_TYPE['permission_modified']])  # 发送权限被更改的信号
         if favorites:
             user.favorites.set(favorites)
         if config:
@@ -740,6 +741,6 @@ class PenaltyApi(APIView):
 
             new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))
 
-        user.save(update_fields=['permission'])
+        user.save(update_fields=[NOTIFY_TYPE['permission_modified']])
         serializer = UserSerializer(user)
         return Response(serializer.data)
