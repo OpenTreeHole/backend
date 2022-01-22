@@ -2,8 +2,8 @@ name: build
 
 on:
   push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+    branches:
+      - master
 
 env:
   APP_NAME: open_tree_hole_backend
