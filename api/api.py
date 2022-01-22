@@ -17,8 +17,8 @@ from rest_framework.views import APIView
 
 from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
-    PushTokenSerializer, FloorUpdateSerializer
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, \
+    HoleCreateSerializer, PushTokenSerializer, FloorUpdateSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
 from utils.apis import find_mentions
@@ -268,7 +268,10 @@ class HolesApi(APIView):
 
     @transaction.atomic
     def post(self, request):
-        serializer = HoleCreateSerializer(data=request.data, context={'request_data': request.data, 'user': request.user})
+        serializer = HoleCreateSerializer(
+            data=request.data,
+            context={'request_data': request.data, 'user': request.user}
+        )
         serializer.is_valid(raise_exception=True)
         # 检查权限
         division_id = serializer.validated_data.get('division_id')

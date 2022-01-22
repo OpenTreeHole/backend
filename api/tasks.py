@@ -1,10 +1,12 @@
 # Create your tasks here
 from __future__ import absolute_import, unicode_literals
 
+import re
 import time
 from smtplib import SMTPException
 
 from celery import shared_task
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import F
@@ -12,6 +14,8 @@ from django.db.models import F
 from OpenTreeHole.celery import app
 from api.models import Hole
 from ws.utils import send_websocket_message_to_group
+
+User = get_user_model()
 
 
 @shared_task
@@ -58,6 +62,15 @@ def update_hole_views():
     cache.set('hole_views', cached, None)
 
 
+@app.task
+def update_last_login():
+    for key in cache.iter_keys('user_last_login_*'):
+        user_id = int(re.findall(r'user_last_login_(\d+)', key)[0])
+        User.objects.filter(pk=user_id).update(last_login=cache.get(key, ''))
+        cache.delete(key)
+
+
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(60, update_hole_views.s())  # 每分钟更新一次浏览量
+    sender.add_periodic_task(3600, update_last_login.s())  # 每小时更新一次 last_login
