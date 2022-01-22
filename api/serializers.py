@@ -23,7 +23,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config', 'joined_time', 'is_admin']
+        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config',
+                  'joined_time', 'is_admin']
 
     def validate_permission(self, permission):
         for s in ['admin', 'silent']:
@@ -114,7 +115,8 @@ class DivisionSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(instance.pinned)])  # Holes 按 pinned 的顺序排序
+        order = Case(*[When(pk=pk, then=pos) for pos, pk in
+                       enumerate(instance.pinned)])  # Holes 按 pinned 的顺序排序
         holes_data = HoleSerializer(
             Hole.objects.filter(id__in=instance.pinned).order_by(order),
             many=True,
@@ -174,7 +176,8 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated',
+                  'time_created', 'deleted', 'fold', 'like', 'special_tag']
         read_only_fields = ['floor_id', 'anonyname']
 
     def to_representation(self, instance):
@@ -191,7 +194,9 @@ class FloorSerializer(SimpleFloorSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
+        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention',
+                  'time_updated', 'time_created', 'deleted', 'fold', 'like',
+                  'special_tag']
         read_only_fields = ['floor_id', 'history', 'anonyname']
 
     @staticmethod
@@ -218,7 +223,8 @@ class FloorSerializer(SimpleFloorSerializer):
             anonyname = random_name(hole.mapping.values())
             hole.mapping[user.pk] = anonyname
         hole.save()
-        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=user, special_tag=special_tag)
+        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname,
+                                     user=user, special_tag=special_tag)
         floor.mention.set(mentions)
         mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
         return floor
@@ -274,7 +280,8 @@ class HoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Hole
-        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
+        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags',
+                  'view', 'reply', 'length', 'prefetch_length', 'start_time', 'hidden']
 
     def to_representation(self, instance):
         """
@@ -286,7 +293,8 @@ class HoleSerializer(serializers.ModelSerializer):
         def _inner_to_representation(self, instance):
             data = super().to_representation(instance)
             user = self.context.get('user')
-            prefetch_length = self.context.get('prefetch_length', settings.FLOOR_PREFETCH_LENGTH)
+            prefetch_length = self.context.get('prefetch_length',
+                                               settings.FLOOR_PREFETCH_LENGTH)
             if not user:
                 print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
             else:
@@ -385,7 +393,8 @@ class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Report
-        fields = ['report_id', 'hole_id', 'floor', 'reason', 'time_created', 'time_updated', 'dealed']
+        fields = ['report_id', 'hole_id', 'floor', 'reason', 'time_created',
+                  'time_updated', 'dealed']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

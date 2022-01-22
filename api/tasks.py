@@ -56,11 +56,14 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
 @app.task
 def update_hole_views():
     cached = cache.get('hole_views', {})
+    result = {}
     for id in cached:
         if cached[id] > 0:
             Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
+            result[id] = cached[id]
             cached[id] = 0
     cache.set('hole_views', cached, None)
+    return result
 
 
 @app.task
