@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
 from utils.auth import encrypt_email, many_hashes
+from utils.constants import NotifyConfig
 
 
 class Division(models.Model):
@@ -102,14 +103,15 @@ def default_config():
         show: 展示
 
     notify: 在以下场景时通知
-        mention: 帖子被提及时
-        favorite: 收藏的主题帖有新帖时
-        report: 被举报时
+        NotifyConfig.floor_mentioned:       帖子被提及时
+        NotifyConfig.favored_hole_replied:  收藏的主题帖有新帖时
+        NotifyConfig.reported:              被举报时通知管理员
+        NotifyConfig.punished:              被处罚时
     另外，当用户权限发生变化或所发帖被修改时也会收到通知
     """
     return {
         'show_folded': 'fold',
-        'notify': ['mention', 'favorite']
+        'notify': [NotifyConfig.floor_mentioned, NotifyConfig.favored_hole_replied, NotifyConfig.punished]
     }
 
 
