@@ -101,7 +101,7 @@ def notify_when_reported(sender, instance, created, **kwargs):
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def notify_when_permission_changed(sender, instance, **kwargs):
     update_fields = kwargs.get('update_fields') if kwargs.get('update_fields') else []
-    if NotifyType.permission_modified in update_fields:
+    if 'permission' in update_fields:
         message = '你的权限被更改了'
         data = instance.permission
         send_notifications.delay(instance.id, message, data, NotifyType.permission_modified)
