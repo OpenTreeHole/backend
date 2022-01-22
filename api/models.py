@@ -210,3 +210,9 @@ class PushToken(models.Model):
 class OldUserFavorites(models.Model):
     uid = models.CharField(max_length=11)
     favorites = models.JSONField()
+
+
+class ActiveUser(models.Model):
+    date = models.DateField(unique=True)
+    dau = models.IntegerField(default=0)  # 日活
+    mau = models.IntegerField(default=0)  # 月活
