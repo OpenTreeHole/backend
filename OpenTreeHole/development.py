@@ -7,19 +7,9 @@ DEBUG = True
 # 允许任意 host
 ALLOWED_HOSTS = ['*']
 
-INSTALLED_APPS = [
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    'django_celery_results',
-    'channels',
-    'silk',
-    "api.apps.ApiConfig",
-]
+INSTALLED_APPS = INSTALLED_APPS + ['silk']
 
-MIDDLEWARE = [
+MIDDLEWARE = MIDDLEWARE + [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'silk.middleware.SilkyMiddleware',
 ]
@@ -34,7 +24,8 @@ DATABASES = {
 
 if USE_REDIS_IN_DEV:
     # noinspection PyUnresolvedReferences
-    from .production import CACHES, CHANNEL_LAYERS, CELERY_BROKER_URL, CELERY_RESULT_BACKEND
+    from .production import CACHES, CHANNEL_LAYERS, CELERY_BROKER_URL, \
+        CELERY_RESULT_BACKEND
 else:
     # 开发环境使用本地内存作为缓存
     CACHES = {
@@ -59,16 +50,7 @@ else:
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # 开发环境不限制 API 访问速率
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
-    ],
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer'
-    ],
-    "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
-}
+REST_FRAMEWORK = REST_FRAMEWORK
 
 # silk profiling
 SILKY_PYTHON_PROFILER = True

@@ -15,20 +15,16 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division, \
-    PushToken, OldUserFavorites
-from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
-    ReportSerializer, MessageSerializer, \
-    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, \
-    EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
-    PushTokenSerializer, FloorUpdateSerializer
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites, ActiveUser
+from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
+    UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, \
+    HoleCreateSerializer, PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
 from utils.apis import find_mentions
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
-from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
-    NotSilentOrAdminCanPost, AdminOrReadOnly, \
+from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
 
 
@@ -89,8 +85,7 @@ class VerifyApi(APIView):
                 f'验证码的有效期为 {settings.VALIDATION_CODE_EXPIRE_TIME} 分钟\r\n'
                 '如果您意外地收到了此邮件，请忽略它'
             )
-            if not User.objects.filter(
-                    identifier=many_hashes(email)).exists():  # 用户不存在，注册邮件
+            if not User.objects.filter(identifier=many_hashes(email)).exists():  # 用户不存在，注册邮件
                 send_email.delay(
                     subject=f'{settings.SITE_NAME} 注册验证',
                     content=f'欢迎注册 {settings.SITE_NAME}，{base_content}',
@@ -198,11 +193,7 @@ class DivisionsApi(APIView):
         else:
             query_set = Division.objects.all()
 
-        serializer = DivisionSerializer(
-            query_set,
-            many=not division_id,
-            context={'user': request.user}
-        )
+        serializer = DivisionSerializer(query_set, many=not division_id, context={'user': request.user})
         return Response(serializer.data)
 
     @transaction.atomic
@@ -240,8 +231,7 @@ class HolesApi(APIView):
         # 获取单个
         hole_id = kwargs.get('hole_id')
         if hole_id:
-            hole = get_object_or_404(Hole, pk=hole_id) if request.user.is_admin \
-                else get_object_or_404(Hole, pk=hole_id, hidden=False)
+            hole = get_object_or_404(Hole, pk=hole_id)
             # 缓存中增加主题帖的浏览量
             cached = cache.get('hole_views', {})
             view = cached.get(hole_id, 0)
@@ -257,17 +247,13 @@ class HolesApi(APIView):
 
         # 获取多个
         else:
-            # 标签
             tag_name = request.query_params.get('tag')
             if tag_name:
                 tag = get_object_or_404(Tag, name=tag_name)
                 queryset = tag.hole_set.all()
             else:
                 queryset = Hole.objects.all()
-            # 隐藏帖
-            queryset = queryset if request.user.is_admin else \
-                queryset.filter(hidden=False)
-            # 时间、分区
+
             queryset = queryset.order_by('-time_updated').filter(
                 time_updated__lt=start_time,
                 division_id=division_id
@@ -307,8 +293,8 @@ class HolesApi(APIView):
         return Response(serializer.data)
 
     def delete(self, request, **kwargs):
-        Hole.objects.filter(id=kwargs.get('hole_id', 1)).update(hidden=True)
-        return Response({'message': '已隐藏'}, 200)
+        # 主题帖不能删除
+        return Response(None, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class FloorsApi(APIView):
@@ -353,10 +339,7 @@ class FloorsApi(APIView):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         self.check_object_permissions(request, hole.division_id)
-        serializer = FloorSerializer(
-            data=request.data,
-            context={'user': request.user, 'hole': hole}
-        )
+        serializer = FloorSerializer(data=request.data, context={'user': request.user, 'hole': hole})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({'message': '发表成功！', 'data': serializer.data}, 201)
@@ -475,38 +458,26 @@ class FavoritesApi(APIView):
 
     def get(self, request):
         query_set = request.user.favorites.all()
-        serializer = HoleSerializer(
-            query_set, many=True,
-            context={"user": request.user, 'simple': True}
-        )
+        serializer = HoleSerializer(query_set, many=True, context={"user": request.user, 'simple': True})
         return Response(serializer.data)
 
     def post(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.add(hole)
-        return Response({
-            'message': '收藏成功',
-            'data': request.user.favorites.values_list('id', flat=True)
-        }, 201)
+        return Response({'message': '收藏成功', 'data': request.user.favorites.values_list('id', flat=True)}, 201)
 
     def put(self, request):
         hole_ids = request.data.get('hole_ids')
         holes = Hole.objects.filter(pk__in=hole_ids)
         request.user.favorites.set(holes)
-        return Response({
-            'message': '修改成功',
-            'data': request.user.favorites.values_list('id', flat=True)
-        }, 200)
+        return Response({'message': '修改成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
     def delete(self, request):
         hole_id = request.data.get('hole_id')
         hole = get_object_or_404(Hole, pk=hole_id)
         request.user.favorites.remove(hole)
-        return Response({
-            'message': '删除成功',
-            'data': request.user.favorites.values_list('id', flat=True)
-        }, 200)
+        return Response({'message': '删除成功', 'data': request.user.favorites.values_list('id', flat=True)}, 200)
 
 
 class ReportsApi(APIView):
@@ -518,11 +489,7 @@ class ReportsApi(APIView):
         floor = get_object_or_404(Floor, pk=floor_id)
         if not reason or not reason.strip():
             return Response({'message': '举报原因不能为空'}, 400)
-        report = Report.objects.create(
-            hole_id=floor.hole_id,
-            floor_id=floor_id,
-            reason=reason
-        )
+        report = Report.objects.create(hole_id=floor.hole_id, floor_id=floor_id, reason=reason)
         serializer = ReportSerializer(report)
         return Response(serializer.data, 201)
 
@@ -566,14 +533,10 @@ class ReportsApi(APIView):
             floor.deleted = True
         if request.data.get('silent'):
             permission = floor.user.permission
-            current_time_str = permission['silent'].get(
-                str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
+            current_time_str = permission['silent'].get(str(floor.hole.division_id), '1970-01-01T00:00:00+00:00')
             current_time = parse_datetime(current_time_str)
-            expected_time = \
-                datetime.now(settings.TIMEZONE) + \
-                timedelta(days=request.data.get('silent'))
-            permission['silent'][str(floor.hole.division_id)] = max(
-                current_time, expected_time).isoformat()
+            expected_time = datetime.now(settings.TIMEZONE) + timedelta(days=request.data.get('silent'))
+            permission['silent'][str(floor.hole.division_id)] = max(current_time, expected_time).isoformat()
             floor.user.save()
 
         floor.save()
@@ -602,7 +565,7 @@ class MessagesApi(APIView):
 
         if request.data.get('share_email'):
             code = 'share_email'
-            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.email} '
+            message = f'用户看到了你发布的帖子\n{str(floor)}\n希望与你取得联系，TA的邮箱为：{request.user.email}'
         elif request.data.get('message'):
             code = 'message'
             message = request.data.get('message').strip()
@@ -733,15 +696,9 @@ class PushTokensAPI(APIView):
         device_id = request.data.get('device_id', '')
         service = request.data.get('service', '')
         token = request.data.get('token', '')
-        push_token = PushToken.objects.filter(device_id=device_id,
-                                              user=request.user).first()
+        push_token = PushToken.objects.filter(device_id=device_id, user=request.user).first()
         if not push_token:
-            push_token = PushToken.objects.create(
-                device_id=device_id,
-                service=service,
-                token=token,
-                user=request.user
-            )
+            push_token = PushToken.objects.create(device_id=device_id, service=service, token=token, user=request.user)
             code = 201
         else:
             push_token.token = token or push_token.token
@@ -781,17 +738,24 @@ class PenaltyApi(APIView):
             offense_count += 1
             user.permission['offense_count'] = offense_count
 
-            new_penalty_date = \
-                datetime.now(settings.TIMEZONE) + \
-                timedelta(days=offense_count * penalty_multiplier)
+            new_penalty_date = datetime.now(settings.TIMEZONE) + timedelta(days=offense_count * penalty_multiplier)
             user.permission['silent'][str(division_id)] = new_penalty_date.isoformat()
 
-            new_penalty.send(
-                sender=Floor,
-                instance=floor,
-                penalty=(penalty_level, new_penalty_date, division_id)
-            )
+            new_penalty.send(sender=Floor, instance=floor, penalty=(penalty_level, new_penalty_date, division_id))
 
         user.save(update_fields=['permission'])
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_active_user(request):
+    serializer = ActiveUserSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    queryset = ActiveUser.objects.filter(
+        date__gte=data['end_date'], date__lte=data['start_date']
+    ).order_by('-id')
+    serializer = ActiveUserSerializer(queryset, many=True)
+    return Response(serializer.data)

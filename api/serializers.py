@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.db.models import Case, When
 from rest_framework import serializers
 
-from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken, ActiveUser
 from api.signals import mention_to
 from utils.apis import find_mentions
 from utils.auth import many_hashes
@@ -408,3 +408,13 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created']
+
+
+class ActiveUserSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date() - timedelta(days=1),
+                                       write_only=True)
+    end_date = serializers.DateField(default='1970-01-01', write_only=True)
+
+    class Meta:
+        model = ActiveUser
+        fields = ['date', 'dau', 'mau', 'start_date', 'end_date']
