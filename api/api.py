@@ -15,10 +15,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites
+from api.models import Tag, Hole, Floor, Report, User, Message, Division, PushToken, OldUserFavorites, ActiveUser
 from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, EmailSerializer, BaseEmailSerializer, \
-    HoleCreateSerializer, PushTokenSerializer, FloorUpdateSerializer
+    HoleCreateSerializer, PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
 from utils.apis import find_mentions
@@ -746,3 +746,16 @@ class PenaltyApi(APIView):
         user.save(update_fields=['permission'])
         serializer = UserSerializer(user)
         return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_active_user(request):
+    serializer = ActiveUserSerializer(data=request.query_params)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    queryset = ActiveUser.objects.filter(
+        date__gte=data['end_date'], date__lte=data['start_date']
+    ).order_by('-id')
+    serializer = ActiveUserSerializer(queryset, many=True)
+    return Response(serializer.data)

@@ -8,7 +8,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
-from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken, ActiveUser
 from utils.auth import many_hashes
 
 User = get_user_model()
@@ -835,3 +835,16 @@ class PushTokenTests(APITestCase):
         r = self.client.delete('/users/push-tokens', data={'device_id': '1'})
         self.assertEqual(r.status_code, 204)
         self.assertEqual(PushToken.objects.filter(device_id='1').exists(), False)
+
+
+class SiteInfoTests(APITestCase):
+    def setUp(self):
+        self.admin = None
+        self.user = None
+        basic_setup(self)
+        ActiveUser.objects.create()
+
+    def test_active_user(self):
+        r = self.client.get('/siteinfo/active-user')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(r.json()), 1)
