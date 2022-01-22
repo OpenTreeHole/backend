@@ -1,11 +1,9 @@
 # Create your tasks here
 from __future__ import absolute_import, unicode_literals
 
-import os
 import time
 from smtplib import SMTPException
 
-import httpx
 from celery import shared_task
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -43,31 +41,24 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
             'success': True
         }
     if uuid:
-        send_websocket_message_to_group(uuid, result)
-    return result
-
-
-@shared_task
-def post_image_to_github(url: str, headers: dict, body: dict, user_id: int) -> dict:
-    proxies = os.environ.get("HTTP_PROXY")
-    with httpx.Client(proxies=proxies) as client:
-        r = client.put(url, headers=headers, json=body)
-    if r.status_code == 201:
-        result = {'message': '上传成功', 'success': True}
-    else:
-        result = {'message': '上传失败', 'data': r.json(), 'success': False}
-    send_websocket_message_to_group(f'user-{user_id}', result)
+        try:
+            send_websocket_message_to_group(uuid, result)
+        except:
+            print(uuid, type(uuid))
     return result
 
 
 @app.task
 def update_hole_views():
     cached = cache.get('hole_views', {})
+    result = {}
     for id in cached:
         if cached[id] > 0:
             Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
+            result[id] = cached[id]
             cached[id] = 0
     cache.set('hole_views', cached, None)
+    return result
 
 
 @app.on_after_finalize.connect

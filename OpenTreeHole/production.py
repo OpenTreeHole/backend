@@ -17,7 +17,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "django.middleware.csrf.CsrfViewMiddleware",
 ]
 
 # 生产环境使用 Mysql 数据库

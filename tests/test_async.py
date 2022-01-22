@@ -16,17 +16,6 @@ class IndexTests(APITestCase):
         self.assertEqual(r.data, {"message": "Hello world!"})
 
 
-class ImageTests(APITestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(email='email')
-
-    def test_post(self):
-        self.client.force_authenticate(user=self.user)
-        with open('tests/image.jpg', 'rb') as image:
-            r = self.client.post('/images', {'image': image}, format='multipart')
-        self.assertEqual(r.status_code, 202)
-
-
 class MessageTest(APITestCase):
     def setUp(self):
         basic_setup(self)

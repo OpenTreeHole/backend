@@ -29,7 +29,8 @@ def basic_setup(self):
     self.admin = admin
     self.user = user
 
-    self.client.credentials(HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
+    self.client.credentials(
+        HTTP_AUTHORIZATION='Token ' + Token.objects.get(user=user).key)
 
     division, created = Division.objects.get_or_create(name='树洞')
     for tag_name in ['tag A1', 'tag A2', 'tag B1', 'tag B2']:
@@ -65,7 +66,8 @@ class PermissionTests(APITestCase):
         for method in ['get', 'post', 'put', 'delete']:
             for url in ['/holes', '/floors', '/tags', '/user/favorites', '/reports']:
                 loc = locals()
-                exec('r = self.client.{method}("{url}")'.format(method=method, url=url), globals(), loc)
+                exec('r = self.client.{method}("{url}")'.format(method=method, url=url),
+                     globals(), loc)
                 r = loc['r']
                 self.assertEqual(r.status_code, 401)
 
@@ -88,12 +90,6 @@ class PermissionTests(APITestCase):
 
     def test_admin(self):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.admin_token)
-
-        r = self.client.put('/holes/1')
-        self.assertEqual(r.status_code, 200)
-
-        r = self.client.delete('/holes/1')
-        self.assertEqual(r.status_code, 405)
 
         r = self.client.put('/floors/1')
         self.assertEqual(r.status_code, 200)
@@ -356,6 +352,7 @@ class HoleTests(APITestCase):
         self.admin = None
         self.user = None
         basic_setup(self)
+        self.hidden_hole = Hole.objects.create(division_id=1, hidden=True)
 
     def test_post(self):
         r = self.client.post('/holes', {
@@ -394,18 +391,45 @@ class HoleTests(APITestCase):
         r = self.client.get('/holes/1')
         self.assertEqual(r.status_code, 200)
 
+    def test_get_hidden(self):
+        r = self.client.get(f'/holes/{self.hidden_hole.id}')
+        self.assertEqual(r.status_code, 404)
+        r = self.client.get('/holes')
+        ids = map(lambda i: i['hole_id'], r.json())
+        self.assertNotIn(self.hidden_hole.id, list(ids))
+        # 管理员显示隐藏帖
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.get(f'/holes/{self.hidden_hole.id}')
+        self.assertEqual(r.status_code, 200)
+        r = self.client.get('/holes')
+        ids = map(lambda i: i['hole_id'], r.json())
+        self.assertIn(self.hidden_hole.id, list(ids))
+
     def test_put(self):
+        r = self.client.put('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
         self.client.force_authenticate(user=self.admin)
         r = self.client.put('/holes/1', {
             'view': 2,
             'tags': [{'name': 'tag A1'}, {'name': 'tag B1'}]
         })
-        self.client.force_authenticate(user=self.user)
         self.assertEqual(r.status_code, 200)
         hole = Hole.objects.get(pk=1)
         self.assertEqual(hole.view, 2)
         tags = set(hole.tags.values_list('name', flat=True))
         self.assertEqual(tags, {'tag A1', 'tag B1'})
+
+    def test_delete(self):
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 403)
+
+        self.client.force_authenticate(user=self.admin)
+        r = self.client.delete('/holes/1')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Hole.objects.get(id=1).hidden, True)
+        r = self.client.delete('/holes/114514')
+        self.assertEqual(r.status_code, 200)
 
 
 class FloorTests(APITestCase):
@@ -575,7 +599,8 @@ class TagTests(APITestCase):
         self.assertEqual(r.json()['temperature'], 0)
         Tag.objects.get(name='new tag')
         # 名称过长
-        r = self.client.post('/tags', {'name': ' '.join(str(i) for i in range(settings.MAX_TAG_LENGTH))})
+        r = self.client.post('/tags', {
+            'name': ' '.join(str(i) for i in range(settings.MAX_TAG_LENGTH))})
         self.assertEqual(r.status_code, 400)
 
     def test_put(self):
@@ -622,7 +647,9 @@ class UserTests(APITestCase):
             r = self.client.post('/user/favorites', {'hole_id': 1})
             self.assertEqual(r.status_code, 201)
             self.assertEqual(r.json(), {'message': '收藏成功', 'data': [1]})
-            self.assertEqual(User.objects.get(identifier=many_hashes(USERNAME)).favorites.filter(pk=1).exists(), True)
+            self.assertEqual(
+                User.objects.get(identifier=many_hashes(USERNAME)).favorites.filter(
+                    pk=1).exists(), True)
 
         def get():
             r = self.client.get('/user/favorites')
@@ -633,14 +660,16 @@ class UserTests(APITestCase):
             r = self.client.put('/user/favorites', {'hole_ids': [2, 3]})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json(), {'message': '修改成功', 'data': [2, 3]})
-            ids = User.objects.get(identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
+            ids = User.objects.get(
+                identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
             self.assertEqual([2, 3], list(ids))
 
         def delete():
             r = self.client.delete('/user/favorites', {'hole_id': 2})
             self.assertEqual(r.status_code, 200)
             self.assertEqual(r.json(), {'message': '删除成功', 'data': [3]})
-            ids = User.objects.get(identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
+            ids = User.objects.get(
+                identifier=many_hashes(USERNAME)).favorites.values_list('id', flat=True)
             self.assertEqual([3], list(ids))
 
         post()
@@ -708,7 +737,8 @@ class ReportTests(APITestCase):
         self.assertEqual(floor.deleted, True)
         self.assertEqual(floor.content, 'test delete')
         user = User.objects.get(identifier=many_hashes(USERNAME))
-        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(settings.TIMEZONE) < timedelta(days=3, minutes=1))
+        self.assertTrue(parse_datetime(user.permission['silent']['1']) - datetime.now(
+            settings.TIMEZONE) < timedelta(days=3, minutes=1))
         r = self.client.get('/reports/1')
         self.assertEqual(r.json()['dealed_by'], self.admin.nickname)
 
@@ -770,9 +800,11 @@ class PushTokenTests(APITestCase):
         self.admin = None
         self.user = None
         basic_setup(self)
-        PushToken.objects.create(user=self.admin, service='apns', device_id='0', token='x')
+        PushToken.objects.create(user=self.admin, service='apns', device_id='0',
+                                 token='x')
         PushToken.objects.create(user=self.user, service='apns', device_id='1', token='a')
-        PushToken.objects.create(user=self.user, service='mipush', device_id='2', token='b')
+        PushToken.objects.create(user=self.user, service='mipush', device_id='2',
+                                 token='b')
 
     def test_get(self):
         self.client.force_authenticate(user=self.admin)

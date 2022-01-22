@@ -87,14 +87,19 @@ EMAIL_USE_TLS = get_bool_from_env('EMAIL_USE_TLS', False)
 EMAIL_USE_SSL = get_bool_from_env('EMAIL_USE_SSL', True)
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '')  # 默认发件人地址
 
+# 代理配置
+HTTP_PROXY = os.environ.get('HTTP_PROXY', None)
 # 图片配置
 MAX_IMAGE_SIZE = get_int_from_env('MAX_IMAGE_SIZE', 20)  # 最大上传图片大小（MB）
-
-# 采用 Github 图床，具体可参考 https://gitnoteapp.com/zh/extensions/github.html
+IMAGE_BACKEND = os.environ.get('IMAGE_BACKEND', '')
+# Github 图床，具体可参考 https://gitnoteapp.com/zh/extensions/github.html
 GITHUB_OWENER = os.environ.get('GITHUB_OWENER', 'OpenTreeHole')
 GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '123456')
 GITHUB_REPO = os.environ.get('GITHUB_REPO', 'images')
 GITHUB_BRANCH = os.environ.get('GITHUB_BRANCH', 'master')
+# chevereto 图床
+CHEVERETO_URL = os.environ.get('CHEVERETO_URL', '')  # e.g. https://www.chevereto.com/api/1/upload
+CHEVERETO_TOKEN = os.environ.get('CHEVERETO_TOKEN', '')
 
 # 足够长的密码，供 Django 安全机制
 SECRET_KEY = os.environ.get('SECRET_KEY', str(uuid.uuid4()))

@@ -2,10 +2,10 @@
 注册、登录、用户管理
 """
 import base64
-import pyotp
 import hashlib
 import time
 
+import pyotp
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
 from django.conf import settings
@@ -70,10 +70,7 @@ def sha512(string: str) -> str:
 
 
 def many_hashes(string: str) -> str:
-    if settings.HOLE_ENV == 'development':
-        iterations = 1
-    else:
-        iterations = 1000000
+    iterations = 1
     byte_string = bytes(string.encode('utf-8'))
     return hashlib.pbkdf2_hmac('sha3_512', byte_string, b'', iterations).hex()
 

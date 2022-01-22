@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
 from utils.auth import encrypt_email, many_hashes
+from utils.constants import NotifyConfig
 
 
 class Division(models.Model):
@@ -33,10 +34,11 @@ class Hole(models.Model):
     tags = models.ManyToManyField(Tag, blank=True)
     division = models.ForeignKey(Division, on_delete=models.CASCADE, help_text="分区")
     view = models.IntegerField(db_index=True, default=0, help_text="浏览量")
-    reply = models.IntegerField(db_index=True, default=-1, help_text="楼层数")  # 如果只有首条帖子的话认为回复数为零
-    mapping = models.JSONField(default=dict, help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
-
-    # key_floors 首条和末条回帖，动态生成
+    reply = models.IntegerField(db_index=True, default=-1,
+                                help_text="楼层数")  # 如果只有首条帖子的话认为回复数为零
+    mapping = models.JSONField(default=dict,
+                               help_text='匿名到真实用户的对应')  # {user.id: anonymous_name}
+    hidden = models.BooleanField(default=False, help_text='帖子是否隐藏')
 
     def __str__(self):
         return f'树洞#{self.pk}'
@@ -54,7 +56,8 @@ class Floor(models.Model):
     shadow_text = models.TextField(default='')  # 去除markdown关键字的文本，方便搜索
     anonyname = models.CharField(max_length=16)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, models.CASCADE)
-    mention = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='mentioned_by')
+    mention = models.ManyToManyField('self', blank=True, symmetrical=False,
+                                     related_name='mentioned_by')
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     like = models.IntegerField(default=0, db_index=True)  # 赞同数
@@ -75,7 +78,8 @@ class Report(models.Model):
     time_created = models.DateTimeField(auto_now_add=True)
     time_updated = models.DateTimeField(auto_now=True)
     dealed = models.BooleanField(default=False, db_index=True)
-    dealed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
+    dealed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                  null=True)
 
     def __str__(self):
         return f"{self.hole}, 帖子{self.floor}\n理由: {self.reason}"
@@ -102,14 +106,16 @@ def default_config():
         show: 展示
 
     notify: 在以下场景时通知
-        mention: 帖子被提及时
-        favorite: 收藏的主题帖有新帖时
-        report: 被举报时
+        NotifyConfig.floor_mentioned:       帖子被提及时
+        NotifyConfig.favored_hole_replied:  收藏的主题帖有新帖时
+        NotifyConfig.reported:              被举报时通知管理员
+        NotifyConfig.punished:              被处罚时
     另外，当用户权限发生变化或所发帖被修改时也会收到通知
     """
     return {
         'show_folded': 'fold',
-        'notify': ['mention', 'favorite']
+        'notify': [NotifyConfig.floor_mentioned, NotifyConfig.favored_hole_replied,
+                   NotifyConfig.punished]
     }
 
 
@@ -180,7 +186,8 @@ class User(AbstractBaseUser):
 
 class Message(models.Model):
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, related_name="message_to", on_delete=models.CASCADE, db_index=True
+        settings.AUTH_USER_MODEL, related_name="message_to", on_delete=models.CASCADE,
+        db_index=True
     )
     message = models.TextField()
     code = models.CharField(max_length=30, default='')
@@ -193,7 +200,8 @@ class Message(models.Model):
 
 
 class PushToken(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='push_tokens')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                             related_name='push_tokens')
     service = models.CharField(max_length=16, db_index=True)  # apns or mipush
     device_id = models.CharField(max_length=128, unique=True)
     token = models.CharField(max_length=128)
