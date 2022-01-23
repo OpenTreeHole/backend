@@ -127,6 +127,13 @@ class DivisionSerializer(serializers.ModelSerializer):
         data['pinned'] = holes_data
         return data
 
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.pinned = validated_data.get('pinned', instance.pinned)
+        instance.save()
+        return instance
+
 
 class TagSerializer(serializers.ModelSerializer):
     tag_id = serializers.IntegerField(source='id', read_only=True, required=False)

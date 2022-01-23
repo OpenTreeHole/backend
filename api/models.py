@@ -11,7 +11,7 @@ from utils.default_values import default_active_user_date, default_permission, d
 
 
 class Division(models.Model):
-    name = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=32, unique=True, default='树洞')
     description = models.TextField(null=True)
     pinned = models.JSONField(default=list)
 
