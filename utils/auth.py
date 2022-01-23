@@ -16,13 +16,15 @@ from rest_framework.authentication import TokenAuthentication
 
 class MyTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
-        user, token = super().authenticate(request)
-        cache.set(
-            f'user_last_login_{user.id}',
-            datetime.now(settings.TIMEZONE).isoformat(),
-            86400
-        )
-        return user, token
+        authenticated = super().authenticate(request)
+        if authenticated:
+            user, token = authenticated
+            cache.set(
+                f'user_last_login_{user.id}',
+                datetime.now(settings.TIMEZONE).isoformat(),
+                86400
+            )
+        return authenticated
 
 
 apikey_verifier_totp = pyotp.TOTP(
