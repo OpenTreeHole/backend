@@ -116,8 +116,9 @@ class DivisionSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        order = Case(*[When(pk=pk, then=pos) for pos, pk in
-                       enumerate(instance.pinned)])  # Holes 按 pinned 的顺序排序
+        order = Case(
+            *[When(pk=pk, then=pos) for pos, pk in enumerate(instance.pinned)]
+        )  # Holes 按 pinned 的顺序排序
         holes_data = HoleSerializer(
             Hole.objects.filter(id__in=instance.pinned).order_by(order),
             many=True,
