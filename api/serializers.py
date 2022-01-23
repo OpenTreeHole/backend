@@ -13,7 +13,7 @@ from utils.apis import find_mentions
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
 from utils.default_values import now
-from utils.exception import BadRequest, Forbidden
+from utils.exception import BadRequest, Forbidden, ServerError
 from utils.name import random_name
 
 User = get_user_model()
@@ -204,11 +204,23 @@ class FloorSerializer(SimpleFloorSerializer):
     def get_queryset(queryset):
         return queryset.prefetch_related('mention')
 
-    def validate_special_tag(self, special_tag):
+    def get_user(self):
         user = self.context.get('user')
+        if not isinstance(user, get_user_model()):
+            raise ServerError('FloorSerializer 实例化时应提供参数 context={"user": request.user}')
+        return user
+
+    def validate_special_tag(self, special_tag):
+        user = self.get_user()
         if not user or not user.is_admin:
             raise Forbidden()
         return special_tag
+
+    def validate_anonyname(self, anonyname):
+        user = self.get_user()
+        if not user.is_admin:
+            raise Forbidden()
+        return anonyname
 
     def create(self, validated_data):
         content = validated_data.get('content', '')
@@ -276,7 +288,7 @@ class HoleSerializer(serializers.ModelSerializer):
     )
     start_time = serializers.DateTimeField(
         required=False, write_only=True,
-        default=now()  # 使用函数返回值，否则指向的是同一个对象
+        default=now  # 使用函数返回值，否则指向的是同一个对象
     )
 
     class Meta:
@@ -407,7 +419,7 @@ class MessageSerializer(serializers.ModelSerializer):
     message_id = serializers.IntegerField(source='id', read_only=True)
     clear_all = serializers.BooleanField(default=False, write_only=True)
     not_read = serializers.BooleanField(default=True, write_only=True)
-    start_time = serializers.DateTimeField(default=now(), write_only=True)
+    start_time = serializers.DateTimeField(default=now, write_only=True)
 
     class Meta:
         model = Message

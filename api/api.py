@@ -236,7 +236,6 @@ class HolesApi(APIView):
         prefetch_length = serializer.validated_data.get('prefetch_length')
         start_time = serializer.validated_data.get('start_time')
         division_id = serializer.validated_data.get('division_id')
-
         # 获取单个
         hole_id = kwargs.get('hole_id')
         if hole_id:
@@ -365,7 +364,7 @@ class FloorsApi(APIView):
     def put(self, request, **kwargs):
         floor_id = kwargs.get('floor_id')
         floor = get_object_or_404(Floor, pk=floor_id)
-        serializer = FloorUpdateSerializer(data=request.data)
+        serializer = FloorUpdateSerializer(data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
@@ -396,9 +395,7 @@ class FloorsApi(APIView):
             mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
         floor.fold = data.pop('fold', floor.fold)
 
-        # 仅管理员
-        if data and not request.user.is_admin:
-            return Response(None, 403)
+        # anonyname 和 special_tag 已在序列化器中校验
         floor.anonyname = data.pop('anonyname', floor.anonyname)
         floor.special_tag = data.pop('special_tag', floor.special_tag)
 
