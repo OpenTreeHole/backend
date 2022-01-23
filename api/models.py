@@ -151,7 +151,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, related_name="message_to", on_delete=models.CASCADE,
         db_index=True
     )
-    message = models.TextField()
+    message = models.TextField(default='')
     code = models.CharField(max_length=30, default='')
     data = models.JSONField(default=dict)
     has_read = models.BooleanField(default=False)

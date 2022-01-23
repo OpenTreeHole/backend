@@ -12,6 +12,7 @@ from api.signals import mention_to
 from utils.apis import find_mentions
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
+from utils.default_values import now
 from utils.exception import BadRequest, Forbidden
 from utils.name import random_name
 
@@ -275,7 +276,7 @@ class HoleSerializer(serializers.ModelSerializer):
     )
     start_time = serializers.DateTimeField(
         required=False, write_only=True,
-        default=lambda: datetime.now(settings.TIMEZONE)  # 使用函数返回值，否则指向的是同一个对象
+        default=now()  # 使用函数返回值，否则指向的是同一个对象
     )
 
     class Meta:
@@ -404,10 +405,22 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     message_id = serializers.IntegerField(source='id', read_only=True)
+    clear_all = serializers.BooleanField(default=False, write_only=True)
+    not_read = serializers.BooleanField(default=True, write_only=True)
+    start_time = serializers.DateTimeField(default=now(), write_only=True)
 
     class Meta:
         model = Message
-        fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created']
+        fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created',
+                  'clear_all', 'not_read', 'start_time']
+
+    def update(self, instance, validated_data):
+        instance.message = validated_data.get('message', instance.message)
+        instance.has_read = validated_data.get('has_read', instance.has_read)
+        instance.code = validated_data.get('code', instance.code)
+        instance.data = validated_data.get('data', instance.data)
+        instance.save()
+        return instance
 
 
 class ActiveUserSerializer(serializers.ModelSerializer):

@@ -594,7 +594,7 @@ class ImagesApi(APIView):
 
 
 class MessagesApi(APIView):
-    permission_classes = [IsAuthenticated, OnlyAdminCanModify, OwenerOrAdminCanSee]
+    permission_classes = [IsAuthenticated, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
 
     def post(self, request):
         floor = get_object_or_404(Floor, pk=request.data.get('to'))
@@ -617,10 +617,11 @@ class MessagesApi(APIView):
         return Response({'message': f'已发送通知，内容为：{message}'}, 201)
 
     def get(self, request, **kwargs):
-        not_read = request.query_params.get('not_read', False)
-        start_time = request.query_params.get('start_time')
+        serializer = MessageSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        not_read = serializer.validated_data.get('not_read')
+        start_time = serializer.validated_data.get('start_time')
         message_id = kwargs.get('message_id')
-
         # 获取单个
         if message_id:
             message = get_object_or_404(Message, pk=message_id)
@@ -629,45 +630,28 @@ class MessagesApi(APIView):
             return Response(serializer.data)
         # 获取多个
         else:
-            query_set = Message.objects.filter(user=request.user).order_by('-pk')
+            query_set = Message.objects.filter(user=request.user, time_created__lt=start_time).order_by('-pk')
             if not_read:
                 query_set = query_set.filter(has_read=False)
-            if start_time:
-                query_set = query_set.filter(time_created__lt=start_time)
-            length = settings.FLOOR_PREFETCH_LENGTH
-            serializer = MessageSerializer(query_set[:length], many=True)
+            serializer = MessageSerializer(query_set, many=True)
             return Response(serializer.data)
 
     def put(self, request, **kwargs):
         message_id = kwargs.get('message_id')
         if message_id:
-            message = get_object_or_404(Message, pk=message_id)
-            content = request.data.get('message')
-            has_read = request.data.get('has_read')
-            code = request.data.get('code')
-            data = request.data.get('data')
-
-            if content:
-                message.message = content.strip()
-            if has_read:
-                message.has_read = has_read
-            if code:
-                message.code = code
-            if data:
-                message.data = data
-
-            message.save()
-            serializer = MessageSerializer(message)
+            instance = get_object_or_404(Message, pk=message_id)
+            self.check_object_permissions(request, instance)
+            serializer = MessageSerializer(instance=instance, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response(serializer.data)
         else:
-            clear_all = request.data.get('clear_all', False)
-            if clear_all:
+            serializer = MessageSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            if serializer.validated_data.get('clear_all'):
                 Message.objects.filter(user=request.user).update(has_read=True)
-                return Response(None, 200)
+                return Response({'message': '已全部设为已读'}, 200)
         return Response({'message': '需要指定操作'}, 400)
-
-    def delete(self, request):
-        pass
 
 
 class UsersApi(APIView):

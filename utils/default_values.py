@@ -8,8 +8,12 @@ from django.conf import settings
 from utils.constants import NotifyConfig
 
 
+def now():
+    return datetime.now(settings.TIMEZONE)
+
+
 def default_active_user_date():
-    return datetime.now(settings.TIMEZONE) - timedelta(days=1)
+    return now() - timedelta(days=1)
 
 
 def default_permission():
