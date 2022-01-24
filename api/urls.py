@@ -19,7 +19,7 @@ from django.conf.urls import url
 from django.urls import path, include
 
 from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
-    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi, PushTokensAPI
+    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi, PushTokensAPI, get_active_user
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -48,6 +48,7 @@ urlpatterns = [
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
     path('penalty', PenaltyApi.as_view()),
     path('penalty/<int:floor_id>', PenaltyApi.as_view()),
+    path('siteinfo/active-user', get_active_user),
 ]
 
 if settings.HOLE_ENV == 'development':

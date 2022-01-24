@@ -4,13 +4,32 @@
 import base64
 import hashlib
 import time
+from datetime import datetime
 
 import pyotp
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
 from django.conf import settings
+from django.core.cache import cache
+from rest_framework.authentication import TokenAuthentication
 
-apikey_verifier_totp = pyotp.TOTP(str(base64.b32encode(bytearray(settings.REGISTER_API_KEY_SEED, 'ascii')).decode('utf-8')), digest=hashlib.sha256, interval=5, digits=16)
+
+class MyTokenAuthentication(TokenAuthentication):
+    def authenticate(self, request):
+        authenticated = super().authenticate(request)
+        if authenticated:
+            user, token = authenticated
+            cache.set(
+                f'user_last_login_{user.id}',
+                datetime.now(settings.TIMEZONE).isoformat(),
+                86400
+            )
+        return authenticated
+
+
+apikey_verifier_totp = pyotp.TOTP(
+    str(base64.b32encode(bytearray(settings.REGISTER_API_KEY_SEED, 'ascii')).decode(
+        'utf-8')), digest=hashlib.sha256, interval=5, digits=16)
 
 
 def check_api_key(key_to_check):

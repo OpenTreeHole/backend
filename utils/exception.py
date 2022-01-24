@@ -23,3 +23,8 @@ class BadRequest(APIException):
 class Forbidden(APIException):
     status_code = 403
     default_detail = 'Forbidden'
+
+
+class ServerError(APIException):
+    status_code = 500
+    default_detail = 'Internal Server Error'

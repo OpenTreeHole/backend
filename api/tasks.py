@@ -1,17 +1,25 @@
 # Create your tasks here
 from __future__ import absolute_import, unicode_literals
 
+import re
 import time
+from datetime import datetime, timedelta
 from smtplib import SMTPException
 
 from celery import shared_task
+from celery.schedules import crontab
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.mail import send_mail
+from django.db import transaction
 from django.db.models import F
 
 from OpenTreeHole.celery import app
-from api.models import Hole
+from api.models import Hole, ActiveUser
 from ws.utils import send_websocket_message_to_group
+
+User = get_user_model()
 
 
 @shared_task
@@ -51,13 +59,43 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
 @app.task
 def update_hole_views():
     cached = cache.get('hole_views', {})
+    result = {}
     for id in cached:
         if cached[id] > 0:
             Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
+            result[id] = cached[id]
             cached[id] = 0
     cache.set('hole_views', cached, None)
+    return result
+
+
+@app.task
+def update_last_login():
+    with transaction.atomic():
+        for key in cache.iter_keys('user_last_login_*'):
+            pattern = re.findall(r'user_last_login_(\d+)', key)
+            if not pattern:
+                continue
+            User.objects.filter(pk=int(pattern[0])).update(last_login=cache.get(key, ''))
+            cache.delete(key)
+
+
+@app.task
+def calculate_active_user():
+    now = datetime.now(settings.TIMEZONE)
+    one_day_ago = now - timedelta(days=1)
+    one_month_ago = now - timedelta(days=30)
+    dau = User.objects.filter(last_login__gt=one_day_ago).count()
+    mau = User.objects.filter(last_login__gt=one_month_ago).count()
+    obj, created = ActiveUser.objects.update_or_create(
+        date=one_day_ago,
+        defaults={'dau': dau, 'mau': mau}
+    )
+    return obj.date, obj.dau
 
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(60, update_hole_views.s())  # 每分钟更新一次浏览量
+    sender.add_periodic_task(3600, update_last_login.s())  # 每小时更新一次 last_login
+    sender.add_periodic_task(crontab(minute=0, hour=0), calculate_active_user.s())  # 每天零点更新日活月活用户数
