@@ -9,9 +9,23 @@ from datetime import datetime
 import pyotp
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
+from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+
+
+async def async_token_auth(request):
+    method = MyTokenAuthentication().authenticate
+    try:
+        user, token = await sync_to_async(method)(request)
+    except (AuthenticationFailed, TypeError):
+        request.user = AnonymousUser()
+        return request
+    request.user = user
+    return request
 
 
 class MyTokenAuthentication(TokenAuthentication):

@@ -1,11 +1,17 @@
+import asyncio
+import base64
+import binascii
+import json
 import secrets
 from datetime import datetime, timedelta
 
+import httpx
+import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.db import transaction, IntegrityError
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
 from rest_framework import status
@@ -25,11 +31,12 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
 from utils.apis import find_mentions, exists_or_404
-from utils.auth import check_api_key, many_hashes
+from utils.auth import check_api_key, many_hashes, async_token_auth
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
     NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
+from ws.utils import async_send_websocket_message_to_group
 
 
 @api_view(["GET"])
@@ -577,13 +584,6 @@ class ReportsApi(APIView):
         pass
 
 
-class ImagesApi(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request):
-        return Response({'message': '该 API 已弃用，请调用 websocket API 以上传图片'}, 405)
-
-
 class MessagesApi(APIView):
     permission_classes = [IsAuthenticated, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
 
@@ -783,3 +783,55 @@ def get_active_user(request):
     ).order_by('-id')
     serializer = ActiveUserSerializer(queryset, many=True)
     return Response(serializer.data)
+
+
+async def upload_image(request):
+    request = await async_token_auth(request)
+    if not request.user.is_authenticated:
+        return JsonResponse({'message': '未鉴权'}, status=401)
+    image_b64 = json.loads(request.body.decode()).get('image')
+    if not image_b64:
+        return JsonResponse({'message': 'image 字段不能为空'}, status=400)
+    try:
+        image = base64.b64decode(image_b64)
+    except binascii.Error:
+        return JsonResponse({'message': 'base64 格式有误'}, status=400)
+    if len(image) > settings.MAX_IMAGE_SIZE * 1024 * 1024:
+        return JsonResponse({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB'}, status=400)
+    mime = magic.from_buffer(image, mime=True)
+    if mime.split('/')[0] != 'image':
+        return JsonResponse({'message': '请上传图片格式'}, status=400)
+
+    if not settings.CHEVERETO_URL:
+        return JsonResponse({'message': '暂不支持图片上传'}, status=501)
+
+    try:
+        async with httpx.AsyncClient(timeout=10, proxies=settings.HTTP_PROXY) as client:
+            li = await asyncio.gather(
+                async_send_websocket_message_to_group(
+                    f'user-{request.user.id}',
+                    {'message': '处理中'}
+                ),
+                client.post(
+                    url=settings.CHEVERETO_URL,
+                    files={'source': image},
+                    data={'key': settings.CHEVERETO_TOKEN}
+                )
+            )
+    except httpx.RequestError as e:
+        return JsonResponse({'message': f'网络错误: {e}'}, status=500)
+    r = li[1]
+    if r.status_code == 200:
+        r = r.json()['image']
+        return JsonResponse({
+            'message': '上传成功',
+            'url': r['url'],
+            'medium': r.get('medium', {}).get('url', r['url']),
+            'thumb': r.get('thumb', {}).get('url', r['url'])
+        })
+    else:
+        try:
+            message = r.json()['error']['message']
+        except:
+            message = '上传失败'
+        return JsonResponse({'message': message}, status=500)

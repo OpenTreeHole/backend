@@ -9,6 +9,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = INSTALLED_APPS + ['silk', 'corsheaders']
 
+# 如要使用异步功能，需注释掉开发环境中新增的中间件
 MIDDLEWARE = MIDDLEWARE + [
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
