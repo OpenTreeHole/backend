@@ -24,7 +24,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
     PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email
-from utils.apis import find_mentions
+from utils.apis import find_mentions, exists_or_404
 from utils.auth import check_api_key, many_hashes
 from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
@@ -231,12 +231,6 @@ class HolesApi(APIView):
         if hole_id:
             hole = get_object_or_404(Hole, pk=hole_id) if request.user.is_admin \
                 else get_object_or_404(Hole, pk=hole_id, hidden=False)
-            # 缓存中增加主题帖的浏览量
-            cached = cache.get('hole_views', {})
-            view = cached.get(hole_id, 0)
-            cached[hole_id] = view + 1
-            cache.set('hole_views', cached)
-
             serializer = HoleSerializer(hole, context={
                 "user": request.user,
                 "prefetch_length": prefetch_length,
@@ -298,6 +292,16 @@ class HolesApi(APIView):
     def delete(self, request, **kwargs):
         Hole.objects.filter(id=kwargs.get('hole_id', 1)).update(hidden=True)
         return Response({'message': '已隐藏'}, 200)
+
+    def patch(self, request, **kwargs):
+        hole_id = kwargs.get('hole_id')
+        if hole_id:
+            exists_or_404(Hole, pk=hole_id)
+            key = f'hole_viewed_{hole_id}'
+            value = cache.get(key, 0)
+            cache.set(key, value + 1, 60)
+            return Response({'message': '处理中'}, 202)
+        return Response(None, 404)
 
 
 class FloorsApi(APIView):

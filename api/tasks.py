@@ -56,28 +56,36 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
     return result
 
 
+update_hole_views_pattern = re.compile(r'hole_viewed_(\d+)')
+update_last_login_pattern = re.compile(r'user_last_login_(\d+)')
+
+
 @app.task
 def update_hole_views():
-    cached = cache.get('hole_views', {})
-    result = {}
-    for id in cached:
-        if cached[id] > 0:
-            Hole.objects.filter(pk=id).update(view=F('view') + cached[id])
-            result[id] = cached[id]
-            cached[id] = 0
-    cache.set('hole_views', cached, None)
-    return result
+    cnt = 0
+    with transaction.atomic():
+        for key in cache.iter_keys('hole_viewed_*'):
+            pattern = update_hole_views_pattern.findall(key)
+            if not pattern:
+                continue
+            cnt += 1
+            Hole.objects.filter(pk=int(pattern[0])).update(view=F('view') + cache.get(key, 0))
+            cache.delete(key)
+    return f'updated {cnt} hole views'
 
 
 @app.task
 def update_last_login():
+    cnt = 0
     with transaction.atomic():
         for key in cache.iter_keys('user_last_login_*'):
-            pattern = re.findall(r'user_last_login_(\d+)', key)
+            pattern = update_last_login_pattern.findall(key)
             if not pattern:
                 continue
+            cnt += 1
             User.objects.filter(pk=int(pattern[0])).update(last_login=cache.get(key, ''))
             cache.delete(key)
+    return f'updated {cnt} user last logins'
 
 
 @app.task
