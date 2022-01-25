@@ -7,9 +7,10 @@ DEBUG = True
 # 允许任意 host
 ALLOWED_HOSTS = ['*']
 
-INSTALLED_APPS = INSTALLED_APPS + ['silk']
+INSTALLED_APPS = INSTALLED_APPS + ['silk', 'corsheaders']
 
 MIDDLEWARE = MIDDLEWARE + [
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'silk.middleware.SilkyMiddleware',
 ]
@@ -54,3 +55,6 @@ REST_FRAMEWORK = REST_FRAMEWORK
 
 # silk profiling
 SILKY_PYTHON_PROFILER = True
+
+# CORS
+CORS_ALLOW_ALL_ORIGINS = True
