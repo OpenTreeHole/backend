@@ -41,12 +41,14 @@ def send_email(subject: str, content: str, receivers: list[str], uuid=None) -> d
     except SMTPException as e:
         result = {
             'message': f'邮件发送错误，收件人：{receivers}，错误信息：{e}',
-            'success': False
+            'status': 'error',
+            'code': 'simple'
         }
     else:
         result = {
             'message': '邮件发送成功',
-            'success': True
+            'status': 'success',
+            'code': 'simple'
         }
     if uuid:
         try:

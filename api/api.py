@@ -86,7 +86,7 @@ class VerifyApi(APIView):
         serializer = EmailSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get('email')
-        uuid = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('uuid')
 
         if method == "email":
             # 设置验证码并发送验证邮件
@@ -138,6 +138,7 @@ class RegisterApi(APIView):
 
         password = serializer.validated_data.get('password')
         email = serializer.validated_data.get('email')
+        uuid = serializer.validated_data.get('uuid')
         # 迁移用户收藏
         old_favorites = OldUserFavorites.objects.filter(uid=email[:11]).first()
         if old_favorites:
@@ -154,7 +155,8 @@ class RegisterApi(APIView):
                 f'\r\n\r\n{password}\r\n\r\n'
                 '提示：服务器中仅存储加密后的密码，无须担心安全问题'
             ),
-            receivers=[email]
+            receivers=[email],
+            uuid=uuid
         )
         return Response({'message': '注册成功', 'token': token}, 201)
 
