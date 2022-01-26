@@ -382,6 +382,7 @@ class HoleSerializer(serializers.ModelSerializer):
                 tag_list.append(tag)
             instance.tags.set(tag_list)
         instance.view = validated_data.get('view', instance.view)
+        instance.division_id = validated_data.get('division_id', instance.division_id)
         instance.save()
         return instance
 
