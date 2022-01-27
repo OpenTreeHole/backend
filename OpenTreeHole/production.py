@@ -5,19 +5,9 @@ DEBUG = False
 # 此处填写你的域名
 ALLOWED_HOSTS = ALLOW_CONNECT_HOSTS
 
-INSTALLED_APPS = [
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "rest_framework.authtoken",
-    'django_celery_results',
-    'channels',
-    "api.apps.ApiConfig",
-]
+MIDDLEWARE = MIDDLEWARE
 
-MIDDLEWARE = [
-]
+INSTALLED_APPS = INSTALLED_APPS
 
 # 生产环境使用 Mysql 数据库
 DATABASES = {
@@ -59,15 +49,8 @@ CHANNEL_LAYERS = {
     },
 }
 
-REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.TokenAuthentication"
-    ],
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer'
-    ],
-    "TEST_REQUEST_DEFAULT_FORMAT": "json",
-    'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
+# 生产环境配置限速
+REST_FRAMEWORK.update({
     'DEFAULT_THROTTLE_CLASSES': [
         'utils.throttles.BurstRateThrottle',
         'utils.throttles.SustainedRateThrottle',
@@ -79,7 +62,7 @@ REST_FRAMEWORK = {
         'email': THROTTLE_EMAIL,
         'upload': THROTTLE_UPLOAD
     }
-}
+})
 
 # celery 使用 redis
 CELERY_BROKER_URL = REDIS_URL

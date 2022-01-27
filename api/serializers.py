@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -7,12 +7,13 @@ from django.core.cache import cache
 from django.db.models import Case, When
 from rest_framework import serializers
 
-from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken
+from api.models import Division, Tag, Hole, Floor, Report, Message, PushToken, ActiveUser
 from api.signals import mention_to
 from utils.apis import find_mentions
 from utils.auth import many_hashes
 from utils.decorators import cache_function_call
-from utils.exception import BadRequest, Forbidden
+from utils.default_values import now
+from utils.exception import BadRequest, Forbidden, ServerError
 from utils.name import random_name
 
 User = get_user_model()
@@ -23,7 +24,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config', 'joined_time', 'is_admin']
+        fields = ['user_id', 'nickname', 'favorites', 'permission', 'config',
+                  'joined_time', 'is_admin']
 
     def validate_permission(self, permission):
         for s in ['admin', 'silent']:
@@ -114,7 +116,9 @@ class DivisionSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(instance.pinned)])  # Holes 按 pinned 的顺序排序
+        order = Case(
+            *[When(pk=pk, then=pos) for pos, pk in enumerate(instance.pinned)]
+        )  # Holes 按 pinned 的顺序排序
         holes_data = HoleSerializer(
             Hole.objects.filter(id__in=instance.pinned).order_by(order),
             many=True,
@@ -122,6 +126,13 @@ class DivisionSerializer(serializers.ModelSerializer):
         ).data
         data['pinned'] = holes_data
         return data
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.pinned = validated_data.get('pinned', instance.pinned)
+        instance.save()
+        return instance
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -174,7 +185,8 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
+        fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated',
+                  'time_created', 'deleted', 'fold', 'like', 'special_tag']
         read_only_fields = ['floor_id', 'anonyname']
 
     def to_representation(self, instance):
@@ -191,18 +203,32 @@ class FloorSerializer(SimpleFloorSerializer):
 
     class Meta:
         model = Floor
-        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention', 'time_updated', 'time_created', 'deleted', 'fold', 'like', 'special_tag']
+        fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention',
+                  'time_updated', 'time_created', 'deleted', 'fold', 'like',
+                  'special_tag']
         read_only_fields = ['floor_id', 'history', 'anonyname']
 
     @staticmethod
     def get_queryset(queryset):
         return queryset.prefetch_related('mention')
 
-    def validate_special_tag(self, special_tag):
+    def get_user(self):
         user = self.context.get('user')
+        if not isinstance(user, get_user_model()):
+            raise ServerError('FloorSerializer 实例化时应提供参数 context={"user": request.user}')
+        return user
+
+    def validate_special_tag(self, special_tag):
+        user = self.get_user()
         if not user or not user.is_admin:
             raise Forbidden()
         return special_tag
+
+    def validate_anonyname(self, anonyname):
+        user = self.get_user()
+        if not user.is_admin:
+            raise Forbidden()
+        return anonyname
 
     def create(self, validated_data):
         content = validated_data.get('content', '')
@@ -218,7 +244,8 @@ class FloorSerializer(SimpleFloorSerializer):
             anonyname = random_name(hole.mapping.values())
             hole.mapping[user.pk] = anonyname
         hole.save()
-        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname, user=user, special_tag=special_tag)
+        floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname,
+                                     user=user, special_tag=special_tag)
         floor.mention.set(mentions)
         mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
         return floor
@@ -269,12 +296,13 @@ class HoleSerializer(serializers.ModelSerializer):
     )
     start_time = serializers.DateTimeField(
         required=False, write_only=True,
-        default=lambda: datetime.now(settings.TIMEZONE)  # 使用函数返回值，否则指向的是同一个对象
+        default=now  # 使用函数返回值，否则指向的是同一个对象
     )
 
     class Meta:
         model = Hole
-        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags', 'view', 'reply', 'length', 'prefetch_length', 'start_time']
+        fields = ['hole_id', 'division_id', 'time_updated', 'time_created', 'tags',
+                  'view', 'reply', 'length', 'prefetch_length', 'start_time', 'hidden']
 
     def to_representation(self, instance):
         """
@@ -286,7 +314,8 @@ class HoleSerializer(serializers.ModelSerializer):
         def _inner_to_representation(self, instance):
             data = super().to_representation(instance)
             user = self.context.get('user')
-            prefetch_length = self.context.get('prefetch_length', settings.FLOOR_PREFETCH_LENGTH)
+            prefetch_length = self.context.get('prefetch_length',
+                                               settings.FLOOR_PREFETCH_LENGTH)
             if not user:
                 print('[W] HoleSerializer 实例化时应提供参数 context={"user": request.user}')
             else:
@@ -353,6 +382,7 @@ class HoleSerializer(serializers.ModelSerializer):
                 tag_list.append(tag)
             instance.tags.set(tag_list)
         instance.view = validated_data.get('view', instance.view)
+        instance.division_id = validated_data.get('division_id', instance.division_id)
         instance.save()
         return instance
 
@@ -385,7 +415,8 @@ class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Report
-        fields = ['report_id', 'hole_id', 'floor', 'reason', 'time_created', 'time_updated', 'dealed']
+        fields = ['report_id', 'hole_id', 'floor', 'reason', 'time_created',
+                  'time_updated', 'dealed']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -395,7 +426,29 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     message_id = serializers.IntegerField(source='id', read_only=True)
+    clear_all = serializers.BooleanField(default=False, write_only=True)
+    not_read = serializers.BooleanField(default=True, write_only=True)
+    start_time = serializers.DateTimeField(default=now, write_only=True)
 
     class Meta:
         model = Message
-        fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created']
+        fields = ['message_id', 'message', 'code', 'data', 'has_read', 'time_created',
+                  'clear_all', 'not_read', 'start_time']
+
+    def update(self, instance, validated_data):
+        instance.message = validated_data.get('message', instance.message)
+        instance.has_read = validated_data.get('has_read', instance.has_read)
+        instance.code = validated_data.get('code', instance.code)
+        instance.data = validated_data.get('data', instance.data)
+        instance.save()
+        return instance
+
+
+class ActiveUserSerializer(serializers.ModelSerializer):
+    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date() - timedelta(days=1),
+                                       write_only=True)
+    end_date = serializers.DateField(default='1970-01-01', write_only=True)
+
+    class Meta:
+        model = ActiveUser
+        fields = ['date', 'dau', 'mau', 'start_date', 'end_date']

@@ -4,7 +4,7 @@ import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
-import api.models
+import utils.default_values
 
 
 class Migration(migrations.Migration):
@@ -24,8 +24,8 @@ class Migration(migrations.Migration):
                 ('identifier', models.CharField(max_length=128, unique=True)),
                 ('joined_time', models.DateTimeField(auto_now_add=True)),
                 ('nickname', models.CharField(blank=True, max_length=32)),
-                ('permission', models.JSONField(default=api.models.default_permission)),
-                ('config', models.JSONField(default=api.models.default_config)),
+                ('permission', models.JSONField(default=utils.default_values.default_permission)),
+                ('config', models.JSONField(default=utils.default_values.default_config)),
             ],
             options={
                 'abstract': False,
@@ -65,7 +65,8 @@ class Migration(migrations.Migration):
                 ('view', models.IntegerField(db_index=True, default=0, help_text='浏览量')),
                 ('reply', models.IntegerField(db_index=True, default=-1, help_text='楼层数')),
                 ('mapping', models.JSONField(default=dict, help_text='匿名到真实用户的对应')),
-                ('division', models.ForeignKey(help_text='分区', on_delete=django.db.models.deletion.CASCADE, to='api.division')),
+                ('division',
+                 models.ForeignKey(help_text='分区', on_delete=django.db.models.deletion.CASCADE, to='api.division')),
             ],
         ),
         migrations.CreateModel(
@@ -84,7 +85,8 @@ class Migration(migrations.Migration):
                 ('time_created', models.DateTimeField(auto_now_add=True)),
                 ('time_updated', models.DateTimeField(auto_now=True)),
                 ('dealed', models.BooleanField(db_index=True, default=False)),
-                ('dealed_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('dealed_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE,
+                                                to=settings.AUTH_USER_MODEL)),
                 ('floor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.floor')),
                 ('hole', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='api.hole')),
             ],
@@ -96,7 +98,8 @@ class Migration(migrations.Migration):
                 ('service', models.CharField(db_index=True, max_length=16)),
                 ('device_id', models.CharField(max_length=128, unique=True)),
                 ('token', models.CharField(max_length=128)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='push_tokens', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='push_tokens',
+                                           to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -108,7 +111,8 @@ class Migration(migrations.Migration):
                 ('data', models.JSONField(default=dict)),
                 ('has_read', models.BooleanField(default=False)),
                 ('time_created', models.DateTimeField(auto_now_add=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='message_to', to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='message_to',
+                                           to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.AddField(

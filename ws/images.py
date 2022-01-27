@@ -1,4 +1,5 @@
 import base64
+import binascii
 import uuid
 from datetime import datetime
 
@@ -6,10 +7,10 @@ import httpx
 import magic
 from django.conf import settings
 
-from ws.utils import MyWebsocketConsumer
+from ws.utils import MyJsonWebsocketConsumer
 
 
-class ImageConsumer(MyWebsocketConsumer):
+class ImageConsumer(MyJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -19,10 +20,16 @@ class ImageConsumer(MyWebsocketConsumer):
         else:
             await self.close()
 
-    async def receive(self, text_data=None, bytes_data=None):
-        image = bytes_data
-        if not image:
-            await self.send_json({'message': '内容不能为空', 'status': 'error'})
+    async def receive_json(self, content, **kwargs):
+        image_b64 = content.get('image')
+        if not image_b64:
+            await self.send_json({'message': 'image 字段不能为空', 'status': 'error'})
+            return
+        try:
+            image = base64.b64decode(image_b64)
+        except binascii.Error:
+            await self.send_json({'message': 'base64 格式有误', 'status': 'error'})
+            return
         if len(image) > settings.MAX_IMAGE_SIZE * 1024 * 1024:
             await self.send_json({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB', 'status': 'error'})
         mime = magic.from_buffer(image, mime=True)
@@ -32,7 +39,6 @@ class ImageConsumer(MyWebsocketConsumer):
         await self.send_json({'message': '处理中', 'status': 'info'})
         # 上传图片
         if settings.IMAGE_BACKEND == 'github':
-            print(settings.HTTP_PROXY)
             date_str = datetime.now().strftime('%Y-%m-%d')
             uid = uuid.uuid4()
             filetype = mime.split('/')[1]
@@ -41,7 +47,7 @@ class ImageConsumer(MyWebsocketConsumer):
                     url=f'https://api.github.com/repos/{settings.GITHUB_OWENER}/{settings.GITHUB_REPO}/contents/{date_str}/{uid}.{filetype}',
                     headers={'Authorization': f'token {settings.GITHUB_TOKEN}'},
                     json={
-                        'content': base64.b64encode(image).decode('utf-8'),
+                        'content': image_b64,
                         'message': 'upload image',
                         'branch': settings.GITHUB_BRANCH,
                     })

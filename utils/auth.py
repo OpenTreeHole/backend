@@ -4,13 +4,46 @@
 import base64
 import hashlib
 import time
+from datetime import datetime
 
 import pyotp
 from Crypto.Cipher import PKCS1_v1_5 as PKCS1_cipher
 from Crypto.PublicKey import RSA
+from asgiref.sync import sync_to_async
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 
-apikey_verifier_totp = pyotp.TOTP(str(base64.b32encode(bytearray(settings.REGISTER_API_KEY_SEED, 'ascii')).decode('utf-8')), digest=hashlib.sha256, interval=5, digits=16)
+
+async def async_token_auth(request):
+    method = MyTokenAuthentication().authenticate
+    try:
+        user, token = await sync_to_async(method)(request)
+    except (AuthenticationFailed, TypeError):
+        request.user = AnonymousUser()
+        return request
+    request.user = user
+    return request
+
+
+class MyTokenAuthentication(TokenAuthentication):
+    def authenticate(self, request):
+        authenticated = super().authenticate(request)
+        if authenticated:
+            user, token = authenticated
+            cache.set(
+                f'user_last_login_{user.id}',
+                datetime.now(settings.TIMEZONE).isoformat(),
+                86400
+            )
+        return authenticated
+
+
+apikey_verifier_totp = pyotp.TOTP(
+    str(base64.b32encode(bytearray(settings.REGISTER_API_KEY_SEED, 'ascii')).decode(
+        'utf-8')), digest=hashlib.sha256, interval=5, digits=16)
 
 
 def check_api_key(key_to_check):

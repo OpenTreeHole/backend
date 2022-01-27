@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
-MODIFY_METHODS = ('PUT', 'PATCH', 'DELETE')
+# PATCH 方法不检查权限！！！
+MODIFY_METHODS = ('PUT', 'DELETE')
 
 
 class OnlyAdminCanModify(permissions.BasePermission):

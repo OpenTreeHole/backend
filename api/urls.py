@@ -18,8 +18,9 @@ from django.conf import settings
 from django.conf.urls import url
 from django.urls import path, include
 
-from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, ImagesApi, \
-    MessagesApi, UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi, PushTokensAPI
+from api.api import index, login, RegisterApi, HolesApi, FloorsApi, TagsApi, FavoritesApi, ReportsApi, MessagesApi, \
+    UsersApi, DivisionsApi, logout, VerifyApi, PenaltyApi, EmailApi, PushTokensAPI, get_active_user, \
+    upload_image
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
@@ -38,7 +39,7 @@ urlpatterns = [
     path('user/favorites', FavoritesApi.as_view()),
     path('reports', ReportsApi.as_view()),
     path('reports/<int:report_id>', ReportsApi.as_view()),
-    path('images', ImagesApi.as_view()),
+    path('images', upload_image),
     path('messages', MessagesApi.as_view()),
     path('messages/<int:message_id>', MessagesApi.as_view()),
     path('users/<int:user_id>', UsersApi.as_view()),
@@ -48,6 +49,7 @@ urlpatterns = [
     path('divisions/<int:division_id>', DivisionsApi.as_view()),
     path('penalty', PenaltyApi.as_view()),
     path('penalty/<int:floor_id>', PenaltyApi.as_view()),
+    path('siteinfo/active-user', get_active_user),
 ]
 
 if settings.HOLE_ENV == 'development':
