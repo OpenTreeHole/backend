@@ -507,6 +507,7 @@ class ReportsApi(APIView):
             queryset = Report.objects.all()
         else:
             return Response({'message': 'category 参数不正确'})
+        queryset = queryset.order_by('-time_created')
         serializer = ReportSerializer(queryset, many=True)
         return Response(serializer.data)
 
