@@ -218,7 +218,7 @@ class DivisionsApi(APIView):
     def put(self, request, **kwargs):
         division_id = kwargs.get('division_id')
         division = get_object_or_404(Division, id=division_id)
-        serializer = DivisionSerializer(division, data=request.data)
+        serializer = DivisionSerializer(division, data=request.data, context={'user': request.user})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
