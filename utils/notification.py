@@ -67,10 +67,11 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         if push_tokens:
             # 准备数据
             apns_notifications = []
+            unread_count = Message.objects.filter(user__pk=user_id, has_read=False).count()
             apns_payload = APNsPayload(
                 alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
                 sound="default",
-                badge=1,
+                badge=unread_count,
                 thread_id=instance.code,
                 custom=payload
             )
