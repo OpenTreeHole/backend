@@ -26,6 +26,7 @@ pyotp = "*"
 [dev-packages]
 django-silk = "*"
 sqlalchemy = "*"
+django-cors-headers = "*"
 
 [requires]
 python_version = "3.9"

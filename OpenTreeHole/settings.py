@@ -88,6 +88,7 @@ STATIC_URL = "/static/"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DATA_UPLOAD_MAX_MEMORY_SIZE = 30 * 1024 * 1024  # 30M
 
 # 自定义用户模型
 AUTH_USER_MODEL = 'api.User'

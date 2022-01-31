@@ -7,11 +7,11 @@ from django.utils.dateparse import parse_datetime
 from rest_framework.authtoken.models import Token
 
 from utils.auth import encrypt_email, many_hashes
-from utils.constants import NotifyConfig
+from utils.default_values import default_active_user_date, default_permission, default_config
 
 
 class Division(models.Model):
-    name = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=32, unique=True, default='树洞')
     description = models.TextField(null=True)
     pinned = models.JSONField(default=list)
 
@@ -85,44 +85,6 @@ class Report(models.Model):
         return f"{self.hole}, 帖子{self.floor}\n理由: {self.reason}"
 
 
-def default_permission():
-    """
-    silent 字典
-        index：分区id （string） django的JSONField会将字典的int索引转换成str
-        value：禁言解除时间
-    """
-    return {
-        'admin': '1970-01-01T00:00:00+00:00',  # 管理员权限：到期时间
-        'silent': {},  # 禁言
-        'offense_count': 0
-    }
-
-
-def default_config():
-    """
-    show_folded: 对折叠内容的处理
-        fold: 折叠
-        hide: 隐藏
-        show: 展示
-
-    notify: 在以下场景时通知
-        NotifyConfig.floor_mentioned:       帖子被提及时
-        NotifyConfig.favored_hole_replied:  收藏的主题帖有新帖时
-        NotifyConfig.reported:              被举报时通知管理员
-        NotifyConfig.punished:              被处罚时
-    另外，当用户权限发生变化或所发帖被修改时也会收到通知
-    """
-    return {
-        'show_folded': 'fold',
-        'notify': [NotifyConfig.floor_mentioned, NotifyConfig.favored_hole_replied,
-                   NotifyConfig.punished]
-    }
-
-
-def default_push_notification_tokens():
-    pass
-
-
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         """
@@ -189,7 +151,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, related_name="message_to", on_delete=models.CASCADE,
         db_index=True
     )
-    message = models.TextField()
+    message = models.TextField(default='')
     code = models.CharField(max_length=30, default='')
     data = models.JSONField(default=dict)
     has_read = models.BooleanField(default=False)
@@ -210,3 +172,9 @@ class PushToken(models.Model):
 class OldUserFavorites(models.Model):
     uid = models.CharField(max_length=11)
     favorites = models.JSONField()
+
+
+class ActiveUser(models.Model):
+    date = models.DateField(default=default_active_user_date, unique=True)
+    dau = models.IntegerField(default=0)  # 日活
+    mau = models.IntegerField(default=0)  # 月活

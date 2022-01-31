@@ -42,7 +42,8 @@ LANGUAGE = os.environ.get('LANGUAGE', 'zh-Hans')  # 语言代码
 ALLOW_CONNECT_HOSTS = get_array_from_env('ALLOW_CONNECT_HOSTS', [HOST])  # 允许连接的域名
 EMAIL_WHITELIST = get_array_from_env('EMAIL_WHITELIST', ['test.com'])  # 允许注册树洞的邮箱域名
 MIN_PASSWORD_LENGTH = get_int_from_env('MIN_PASSWORD_LENGTH', 8)  # 允许的最短用户密码长度
-VALIDATION_CODE_EXPIRE_TIME = get_int_from_env('VALIDATION_CODE_EXPIRE_TIME', 5)  # 验证码失效时间（分钟）
+VALIDATION_CODE_EXPIRE_TIME = get_int_from_env('VALIDATION_CODE_EXPIRE_TIME',
+                                               5)  # 验证码失效时间（分钟）
 MAX_PAGE_SIZE = get_int_from_env('MAX_PAGE_SIZE', 10)
 PAGE_SIZE = get_int_from_env('PAGE_SIZE', 10)
 FLOOR_PREFETCH_LENGTH = get_int_from_env('FLOOR_PREFETCH_LENGTH', 10)
@@ -50,8 +51,10 @@ MAX_TAGS = get_int_from_env('MAX_TAGS', 5)
 MAX_TAG_LENGTH = get_int_from_env('MAX_TAG_LENGTH', 8)
 TAG_COLORS = get_array_from_env(
     'TAG_COLORS',
-    ['red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan', 'teal', 'green',
-     'light-green', 'lime', 'yellow', 'amber', 'orange', 'deep-orange', 'brown', 'blue-grey', 'grey']
+    ['red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan',
+     'teal', 'green',
+     'light-green', 'lime', 'yellow', 'amber', 'orange', 'deep-orange', 'brown',
+     'blue-grey', 'grey']
 )
 # 时区配置
 TZ = os.environ.get('TZ', 'Asia/Shanghai')
@@ -98,7 +101,8 @@ GITHUB_TOKEN = os.environ.get('GITHUB_TOKEN', '123456')
 GITHUB_REPO = os.environ.get('GITHUB_REPO', 'images')
 GITHUB_BRANCH = os.environ.get('GITHUB_BRANCH', 'master')
 # chevereto 图床
-CHEVERETO_URL = os.environ.get('CHEVERETO_URL', '')  # e.g. https://www.chevereto.com/api/1/upload
+CHEVERETO_URL = os.environ.get('CHEVERETO_URL',
+                               '')  # e.g. https://www.chevereto.com/api/1/upload
 CHEVERETO_TOKEN = os.environ.get('CHEVERETO_TOKEN', '')
 
 # 足够长的密码，供 Django 安全机制
@@ -108,7 +112,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', str(uuid.uuid4()))
 REGISTER_API_KEY_SEED = os.environ.get('REGISTER_API_KEY_SEED', 'abcdefg')
 
 # 用户名加密公钥文件(PEM)路径
-USERNAME_PUBLIC_KEY_PATH = os.environ.get('USERNAME_PUBLIC_KEY_PATH', 'treehole_demo_public.pem')
+USERNAME_PUBLIC_KEY_PATH = os.environ.get('USERNAME_PUBLIC_KEY_PATH',
+                                          'treehole_demo_public.pem')
 
 USE_REDIS_IN_DEV = get_bool_from_env('USE_REDIS_IN_DEV', False)  # 开发环境中使用 redis
 
@@ -117,12 +122,39 @@ USE_REDIS_IN_DEV = get_bool_from_env('USE_REDIS_IN_DEV', False)  # 开发环境�
 # NOTE: The APNS KEY must contain both the certificate AND the private key, in PEM format
 APNS_KEY_PATH = os.environ.get('APNS_KEY_PATH', '')
 APNS_USE_ALTERNATIVE_PORT = get_bool_from_env('APNS_USE_ALTERNATIVE_PORT', False)
-MIPUSH_APP_SECRET = os.environ.get('MIPUSH_APP_SECRET', '')  # Leave blank to disable MiPush
-PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = os.environ.get('PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS', 'org.opentreehole.client')
-PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = os.environ.get('PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID', 'org.opentreehole.client')
+MIPUSH_APP_SECRET = os.environ.get(
+    'MIPUSH_APP_SECRET', '')  # Leave blank to disable MiPush
+PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS = os.environ.get(
+    'PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_IOS', 'org.opentreehole.client')
+PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID = os.environ.get(
+    'PUSH_NOTIFICATION_CLIENT_PACKAGE_NAME_ANDROID', 'org.opentreehole.client')
 
 # 就是外层的 OpenTreeHole
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+INSTALLED_APPS = [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework.authtoken",
+    'django_celery_results',
+    'channels',
+    "api.apps.ApiConfig",
+]
+
+MIDDLEWARE = []
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "utils.auth.MyTokenAuthentication"
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer'
+    ],
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    'EXCEPTION_HANDLER': 'utils.exception.custom_exception_handler',
+}
 
 if __name__ == '__main__':
     print(get_array_from_env('test', [1]))

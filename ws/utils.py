@@ -35,3 +35,14 @@ def send_websocket_message_to_group(group: str, content: dict):
             "content": content,
         }
     )
+
+
+async def async_send_websocket_message_to_group(group: str, content: dict):
+    channel_layer = get_channel_layer()
+    await channel_layer.group_send(
+        group,
+        {
+            "type": "on_send",
+            "content": content,
+        }
+    )

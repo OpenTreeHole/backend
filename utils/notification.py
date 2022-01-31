@@ -67,10 +67,11 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
         if push_tokens:
             # 准备数据
             apns_notifications = []
+            unread_count = Message.objects.filter(user_id=user_id, has_read=False).count()
             apns_payload = APNsPayload(
                 alert=PayloadAlert(title=instance.message, body=_generate_subtitle(data, code)),
                 sound="default",
-                badge=1,
+                badge=unread_count,
                 thread_id=instance.code,
                 custom=payload
             )
@@ -101,6 +102,7 @@ def send_notifications(user_id: int, message: str, data=None, code=''):
                         "title": instance.message,
                         "description": _generate_subtitle(data, code),
                         "payload": urllib.parse.urlencode({"data": json.dumps(data, ensure_ascii=False), "code": code}),
+                        "extra.notify_effect": '1'
                     }).json()
                 print('MiPush Response', response_json)
                 # 清除过期token
