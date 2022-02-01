@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -446,7 +446,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ActiveUserSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date() - timedelta(days=1),
+    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date(),
                                        write_only=True)
     end_date = serializers.DateField(default='1970-01-01', write_only=True)
 
