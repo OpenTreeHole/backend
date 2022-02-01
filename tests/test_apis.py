@@ -460,6 +460,16 @@ class FloorTests(APITestCase):
         r = self.client.get('/holes')
         self.assertEqual(r.json()[0]['floors']['last_floor']['floor_id'], floor.id)
 
+    def test_reply_and_storey(self):
+        hole = Hole.objects.get(pk=1)
+        r = self.client.post('/floors', {
+            'content': 'reply',
+            'hole_id': 1
+        })
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(r.json()['data']['storey'], hole.reply + 1)
+        self.assertEqual(Hole.objects.get(pk=1).reply, hole.reply + 1)
+
     def test_wrong_mention(self):
         r = self.client.post('/floors', {
             'content': '#1234567 ##7654321',
