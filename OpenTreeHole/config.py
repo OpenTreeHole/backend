@@ -48,7 +48,7 @@ MAX_PAGE_SIZE = get_int_from_env('MAX_PAGE_SIZE', 10)
 PAGE_SIZE = get_int_from_env('PAGE_SIZE', 10)
 FLOOR_PREFETCH_LENGTH = get_int_from_env('FLOOR_PREFETCH_LENGTH', 10)
 MAX_TAGS = get_int_from_env('MAX_TAGS', 5)
-MAX_TAG_LENGTH = get_int_from_env('MAX_TAG_LENGTH', 8)
+MAX_TAG_LENGTH = get_int_from_env('MAX_TAG_LENGTH', 16)
 TAG_COLORS = get_array_from_env(
     'TAG_COLORS',
     ['red', 'pink', 'purple', 'deep-purple', 'indigo', 'blue', 'light-blue', 'cyan',
