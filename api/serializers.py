@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -446,8 +444,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ActiveUserSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date(),
-                                       write_only=True)
+    start_date = serializers.DateField(default=now, write_only=True)
     end_date = serializers.DateField(default='1970-01-01', write_only=True)
 
     class Meta:
