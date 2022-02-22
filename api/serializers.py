@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -186,8 +184,8 @@ class SimpleFloorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Floor
         fields = ['floor_id', 'hole_id', 'content', 'anonyname', 'time_updated',
-                  'time_created', 'deleted', 'fold', 'like', 'special_tag']
-        read_only_fields = ['floor_id', 'anonyname']
+                  'time_created', 'deleted', 'fold', 'like', 'special_tag', 'storey']
+        read_only_fields = ['floor_id', 'anonyname', 'storey']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -205,8 +203,8 @@ class FloorSerializer(SimpleFloorSerializer):
         model = Floor
         fields = ['floor_id', 'hole_id', 'content', 'history', 'anonyname', 'mention',
                   'time_updated', 'time_created', 'deleted', 'fold', 'like',
-                  'special_tag']
-        read_only_fields = ['floor_id', 'history', 'anonyname']
+                  'special_tag', 'storey']
+        read_only_fields = ['floor_id', 'history', 'anonyname', 'storey']
 
     @staticmethod
     def get_queryset(queryset):
@@ -243,9 +241,10 @@ class FloorSerializer(SimpleFloorSerializer):
         if not anonyname:
             anonyname = random_name(hole.mapping.values())
             hole.mapping[user.pk] = anonyname
+        hole.reply += 1
         hole.save()
         floor = Floor.objects.create(hole=hole, content=content, anonyname=anonyname,
-                                     user=user, special_tag=special_tag)
+                                     user=user, special_tag=special_tag, storey=hole.reply)
         floor.mention.set(mentions)
         mention_to.send(sender=Floor, instance=floor, mentioned=mentions)
         return floor
@@ -445,8 +444,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ActiveUserSerializer(serializers.ModelSerializer):
-    start_date = serializers.DateField(default=datetime.now(settings.TIMEZONE).date() - timedelta(days=1),
-                                       write_only=True)
+    start_date = serializers.DateField(default=now, write_only=True)
     end_date = serializers.DateField(default='1970-01-01', write_only=True)
 
     class Meta:

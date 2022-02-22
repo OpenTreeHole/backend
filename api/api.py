@@ -29,10 +29,9 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
     EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
     PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
-from api.tasks import send_email
+from api.tasks import send_email, hello_world
 from utils.apis import find_mentions, exists_or_404
 from utils.auth import check_api_key, many_hashes, async_token_auth
-from utils.notification import send_notifications
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
     NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -41,7 +40,7 @@ from ws.utils import async_send_websocket_message_to_group
 
 @api_view(["GET"])
 def index(request):
-    send_notifications.delay(request.user.id, 'hi')
+    hello_world.delay()
     return Response({"message": "Hello world!"})
 
 

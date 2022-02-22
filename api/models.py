@@ -66,6 +66,7 @@ class Floor(models.Model):
     history = models.JSONField(default=list)  # 修改记录，字典列表
     fold = models.JSONField(default=list)  # 折叠原因，字符串列表（原因由前端提供）
     special_tag = models.CharField(max_length=16, default='')  # 额外字段
+    storey = models.IntegerField(default=0)  # 楼层数
 
     def __str__(self):
         return f"{self.content[:50]}"
