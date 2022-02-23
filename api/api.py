@@ -168,8 +168,8 @@ class RegisterApi(APIView):
         return Response({"message": "已重置密码"}, 200)
 
     def patch(self, request, **kwargs):
-        user_id = kwargs.get('user_id')
-        email = kwargs.get('email')
+        user_id = request.data.get('user_id')
+        email = request.data.get('email')
         # Identify the user in this order: user_id, email, then requester himself.
         if user_id:
             user = get_object_or_404(User, pk=user_id)
