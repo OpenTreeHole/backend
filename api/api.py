@@ -27,7 +27,7 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
     ReportSerializer, MessageSerializer, \
     UserSerializer, DivisionSerializer, FloorGetSerializer, RegisterSerializer, \
     EmailSerializer, BaseEmailSerializer, HoleCreateSerializer, \
-    PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer
+    PushTokenSerializer, FloorUpdateSerializer, ActiveUserSerializer, AdminAccountChangeSerializer
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email, hello_world
 from utils.apis import find_mentions, exists_or_404
@@ -166,6 +166,32 @@ class RegisterApi(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "已重置密码"}, 200)
+
+    def patch(self, request, **kwargs):
+        user_id = request.data.get('user_id')
+        email = request.data.get('email')
+        # Identify the user in this order: user_id, email, then requester himself.
+        if user_id:
+            user = get_object_or_404(User, pk=user_id)
+        elif email:
+            user = get_object_or_404(User, identifier=many_hashes(email))
+        else:
+            user = request.user
+
+        # Reject all requests from non-admin
+        if not request.user.is_admin:
+            return Response({"message": "无管理权限，不能重置密码"}, 401)
+
+        self.check_object_permissions(request, user)
+
+        # Validate the syntax
+        serializer = AdminAccountChangeSerializer(instance=user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Save the new password
+        serializer.save()
+
+        return Response({"message": "用户密码已被重置", "user_id": user.pk}, 200)
 
 
 class EmailApi(APIView):
@@ -623,7 +649,8 @@ class MessagesApi(APIView):
             return Response(serializer.data)
         # 获取多个
         else:
-            query_set = Message.objects.filter(user=request.user, time_created__lt=start_time).order_by('-pk')
+            query_set = Message.objects.filter(user=request.user,
+                                               time_created__lt=start_time).order_by('-pk')
             if not_read:
                 query_set = query_set.filter(has_read=False)
             serializer = MessageSerializer(query_set, many=True)
