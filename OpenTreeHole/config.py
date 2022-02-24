@@ -40,7 +40,7 @@ lower_site_name = SITE_NAME.replace(' ', '').lower()
 HOST = os.environ.get('HOST', f'www.{lower_site_name}.com')  # 网站域名
 LANGUAGE = os.environ.get('LANGUAGE', 'zh-Hans')  # 语言代码
 ALLOW_CONNECT_HOSTS = get_array_from_env('ALLOW_CONNECT_HOSTS', [HOST])  # 允许连接的域名
-EMAIL_WHITELIST = get_array_from_env('EMAIL_WHITELIST', ['test.com'])  # 允许注册树洞的邮箱域名
+EMAIL_WHITELIST = get_array_from_env('EMAIL_WHITELIST', ['test.com','opentreehole.org'])  # 允许注册树洞的邮箱域名
 MIN_PASSWORD_LENGTH = get_int_from_env('MIN_PASSWORD_LENGTH', 8)  # 允许的最短用户密码长度
 VALIDATION_CODE_EXPIRE_TIME = get_int_from_env('VALIDATION_CODE_EXPIRE_TIME',
                                                5)  # 验证码失效时间（分钟）
