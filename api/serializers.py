@@ -105,6 +105,33 @@ class RegisterSerializer(EmailSerializer):
         return instance
 
 
+class AdminAccountChangeSerializer(EmailSerializer):
+    password = serializers.CharField()
+
+    def validate_password(self, password):
+        validate_password(password)
+        return password
+
+    def validate(self, data):
+        email = data['email']
+        return data
+
+    def create(self, validated_data):
+        email = validated_data.get('email')
+        password = validated_data.get('password')
+        # 校验用户名是否已存在
+        if User.objects.filter(identifier=many_hashes(email)).exists():
+            raise BadRequest(detail='该用户已注册！如果忘记密码，请使用忘记密码功能找回')
+        user = User.objects.create_user(email=email, password=password)
+        cache.delete(email)  # 注册成功后验证码失效
+        return user
+
+    def update(self, instance, validated_data):
+        instance.set_password(validated_data.get('password'))
+        instance.save()
+        return instance
+
+
 class DivisionSerializer(serializers.ModelSerializer):
     division_id = serializers.IntegerField(source='id', read_only=True)
 
