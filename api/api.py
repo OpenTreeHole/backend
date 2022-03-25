@@ -4,6 +4,7 @@ import binascii
 import json
 import secrets
 from datetime import datetime, timedelta
+from json import JSONDecodeError
 
 import httpx
 import magic
@@ -11,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
 from django.db import transaction, IntegrityError
+from django.db.models import Case, When
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_datetime
@@ -31,7 +33,8 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email, hello_world
 from utils.apis import find_mentions, exists_or_404
-from utils.auth import check_api_key, many_hashes, async_token_auth
+from utils.auth import check_api_key, many_hashes
+from utils.my_auth import async_token_auth
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
     NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
@@ -356,11 +359,17 @@ class FloorsApi(APIView):
         start_floor = serializer.validated_data.get('start_floor')
         length = serializer.validated_data.get('length')
         reverse = serializer.validated_data.get('reverse')
+        ids = request.query_params.get('ids')
 
-        if search:  # 搜索
-            query_set = Floor.objects.filter(shadow_text__icontains=search)
-            if not reverse:  # 搜索默认降序，reverse 反转
-                query_set = query_set.order_by('-pk')
+        if search:  # 搜索（已弃用）
+            query_set = Floor.objects.filter(content__icontains=search)
+        elif ids:
+            try:
+                ids = json.loads(ids)
+            except JSONDecodeError:
+                ids = []
+            order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(ids)])
+            query_set = Floor.objects.filter(id__in=ids).order_by(order)
         else:  # 主题帖下
             query_set = Floor.objects.filter(hole_id=hole_id)
             if reverse:  # 主题帖默认升序，reverse 反转

@@ -131,7 +131,7 @@ def sync_to_search():
             data = queryset[1000 * i:1000 * (i + 1)]
             for tup in data:
                 a = {"index": {"_id": str(tup[0])}}
-                b = {"content": tup[1]}
+                b = {"content": tup[1], "id": tup[0]}
                 string_io.write(f'{json.dumps(a)}\n{json.dumps(b)}\n')
             r = client.post('/floors/_bulk', content=string_io.getvalue())
             if r.status_code != 200:

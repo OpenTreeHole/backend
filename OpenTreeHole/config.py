@@ -148,7 +148,7 @@ MIDDLEWARE = []
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "utils.auth.MyTokenAuthentication"
+        "utils.my_auth.MyTokenAuthentication"
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer'

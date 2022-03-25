@@ -22,6 +22,7 @@ pycryptodome = "*"
 requests = "*"
 pytz = "*"
 pyotp = "*"
+pyjwt = "*"
 
 [dev-packages]
 django-silk = "*"
