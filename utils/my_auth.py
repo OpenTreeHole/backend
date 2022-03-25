@@ -29,7 +29,7 @@ class MyTokenAuthentication(TokenAuthentication):
     def authenticate(self, request):
         auth = get_authorization_header(request).split()
         if len(auth) != 2:
-            raise AuthenticationFailed('token invalid')
+            return
         authenticated = self._authenticate(
             auth_method=auth[0].decode().lower(),
             token=auth[1].decode()
