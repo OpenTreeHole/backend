@@ -33,7 +33,8 @@ from api.serializers import TagSerializer, HoleSerializer, FloorSerializer, \
 from api.signals import modified_by_admin, new_penalty, mention_to
 from api.tasks import send_email, hello_world
 from utils.apis import find_mentions, exists_or_404
-from utils.auth import check_api_key, many_hashes, async_token_auth
+from utils.auth import check_api_key, many_hashes
+from utils.my_auth import async_token_auth
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
     NotSilentOrAdminCanPost, AdminOrReadOnly, \
     AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
