@@ -263,6 +263,13 @@ class HolesApi(APIView):
         prefetch_length = serializer.validated_data.get('prefetch_length')
         start_time = serializer.validated_data.get('start_time')
         division_id = serializer.validated_data.get('division_id')
+
+        # 返回结果的排序
+        # @w568w (2022/3/30): 我对 Serializer 的组织方式并不熟悉，因此采用了这种比较原始的参数读取方法。
+        order = request.query_params['order']
+        if not order:
+            order = 'time_updated'
+
         # 获取单个
         hole_id = kwargs.get('hole_id')
         if hole_id:
@@ -288,10 +295,15 @@ class HolesApi(APIView):
             queryset = queryset if request.user.is_admin else \
                 queryset.filter(hidden=False)
             # 时间、分区
-            queryset = queryset.order_by('-time_updated').filter(
-                time_updated__lt=start_time,
-                division_id=division_id
-            )[:length]
+            if division_id == 0:
+                queryset = queryset.order_by('-' + order).filter(
+                    time_updated__lt=start_time
+                )[:length]
+            else:
+                queryset = queryset.order_by('-' + order).filter(
+                    time_updated__lt=start_time,
+                    division_id=division_id
+                )[:length]
             queryset = HoleSerializer.get_queryset(queryset)
             serializer = HoleSerializer(queryset, many=True, context={
                 "user": request.user,
