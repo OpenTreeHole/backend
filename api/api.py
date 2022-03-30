@@ -266,9 +266,7 @@ class HolesApi(APIView):
 
         # 返回结果的排序
         # @w568w (2022/3/30): 我对 Serializer 的组织方式并不熟悉，因此采用了这种比较原始的参数读取方法。
-        order = request.query_params['order']
-        if not order:
-            order = 'time_updated'
+        order = request.query_params.get('order', 'time_updated')
 
         # 获取单个
         hole_id = kwargs.get('hole_id')
