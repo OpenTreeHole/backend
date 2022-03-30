@@ -586,6 +586,8 @@ class ReportsApi(APIView):
         report = get_object_or_404(Report, pk=report_id)
         floor = report.floor
 
+        if request.data.get('not_deal'):
+            pass
         if request.data.get('fold'):
             floor.fold = request.data.get('fold')
         if request.data.get('delete'):
