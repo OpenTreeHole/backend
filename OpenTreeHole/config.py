@@ -104,7 +104,8 @@ GITHUB_BRANCH = os.environ.get('GITHUB_BRANCH', 'master')
 CHEVERETO_URL = os.environ.get('CHEVERETO_URL',
                                '')  # e.g. https://www.chevereto.com/api/1/upload
 CHEVERETO_TOKEN = os.environ.get('CHEVERETO_TOKEN', '')
-
+# Elastic Search
+SEARCH_URL = os.environ.get('SEARCH_URL', 'http://search:9200')
 # 足够长的密码，供 Django 安全机制
 SECRET_KEY = os.environ.get('SECRET_KEY', str(uuid.uuid4()))
 
@@ -147,7 +148,7 @@ MIDDLEWARE = []
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "utils.auth.MyTokenAuthentication"
+        "utils.my_auth.MyTokenAuthentication"
     ],
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer'

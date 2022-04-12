@@ -18,6 +18,9 @@ class Division(models.Model):
     def __str__(self):
         return self.name
 
+    class Meta:
+        db_table = 'division'
+
 
 class Tag(models.Model):
     name = models.CharField(max_length=settings.MAX_TAG_LENGTH, unique=True)
@@ -25,6 +28,9 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        db_table = 'tag'
 
 
 # 主题帖
@@ -42,6 +48,9 @@ class Hole(models.Model):
 
     def __str__(self):
         return f'树洞#{self.pk}'
+
+    class Meta:
+        db_table = 'hole'
 
 
 class Floor(models.Model):
@@ -71,6 +80,9 @@ class Floor(models.Model):
     def __str__(self):
         return f"{self.content[:50]}"
 
+    class Meta:
+        db_table = 'floor'
+
 
 class Report(models.Model):
     hole = models.ForeignKey(Hole, on_delete=models.CASCADE)
@@ -84,6 +96,9 @@ class Report(models.Model):
 
     def __str__(self):
         return f"{self.hole}, 帖子{self.floor}\n理由: {self.reason}"
+
+    class Meta:
+        db_table = 'report'
 
 
 class UserManager(BaseUserManager):
@@ -146,6 +161,9 @@ class User(AbstractBaseUser):
     def __str__(self):
         return f"用户#{self.pk}"
 
+    class Meta:
+        db_table = 'user'
+
 
 class Message(models.Model):
     user = models.ForeignKey(
@@ -161,6 +179,9 @@ class Message(models.Model):
     def __str__(self):
         return self.message
 
+    class Meta:
+        db_table = 'message'
+
 
 class PushToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
@@ -168,6 +189,9 @@ class PushToken(models.Model):
     service = models.CharField(max_length=16, db_index=True)  # apns or mipush
     device_id = models.CharField(max_length=128, unique=True)
     token = models.CharField(max_length=128)
+
+    class Meta:
+        db_table = 'push_token'
 
 
 class OldUserFavorites(models.Model):
@@ -179,3 +203,6 @@ class ActiveUser(models.Model):
     date = models.DateField(default=default_active_user_date, unique=True)
     dau = models.IntegerField(default=0)  # 日活
     mau = models.IntegerField(default=0)  # 月活
+
+    class Meta:
+        db_table = 'active_user'
