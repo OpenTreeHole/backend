@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from json import JSONDecodeError
 
 import httpx
-import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
@@ -846,9 +845,6 @@ async def upload_image(request):
         return JsonResponse({'message': 'base64 格式有误'}, status=400)
     if len(image) > settings.MAX_IMAGE_SIZE * 1024 * 1024:
         return JsonResponse({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB'}, status=400)
-    mime = magic.from_buffer(image, mime=True)
-    if mime.split('/')[0] != 'image':
-        return JsonResponse({'message': '请上传图片格式'}, status=400)
 
     if not settings.CHEVERETO_URL:
         return JsonResponse({'message': '暂不支持图片上传'}, status=501)
