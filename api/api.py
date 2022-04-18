@@ -7,7 +7,6 @@ from datetime import datetime, timedelta
 from json import JSONDecodeError
 
 import httpx
-import magic
 from django.conf import settings
 from django.contrib.auth.hashers import check_password
 from django.core.cache import cache
@@ -37,7 +36,7 @@ from utils.auth import check_api_key, many_hashes
 from utils.my_auth import async_token_auth
 from utils.permissions import OnlyAdminCanModify, OwnerOrAdminCanModify, \
     NotSilentOrAdminCanPost, AdminOrReadOnly, \
-    AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly
+    AdminOrPostOnly, OwenerOrAdminCanSee, AdminOnly, IsAuthenticatedEx
 from ws.utils import async_send_websocket_message_to_group
 
 
@@ -62,7 +61,7 @@ def login(request):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedEx])
 def logout(request):
     request.auth.delete()
     Token.objects.create(user=request.user)
@@ -226,7 +225,7 @@ class EmailApi(APIView):
 
 
 class DivisionsApi(APIView):
-    permission_classes = [IsAuthenticated, AdminOrReadOnly]
+    permission_classes = [IsAuthenticatedEx, AdminOrReadOnly]
 
     def get(self, request, **kwargs):
         division_id = kwargs.get('division_id')
@@ -253,7 +252,7 @@ class DivisionsApi(APIView):
 
 
 class HolesApi(APIView):
-    permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OnlyAdminCanModify]
+    permission_classes = [IsAuthenticatedEx, NotSilentOrAdminCanPost, OnlyAdminCanModify]
 
     def get(self, request, **kwargs):
         # 校验数据
@@ -352,7 +351,7 @@ class HolesApi(APIView):
 
 
 class FloorsApi(APIView):
-    permission_classes = [IsAuthenticated, NotSilentOrAdminCanPost, OwnerOrAdminCanModify]
+    permission_classes = [IsAuthenticatedEx, NotSilentOrAdminCanPost, OwnerOrAdminCanModify]
 
     def get(self, request, **kwargs):
         # 获取单个
@@ -474,7 +473,7 @@ class FloorsApi(APIView):
 
 
 class TagsApi(APIView):
-    permission_classes = [IsAuthenticated, AdminOrReadOnly]
+    permission_classes = [IsAuthenticatedEx, AdminOrReadOnly]
 
     def get(self, request, **kwargs):
         # 获取单个
@@ -515,7 +514,7 @@ class TagsApi(APIView):
 
 
 class FavoritesApi(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedEx]
 
     def get(self, request):
         query_set = request.user.favorites.all()
@@ -554,7 +553,7 @@ class FavoritesApi(APIView):
 
 
 class ReportsApi(APIView):
-    permission_classes = [IsAuthenticated, AdminOrPostOnly]
+    permission_classes = [IsAuthenticatedEx, AdminOrPostOnly]
 
     def post(self, request):
         floor_id = request.data.get('floor_id')
@@ -632,7 +631,7 @@ class ReportsApi(APIView):
 
 
 class MessagesApi(APIView):
-    permission_classes = [IsAuthenticated, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
+    permission_classes = [IsAuthenticatedEx, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
 
     def post(self, request):
         floor = get_object_or_404(Floor, pk=request.data.get('to'))
@@ -694,7 +693,7 @@ class MessagesApi(APIView):
 
 
 class UsersApi(APIView):
-    permission_classes = [IsAuthenticated, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
+    permission_classes = [IsAuthenticatedEx, OwnerOrAdminCanModify, OwenerOrAdminCanSee]
 
     def get(self, request, **kwargs):
         user_id = kwargs.get('user_id')
@@ -737,7 +736,7 @@ class UsersApi(APIView):
 
 
 class PushTokensAPI(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedEx]
 
     def get(self, request):
         if not request.user.is_admin:
@@ -821,7 +820,7 @@ class PenaltyApi(APIView):
 
 
 @api_view(["GET"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedEx])
 def get_active_user(request):
     serializer = ActiveUserSerializer(data=request.query_params)
     serializer.is_valid(raise_exception=True)
@@ -846,9 +845,6 @@ async def upload_image(request):
         return JsonResponse({'message': 'base64 格式有误'}, status=400)
     if len(image) > settings.MAX_IMAGE_SIZE * 1024 * 1024:
         return JsonResponse({'message': f'图片大小不能超过 {settings.MAX_IMAGE_SIZE} MB'}, status=400)
-    mime = magic.from_buffer(image, mime=True)
-    if mime.split('/')[0] != 'image':
-        return JsonResponse({'message': '请上传图片格式'}, status=400)
 
     if not settings.CHEVERETO_URL:
         return JsonResponse({'message': '暂不支持图片上传'}, status=501)

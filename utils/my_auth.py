@@ -12,36 +12,28 @@ from api.models import User
 
 
 class MyTokenAuthentication(TokenAuthentication):
-    def _authenticate(self, auth_method, token):
-        if auth_method == 'token':
-            return self.authenticate_credentials(token)
-        elif auth_method == 'bearer':
-            try:
-                payload = jwt.decode(token, verify=False, options={"verify_signature": False})
-            except jwt.DecodeError:
-                raise AuthenticationFailed('jwt token invalid')
-            try:
-                user = User.objects.get(id=payload.get('uid'))
-            except User.DoesNotExist:
-                user = User.objects.create(id=payload.get('uid'), email='', password='', identifier='')
-            return user, token
-
     def authenticate(self, request):
+        if request.headers.get('x-anonymous-consumer'):
+            return
         auth = get_authorization_header(request).split()
         if len(auth) != 2:
             return
-        authenticated = self._authenticate(
-            auth_method=auth[0].decode().lower(),
-            token=auth[1].decode()
+        token = auth[1].decode()
+        uid = request.headers.get('x-consumer-username')
+        if not uid:
+            user, token = self.authenticate_credentials(token)
+        else:
+            try:
+                user = User.objects.get(id=uid)
+            except User.DoesNotExist:
+                email = f'user#{uid}@fduhole.com'
+                user = User.objects.create_user(id=uid, email=email, password=email)
+        cache.set(
+            f'user_last_login_{user.id}',
+            datetime.now(settings.TIMEZONE).isoformat(),
+            86400
         )
-        if authenticated:
-            user, token = authenticated
-            cache.set(
-                f'user_last_login_{user.id}',
-                datetime.now(settings.TIMEZONE).isoformat(),
-                86400
-            )
-        return authenticated
+        return user, token
 
 
 async def async_token_auth(request):

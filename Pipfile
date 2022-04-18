@@ -8,7 +8,6 @@ djangorestframework = "*"
 django-redis = "*"
 celery = "*"
 django-celery-results = "*"
-python-magic = "*"
 httpx = "*"
 channels = "*"
 uvicorn = { extras = ["standard"], version = "*" }

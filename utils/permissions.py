@@ -4,6 +4,7 @@ from rest_framework.permissions import SAFE_METHODS
 
 # PATCH 方法不检查权限！！！
 MODIFY_METHODS = ('PUT', 'DELETE')
+CORS_METHODS = ('OPTIONS',)
 
 
 class OnlyAdminCanModify(permissions.BasePermission):
@@ -72,3 +73,16 @@ class OwnerOrAdminCanModify(permissions.BasePermission):
             return owner == request.user or request.user.is_admin
         else:
             return True
+
+
+class IsAuthenticatedEx(permissions.BasePermission):
+    """
+    Allows access only to authenticated users.
+    But also allows CORS preflight, i.e. OPTIONS.
+    """
+
+    def has_permission(self, request, view):
+        if request.method in CORS_METHODS:
+            return True
+        else:
+            return bool(request.user and request.user.is_authenticated)
