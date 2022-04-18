@@ -20,28 +20,35 @@ class MyTokenAuthentication(TokenAuthentication):
                 payload = jwt.decode(token, verify=False, options={"verify_signature": False})
             except jwt.DecodeError:
                 raise AuthenticationFailed('jwt token invalid')
+            _id = payload.get('uid')
             try:
-                user = User.objects.get(id=payload.get('uid'))
+                user = User.objects.get(id=_id)
             except User.DoesNotExist:
-                user = User.objects.create(id=payload.get('uid'), email='', password='', identifier='')
+                email = f'user#{_id}@fduhole.com'
+                user = User.objects.create_user(id=_id, email=email, password=email)
             return user, token
 
     def authenticate(self, request):
+        if request.headers.get('x-anonymous-consumer'):
+            return
         auth = get_authorization_header(request).split()
         if len(auth) != 2:
             return
-        authenticated = self._authenticate(
-            auth_method=auth[0].decode().lower(),
-            token=auth[1].decode()
+        try:
+            uid = int(request.headers.get('x-consumer-username'))
+        except:
+            return
+        try:
+            user = User.objects.get(id=uid)
+        except User.DoesNotExist:
+            email = f'user#{uid}@fduhole.com'
+            user = User.objects.create_user(id=uid, email=email, password=email)
+        cache.set(
+            f'user_last_login_{user.id}',
+            datetime.now(settings.TIMEZONE).isoformat(),
+            86400
         )
-        if authenticated:
-            user, token = authenticated
-            cache.set(
-                f'user_last_login_{user.id}',
-                datetime.now(settings.TIMEZONE).isoformat(),
-                86400
-            )
-        return authenticated
+        return user, auth[1].decode()
 
 
 async def async_token_auth(request):
