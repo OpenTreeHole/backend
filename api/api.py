@@ -371,7 +371,7 @@ class FloorsApi(APIView):
         ids = request.query_params.get('ids')
 
         if search:  # 搜索（已弃用）
-            query_set = Floor.objects.filter(content__icontains=search)
+            query_set = Floor.objects.filter(content__icontains=search).order_by('-id')
         elif ids:
             try:
                 ids = json.loads(ids)
