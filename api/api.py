@@ -430,6 +430,9 @@ class FloorsApi(APIView):
             self.check_object_permissions(request, floor)
         content = data.pop('content', '')
         if content:
+            # 只允许管理员修改已删除的帖子
+            if floor.deleted and not request.user.is_admin:
+                return Response({"message": "不能修改已删除的帖子，目前只允许管理员修改它们"}, 403)
             floor.history.append({
                 'content': floor.content,
                 'altered_by': request.user.id,
