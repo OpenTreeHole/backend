@@ -573,8 +573,8 @@ class ReportsApi(APIView):
         return Response(serializer.data, 201)
 
     def get(self, request, **kwargs):
-        start_report = kwargs.get('start_report', 0)
-        length = kwargs.get('length', 0)
+        start_report = request.query_params.get('start_report', 0)
+        length = request.query_params.get('length', 0)
         # 获取单个
         report_id = kwargs.get('report_id')
         if report_id:
