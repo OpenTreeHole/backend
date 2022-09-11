@@ -573,6 +573,8 @@ class ReportsApi(APIView):
         return Response(serializer.data, 201)
 
     def get(self, request, **kwargs):
+        start_report = request.query_params.get('start_report', 0)
+        length = request.query_params.get('length', 0)
         # 获取单个
         report_id = kwargs.get('report_id')
         if report_id:
@@ -590,6 +592,12 @@ class ReportsApi(APIView):
         else:
             return Response({'message': 'category 参数不正确'})
         queryset = queryset.order_by('-id')
+
+        if length == 0:
+            queryset = queryset[start_report:]
+        else:
+            queryset = queryset[start_report: start_report + length]
+
         serializer = ReportSerializer(queryset, many=True)
         return Response(serializer.data)
 
