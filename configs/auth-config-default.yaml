@@ -1,0 +1,20 @@
+mode: dev
+debug: true
+db:
+  type: sqlite
+  dsn: data/sqlite.db
+
+cache:
+#  type: memory
+
+gateway:
+#  type: kong
+#  url: kong:8001
+
+feature:
+  standalone: true
+#  shamir: false
+#  emailVerification: false
+#  verificationCodeExpires: 600
+#  emailNotification: false
+#  registrationTest: false
