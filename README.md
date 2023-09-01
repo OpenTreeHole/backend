@@ -41,8 +41,8 @@ API 文档详见启动项目之后的 http://localhost:8000/docs
 
 ## 贡献列表
 
-<a href="https://github.com/ChatDan/chatdan_backend/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ChatDan/chatdan_backend"  alt="contributors"/>
+<a href="https://github.com/OpenTreeHole/backend/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=OpenTreeHole/backend"  alt="contributors"/>
 </a>
 
 ## 联系方式
