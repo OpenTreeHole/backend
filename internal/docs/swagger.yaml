@@ -1,0 +1,197 @@
+basePath: /api
+definitions:
+  schema.HttpBaseError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  schema.HttpError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      validation_detail:
+        items:
+          $ref: '#/definitions/schema.ValidateFieldError'
+        type: array
+    type: object
+  schema.LoginRequest:
+    properties:
+      email:
+        description: |-
+          email in email blacklist
+          TODO: add email blacklist
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+    type: object
+  schema.RegisterRequest:
+    properties:
+      email:
+        description: |-
+          email in email blacklist
+          TODO: add email blacklist
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+      verification:
+        type: string
+    type: object
+  schema.ResetPasswordRequest:
+    properties:
+      email:
+        description: |-
+          email in email blacklist
+          TODO: add email blacklist
+        type: string
+      password:
+        maxLength: 32
+        minLength: 8
+        type: string
+      verification:
+        type: string
+    type: object
+  schema.TokenResponse:
+    properties:
+      access:
+        type: string
+      message:
+        type: string
+      refresh:
+        type: string
+    type: object
+  schema.ValidateFieldError:
+    properties:
+      field:
+        description: |-
+          Field is the field name that failed validation
+          use registered tag name if registered
+        type: string
+      message:
+        description: Message is the error message
+        type: string
+      param:
+        description: Param is the parameter for the validation
+        type: string
+      tag:
+        description: |-
+          Tag is the validation tag that failed.
+          use alias if defined
+
+          e.g. "required", "min", "max", etc.
+        type: string
+      value:
+        description: Value is the actual value that failed validation
+    type: object
+info:
+  contact:
+    email: dev@fduhole.com
+    name: Maintainer Chen Ke
+    url: https://danxi.fduhole.com/about
+  description: Next Generation of Auth microservice integrated with kong for registration
+    and issuing tokens
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  title: Open Tree Hole Auth
+  version: 3.0.0
+paths:
+  /login:
+    post:
+      consumes:
+        - application/json
+      description: login with email and password
+      parameters:
+        - description: LoginRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.LoginRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: login
+      tags:
+        - Account
+  /register:
+    post:
+      consumes:
+        - application/json
+      description: register with email, password and optional verification code if
+        enabled
+      parameters:
+        - description: RegisterRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.RegisterRequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schema.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: register
+      tags:
+        - Account
+    put:
+      consumes:
+        - application/json
+      description: reset password with email, password and optional verification code
+        if enabled
+      parameters:
+        - description: ResetPasswordRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.ResetPasswordRequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schema.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: reset password
+      tags:
+        - Account
+swagger: "2.0"
