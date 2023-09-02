@@ -14,12 +14,14 @@ type Logger struct {
 	*zap.Logger
 }
 
-func NewLogger(conf *config.AtomicAllConfig) *Logger {
-	zapLogger, err := initZap(conf)
+func NewLogger(conf *config.AtomicAllConfig) (*Logger, func()) {
+	logger, err := initZap(conf)
 	if err != nil {
 		panic(err)
 	}
-	return &Logger{Logger: zapLogger}
+	return &Logger{Logger: logger}, func() {
+		_ = logger.Sync()
+	}
 }
 
 func initZap(conf *config.AtomicAllConfig) (*zap.Logger, error) {

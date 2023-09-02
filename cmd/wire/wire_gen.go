@@ -21,7 +21,7 @@ import (
 
 func NewApp() (*server.Server, func(), error) {
 	pointer := config.NewConfig()
-	logger := log.NewLogger(pointer)
+	logger, cleanup := log.NewLogger(pointer)
 	validate := handler.NewValidater()
 	handlerHandler := handler.NewHandler(logger, validate)
 	serviceService := service.NewService(logger)
@@ -33,6 +33,7 @@ func NewApp() (*server.Server, func(), error) {
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
 	serverServer := server.NewServer(accountHandler, logger, pointer)
 	return serverServer, func() {
+		cleanup()
 	}, nil
 }
 

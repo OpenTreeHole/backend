@@ -19,10 +19,9 @@ func TestNewCache(t *testing.T) {
 	)
 	conf.Cache.Type = "memory"
 	allConf.Store(&config.AllConfig{Config: &conf})
-	var cache = NewCache(
-		&allConf,
-		log.NewLogger(&allConf),
-	)
+	logger, cleanup := log.NewLogger(&allConf)
+	defer cleanup()
+	var cache = NewCache(&allConf, logger)
 
 	t.Run("set string", func(t *testing.T) {
 		err = cache.Set(ctx, "key", "value")
