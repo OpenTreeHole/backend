@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/creasty/defaults"
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/pflag"
 
 	"github.com/opentreehole/backend/pkg/utils"
@@ -16,8 +17,8 @@ type Config struct {
 	// app mode: dev, production, test, bench, default is dev
 	Mode string `yaml:"mode" default:"dev" json:"mode"`
 
-	// if true, log above debug level, else log above info level
-	Debug bool `yaml:"debug" default:"false" json:"debug"`
+	// LogLevel is the log level, default is debug
+	LogLevel string `yaml:"log_level" default:"debug" json:"log_level" validate:"oneof=debug info warn error dpanic panic fatal"`
 
 	// set port, default 8000
 	Port int `yaml:"port" json:"port"`
@@ -53,7 +54,7 @@ type Config struct {
 		Type string `yaml:"type" default:"memory" json:"type"`
 
 		// redis url
-		Url string `yaml:"url" json:"url"`
+		Url string `yaml:"url" default:"redis:6379" json:"url"`
 
 		// redis username
 		Username string `yaml:"username" json:"username"`
@@ -71,7 +72,7 @@ type Config struct {
 		Type string `yaml:"type" default:"elasticsearch" json:"type"`
 
 		// search engine url
-		Url string `yaml:"url" json:"url"`
+		Url string `yaml:"url" default:"http://elasticsearch:9200" json:"url"`
 	} `yaml:"searchEngine" json:"search_engine"`
 
 	// api gateway settings
@@ -82,7 +83,7 @@ type Config struct {
 		Type string `yaml:"type" default:"kong" json:"type"`
 
 		// api gateway url
-		Url string `yaml:"url" default:"kong:8001" json:"url"`
+		Url string `yaml:"url" default:"http://kong:8001" json:"url"`
 
 		// api gateway token
 		Token string `yaml:"token" json:"token"`
@@ -106,52 +107,52 @@ type Config struct {
 		From string `yaml:"from" json:"from"`
 
 		// smtp server from name
-		FromName string `yaml:"fromName" json:"from_name"`
+		FromName string `yaml:"from_name" json:"from_name"`
 
 		// smtp server tls
 		TLS bool `yaml:"tls" default:"true" json:"tls"`
 
 		// email white list
-		WhiteList []string `yaml:"whiteList" json:"white_list"`
+		WhiteList []string `yaml:"white_list" json:"white_list"`
 
 		// site name, using when send email
-		SiteName string `yaml:"siteName" default:"Open Tree Hole" json:"site_name"`
+		SiteName string `yaml:"site_name" default:"Open Tree Hole" json:"site_name"`
 
 		// dev email, using when debug
-		DevEmail string `yaml:"devEmail" json:"dev_email"`
+		DevEmail string `yaml:"dev_email" json:"dev_email"`
 	} `yaml:"email" json:"email"`
 
 	// feature settings, including standalone, shamir, emailVerification, emailNotification, registrationTest
 	Feature struct {
-		// enable standalone mode, means jwt-auth without api gateway, default is true
-		Standalone bool `yaml:"standalone" default:"true" json:"standalone"`
+		// enable external gateway mode, means jwt-auth with api gateway
+		ExternalGateway bool `yaml:"external_gateway" default:"false" json:"external_gateway"`
 
-		// enable shamir secret sharing encryption for email, default is false
+		// enable shamir secret sharing encryption for email
 		Shamir bool `yaml:"shamir" default:"false" json:"shamir"`
 
-		// enable email verification, default is false
-		EmailVerification bool `yaml:"emailVerification" default:"false" json:"email_verification"`
+		// enable email verification
+		EmailVerification bool `yaml:"email_verification" default:"false" json:"email_verification"`
 
 		// email verification code expires, default is 600 seconds
-		VerificationCodeExpires int `yaml:"verificationCodeExpires" default:"600" json:"verification_code_expires"`
+		VerificationCodeExpires int `yaml:"verification_code_expires" default:"600" json:"verification_code_expires"`
 
-		// enable email notification, default is false
-		EmailNotification bool `yaml:"emailNotification" default:"false" json:"email_notification"`
+		// enable email notification
+		EmailNotification bool `yaml:"email_notification" default:"false" json:"email_notification"`
 
-		// enable registration test, default is false
-		RegistrationTest bool `yaml:"registrationTest" default:"false" json:"registration_test"`
+		// enable registration test
+		RegistrationTest bool `yaml:"registration_test" default:"false" json:"registration_test"`
 	} `yaml:"feature" json:"feature"`
 
 	// notification settings, used for notification server
 	Notification struct {
 		// notification certificates and package name
-		MipushKeyPath      string `yaml:"mipushKeyPath" default:"data/mipush.pem" json:"mipush_key_path"`
-		APNSKeyPath        string `yaml:"apnsKeyPath" default:"data/apns.pem" json:"apns_key_path"`
-		IOSPackageName     string `yaml:"iosPackageName" default:"io.github.danxi-dev.dan-xi" json:"ios_package_name"`
-		AndroidPackageName string `yaml:"androidPackageName" default:"io.github.danxi_dev.dan_xi" json:"android_package_name"`
+		MipushKeyPath      string `yaml:"mipush_key_path" default:"data/mipush.pem" json:"mipush_key_path"`
+		APNSKeyPath        string `yaml:"apns_key_path" default:"data/apns.pem" json:"apns_key_path"`
+		IOSPackageName     string `yaml:"ios_package_name" default:"io.github.danxi-dev.dan-xi" json:"ios_package_name"`
+		AndroidPackageName string `yaml:"android_package_name" default:"io.github.danxi_dev.dan_xi" json:"android_package_name"`
 
 		// mipush notification callback url, used for notification server
-		MipushCallbackUrl string `yaml:"mipushCallbackUrl" default:"http://notification.fduhole.com/api/callback/mipush" json:"mipush_callback_url"`
+		MipushCallbackUrl string `yaml:"mipush_callback_url" default:"http://notification.fduhole.com/api/callback/mipush" json:"mipush_callback_url"`
 	} `json:"notification"`
 }
 
@@ -205,6 +206,11 @@ func NewConfig() *AtomicAllConfig {
 
 	// read config from file
 	err = config.ReadFromFile(configFilename)
+	if err != nil {
+		panic(err)
+	}
+
+	err = validator.New().Struct(&config)
 	if err != nil {
 		panic(err)
 	}

@@ -46,6 +46,8 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 		),
 	}
 
+	var dbConf = conf.Load().DB
+
 	// Read/Write Splitting
 	mysqlDB := func(dsn string, replicasDsn ...string) *gorm.DB {
 		// set source databases
@@ -139,27 +141,20 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	}
 
 	// init db
-	dbType := conf.Load().DB.Type
 	dbDsn := conf.Load().DB.DSN
 	dbReplicas := conf.Load().DB.Replicas
 
-	switch dbType {
+	if dbDsn == "" {
+		logger.Fatal("db url not set")
+	}
+	switch dbConf.Type {
 	case "mysql":
-		if dbDsn == "" {
-			logger.Fatal("mysql url not set")
-		}
 		db = mysqlDB(dbDsn, dbReplicas...)
 
 	case "sqlite":
-		if dbDsn == "" {
-			logger.Fatal("sqlite url not set")
-		}
 		db = sqliteDB(dbDsn)
 
 	case "postgres":
-		if dbDsn == "" {
-			logger.Fatal("postgres url not set")
-		}
 		db = postgresDB(dbDsn, dbReplicas...)
 
 	case "memory":
@@ -169,7 +164,7 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 		logger.Fatal("db type not support")
 	}
 
-	if conf.Load().Debug {
+	if conf.Load().Mode == "dev" {
 		db = db.Debug()
 	}
 

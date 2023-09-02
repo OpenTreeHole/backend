@@ -1,6 +1,6 @@
 {
     "mode": "dev",
-    "debug": false,
+    "log_level": "debug",
     "port": 0,
     "db": {
         "type": "sqlite",
@@ -9,18 +9,18 @@
     },
     "cache": {
         "type": "memory",
-        "url": "",
+        "url": "redis:6379",
         "username": "",
         "password": "",
         "db": 0
     },
     "search_engine": {
         "type": "elasticsearch",
-        "url": ""
+        "url": "http://elasticsearch:9200"
     },
     "gateway": {
         "type": "kong",
-        "url": "kong:8001",
+        "url": "http://kong:8001",
         "token": ""
     },
     "email": {
@@ -36,7 +36,7 @@
         "dev_email": ""
     },
     "feature": {
-        "standalone": true,
+        "external_gateway": false,
         "shamir": false,
         "email_verification": false,
         "verification_code_expires": 600,
