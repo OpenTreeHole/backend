@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -24,14 +23,14 @@ type Repository struct {
 	db     *gorm.DB
 	cacher cache.Cacher
 	logger *log.Logger
-	conf   *viper.Viper
+	conf   *config.AtomicAllConfig
 }
 
-func NewRepository(db *gorm.DB, cacher cache.Cacher, logger *log.Logger, conf *viper.Viper) *Repository {
+func NewRepository(db *gorm.DB, cacher cache.Cacher, logger *log.Logger, conf *config.AtomicAllConfig) *Repository {
 	return &Repository{db: db, cacher: cacher, logger: logger, conf: conf}
 }
 
-func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
+func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	var gormConfig = &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
@@ -61,7 +60,7 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 			return db
 		}
 		var replicas []gorm.Dialector
-		for _, url := range config.Config.DB.Replicas {
+		for _, url := range replicasDsn {
 			replicas = append(replicas, mysql.Open(url))
 		}
 		err = db.Use(dbresolver.Register(dbresolver.Config{
@@ -88,7 +87,7 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 			return db
 		}
 		var replicas []gorm.Dialector
-		for _, url := range config.Config.DB.Replicas {
+		for _, url := range replicasDsn {
 			replicas = append(replicas, postgres.Open(url))
 		}
 		err = db.Use(dbresolver.Register(dbresolver.Config{
@@ -140,17 +139,9 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 	}
 
 	// init db
-	dbType := conf.GetString("db.type")
-	if dbType == "" {
-		conf.Set("db.type", "sqlite")
-		err := conf.WriteConfig()
-		if err != nil {
-			logger.Fatal("write config error", zap.Error(err))
-		}
-	}
-
-	dbDsn := conf.GetString("db.dsn")
-	dbReplicas := conf.GetStringSlice("db.replicas")
+	dbType := conf.Load().DB.Type
+	dbDsn := conf.Load().DB.DSN
+	dbReplicas := conf.Load().DB.Replicas
 
 	switch dbType {
 	case "mysql":
@@ -161,12 +152,7 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 
 	case "sqlite":
 		if dbDsn == "" {
-			dbDsn = "data/sqlite.db"
-			conf.Set("db.dsn", dbDsn)
-			err := conf.WriteConfig()
-			if err != nil {
-				logger.Fatal("write config error", zap.Error(err))
-			}
+			logger.Fatal("sqlite url not set")
 		}
 		db = sqliteDB(dbDsn)
 
@@ -174,7 +160,7 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 		if dbDsn == "" {
 			logger.Fatal("postgres url not set")
 		}
-		db = postgresDB(config.Config.DB.DSN, config.Config.DB.Replicas...)
+		db = postgresDB(dbDsn, dbReplicas...)
 
 	case "memory":
 		db = memoryDB()
@@ -183,7 +169,7 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 		logger.Fatal("db type not support")
 	}
 
-	if conf.GetBool("debug") {
+	if conf.Load().Debug {
 		db = db.Debug()
 	}
 
@@ -197,6 +183,6 @@ func NewDB(conf *viper.Viper, logger *log.Logger) (db *gorm.DB) {
 	return
 }
 
-func NewCacher(conf *viper.Viper) cache.Cacher {
+func NewCacher(conf *config.AtomicAllConfig) cache.Cacher {
 	return nil
 }

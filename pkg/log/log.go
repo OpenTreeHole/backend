@@ -2,9 +2,10 @@ package log
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/opentreehole/backend/internal/config"
 )
 
 const KEY = "zapLogger"
@@ -13,7 +14,7 @@ type Logger struct {
 	*zap.Logger
 }
 
-func NewLogger(conf *viper.Viper) (*Logger, error) {
+func NewLogger(conf *config.AtomicAllConfig) (*Logger, error) {
 	zapLogger, err := initZap(conf)
 	if err != nil {
 		return nil, err
@@ -21,12 +22,12 @@ func NewLogger(conf *viper.Viper) (*Logger, error) {
 	return &Logger{Logger: zapLogger}, nil
 }
 
-func initZap(config *viper.Viper) (*zap.Logger, error) {
+func initZap(conf *config.AtomicAllConfig) (*zap.Logger, error) {
 	var (
 		atomicLevel zapcore.Level
-		development = config.GetString("mode") != "production"
+		development = conf.Load().Mode != "production"
 	)
-	if config.GetString("mode") != "production" {
+	if conf.Load().Mode != "production" {
 		atomicLevel = zapcore.DebugLevel
 	} else {
 		atomicLevel = zapcore.InfoLevel

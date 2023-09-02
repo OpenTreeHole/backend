@@ -1,0 +1,53 @@
+{
+    "mode": "dev",
+    "debug": false,
+    "port": 0,
+    "db": {
+        "type": "sqlite",
+        "dsn": "data/sqlite.db",
+        "replicas": null
+    },
+    "cache": {
+        "type": "memory",
+        "url": "",
+        "username": "",
+        "password": "",
+        "db": 0
+    },
+    "search_engine": {
+        "type": "elasticsearch",
+        "url": ""
+    },
+    "gateway": {
+        "type": "kong",
+        "url": "kong:8001",
+        "token": ""
+    },
+    "email": {
+        "host": "",
+        "port": 465,
+        "username": "",
+        "password": "",
+        "from": "",
+        "from_name": "",
+        "tls": true,
+        "white_list": null,
+        "site_name": "Open Tree Hole",
+        "dev_email": ""
+    },
+    "feature": {
+        "standalone": true,
+        "shamir": false,
+        "email_verification": false,
+        "verification_code_expires": 600,
+        "email_notification": false,
+        "registration_test": false
+    },
+    "notification": {
+        "mipush_key_path": "data/mipush.pem",
+        "apns_key_path": "data/apns.pem",
+        "ios_package_name": "io.github.danxi-dev.dan-xi",
+        "android_package_name": "io.github.danxi_dev.dan_xi",
+        "mipush_callback_url": "http://notification.fduhole.com/api/callback/mipush"
+    }
+}

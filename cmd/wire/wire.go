@@ -5,8 +5,8 @@ package wire
 
 import (
 	"github.com/google/wire"
-	"github.com/spf13/viper"
 
+	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/handler"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/server"
@@ -31,14 +31,15 @@ var RepositorySet = wire.NewSet(
 	repository.NewAccountRepository,
 )
 
-func NewApp(*viper.Viper) (*server.Server, func(), error) {
+func NewApp() (*server.Server, func(), error) {
 	wire.Build(
+		config.NewConfig,
+		log.NewLogger,
 		RepositorySet,
 		ServiceSet,
 		HandlerSet,
-		server.NewServer,
-		log.NewLogger,
 		handler.NewValidater,
+		server.NewServer,
 	)
 	return &server.Server{}, nil, nil
 }

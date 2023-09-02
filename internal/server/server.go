@@ -16,6 +16,7 @@ import (
 )
 
 type Server struct {
+	config   *config.AtomicAllConfig
 	logger   *log.Logger
 	handlers []handler.RouteRegister
 }
@@ -23,9 +24,11 @@ type Server struct {
 func NewServer(
 	accountHandler handler.AccountHandler,
 	logger *log.Logger,
+	config *config.AtomicAllConfig,
 ) *Server {
 	return &Server{
 		logger: logger,
+		config: config,
 		handlers: []handler.RouteRegister{
 			accountHandler,
 		},
@@ -38,14 +41,14 @@ func (s *Server) Run() {
 		ErrorHandler:          schema.ErrorHandler,
 	})
 
-	RegisterMiddlewares(app)
+	RegisterMiddlewares(s.config)(app)
 	for _, h := range s.handlers {
 		h.RegisterRoute(app)
 	}
 
 	// start server
 	go func() {
-		err := app.Listen("0.0.0.0:" + strconv.Itoa(config.Config.Port))
+		err := app.Listen("0.0.0.0:" + strconv.Itoa(s.config.Load().Port))
 		if err != nil {
 			s.logger.Fatal("error start server", zap.Error(err))
 		}

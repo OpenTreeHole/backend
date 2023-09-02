@@ -17,14 +17,11 @@ import (
 	_ "time/tzdata"
 
 	"github.com/opentreehole/backend/cmd/wire"
-	"github.com/opentreehole/backend/internal/config"
 	_ "github.com/opentreehole/backend/internal/docs"
 )
 
 func main() {
-	conf := config.InitConfig()
-
-	server, cleanup, err := wire.NewApp(conf)
+	server, cleanup, err := wire.NewApp()
 	if err != nil {
 		panic(err)
 	}

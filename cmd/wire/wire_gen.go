@@ -8,31 +8,32 @@ package wire
 
 import (
 	"github.com/google/wire"
+	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/handler"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/server"
 	"github.com/opentreehole/backend/internal/service"
 	"github.com/opentreehole/backend/pkg/log"
-	"github.com/spf13/viper"
 )
 
 // Injectors from wire.go:
 
-func NewApp(viperViper *viper.Viper) (*server.Server, func(), error) {
-	logger, err := log.NewLogger(viperViper)
+func NewApp() (*server.Server, func(), error) {
+	pointer := config.NewConfig()
+	logger, err := log.NewLogger(pointer)
 	if err != nil {
 		return nil, nil, err
 	}
 	validate := handler.NewValidater()
 	handlerHandler := handler.NewHandler(logger, validate)
 	serviceService := service.NewService(logger)
-	db := repository.NewDB(viperViper, logger)
-	cacher := repository.NewCacher(viperViper)
-	repositoryRepository := repository.NewRepository(db, cacher, logger, viperViper)
+	db := repository.NewDB(pointer, logger)
+	cacher := repository.NewCacher(pointer)
+	repositoryRepository := repository.NewRepository(db, cacher, logger, pointer)
 	accountRepository := repository.NewAccountRepository(repositoryRepository)
 	accountService := service.NewAccountService(serviceService, accountRepository)
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
-	serverServer := server.NewServer(accountHandler, logger)
+	serverServer := server.NewServer(accountHandler, logger, pointer)
 	return serverServer, func() {
 	}, nil
 }

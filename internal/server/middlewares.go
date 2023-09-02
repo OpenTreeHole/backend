@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/recover"
+	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/rs/zerolog/log"
 
 	"github.com/opentreehole/backend/internal/config"
@@ -93,13 +93,15 @@ func StackTraceHandler(_ *fiber.Ctx, e any) {
 	log.Error().Any("panic", e).Bytes("stack", debug.Stack()).Msg("stacktrace")
 }
 
-func RegisterMiddlewares(app *fiber.App) {
-	app.Use(recover.New(recover.Config{EnableStackTrace: true, StackTraceHandler: StackTraceHandler}))
-	app.Use(MiddlewareGetUserID)
-	if config.Config.Mode != "bench" {
-		app.Use(MiddlewareCustomLogger)
-	}
-	if config.Config.Mode == "dev" {
-		app.Use(cors.New(cors.Config{AllowOrigins: "*"})) // for swag docs
+func RegisterMiddlewares(conf *config.AtomicAllConfig) func(app *fiber.App) {
+	return func(app *fiber.App) {
+		app.Use(fiberrecover.New(fiberrecover.Config{EnableStackTrace: true, StackTraceHandler: StackTraceHandler}))
+		app.Use(MiddlewareGetUserID)
+		if conf.Load().Mode != "bench" {
+			app.Use(MiddlewareCustomLogger)
+		}
+		if conf.Load().Mode == "dev" {
+			app.Use(cors.New(cors.Config{AllowOrigins: "*"})) // for swag docs
+		}
 	}
 }
