@@ -8,6 +8,7 @@ import (
 
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/handler"
+	"github.com/opentreehole/backend/internal/pkg/cache"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/server"
 	"github.com/opentreehole/backend/internal/service"
@@ -26,7 +27,6 @@ var ServiceSet = wire.NewSet(
 
 var RepositorySet = wire.NewSet(
 	repository.NewDB,
-	repository.NewCacher,
 	repository.NewRepository,
 	repository.NewAccountRepository,
 )
@@ -35,6 +35,7 @@ func NewApp() (*server.Server, func(), error) {
 	wire.Build(
 		config.NewConfig,
 		log.NewLogger,
+		cache.NewCache,
 		RepositorySet,
 		ServiceSet,
 		HandlerSet,

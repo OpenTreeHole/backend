@@ -15,19 +15,19 @@ import (
 
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/model"
-	"github.com/opentreehole/backend/internal/pkg/database/cache"
+	"github.com/opentreehole/backend/internal/pkg/cache"
 	"github.com/opentreehole/backend/pkg/log"
 )
 
 type Repository struct {
 	db     *gorm.DB
-	cacher cache.Cacher
+	cache  *cache.Cache
 	logger *log.Logger
 	conf   *config.AtomicAllConfig
 }
 
-func NewRepository(db *gorm.DB, cacher cache.Cacher, logger *log.Logger, conf *config.AtomicAllConfig) *Repository {
-	return &Repository{db: db, cacher: cacher, logger: logger, conf: conf}
+func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *config.AtomicAllConfig) *Repository {
+	return &Repository{db: db, cache: cache, logger: logger, conf: conf}
 }
 
 func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
@@ -181,8 +181,4 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	}
 
 	return
-}
-
-func NewCacher(conf *config.AtomicAllConfig) cache.Cacher {
-	return nil
 }

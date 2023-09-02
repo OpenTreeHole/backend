@@ -10,6 +10,7 @@ import (
 	"github.com/google/wire"
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/handler"
+	"github.com/opentreehole/backend/internal/pkg/cache"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/server"
 	"github.com/opentreehole/backend/internal/service"
@@ -20,16 +21,13 @@ import (
 
 func NewApp() (*server.Server, func(), error) {
 	pointer := config.NewConfig()
-	logger, err := log.NewLogger(pointer)
-	if err != nil {
-		return nil, nil, err
-	}
+	logger := log.NewLogger(pointer)
 	validate := handler.NewValidater()
 	handlerHandler := handler.NewHandler(logger, validate)
 	serviceService := service.NewService(logger)
 	db := repository.NewDB(pointer, logger)
-	cacher := repository.NewCacher(pointer)
-	repositoryRepository := repository.NewRepository(db, cacher, logger, pointer)
+	cacheCache := cache.NewCache(pointer, logger)
+	repositoryRepository := repository.NewRepository(db, cacheCache, logger, pointer)
 	accountRepository := repository.NewAccountRepository(repositoryRepository)
 	accountService := service.NewAccountService(serviceService, accountRepository)
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
@@ -44,4 +42,4 @@ var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler)
 
 var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService)
 
-var RepositorySet = wire.NewSet(repository.NewDB, repository.NewCacher, repository.NewRepository, repository.NewAccountRepository)
+var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository)

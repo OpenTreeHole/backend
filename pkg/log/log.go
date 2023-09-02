@@ -14,12 +14,12 @@ type Logger struct {
 	*zap.Logger
 }
 
-func NewLogger(conf *config.AtomicAllConfig) (*Logger, error) {
+func NewLogger(conf *config.AtomicAllConfig) *Logger {
 	zapLogger, err := initZap(conf)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	return &Logger{Logger: zapLogger}, nil
+	return &Logger{Logger: zapLogger}
 }
 
 func initZap(conf *config.AtomicAllConfig) (*zap.Logger, error) {
@@ -27,7 +27,7 @@ func initZap(conf *config.AtomicAllConfig) (*zap.Logger, error) {
 		atomicLevel zapcore.Level
 		development = conf.Load().Mode != "production"
 	)
-	if conf.Load().Mode != "production" {
+	if development {
 		atomicLevel = zapcore.DebugLevel
 	} else {
 		atomicLevel = zapcore.InfoLevel
