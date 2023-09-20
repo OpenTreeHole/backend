@@ -16,19 +16,24 @@ import (
 )
 
 type Server struct {
-	config   *config.AtomicAllConfig
-	logger   *log.Logger
-	handlers []handler.RouteRegister
+	config       *config.AtomicAllConfig
+	logger       *log.Logger
+	rootRegister []handler.RouteRegister
+	handlers     []handler.RouteRegister
 }
 
 func NewServer(
 	accountHandler handler.AccountHandler,
+	docsHandler handler.DocsHandler,
 	logger *log.Logger,
 	config *config.AtomicAllConfig,
 ) *Server {
 	return &Server{
 		logger: logger,
 		config: config,
+		rootRegister: []handler.RouteRegister{
+			docsHandler,
+		},
 		handlers: []handler.RouteRegister{
 			accountHandler,
 		},
@@ -42,8 +47,11 @@ func (s *Server) Run() {
 	})
 
 	RegisterMiddlewares(s.config)(app)
-	for _, h := range s.handlers {
+	for _, h := range s.rootRegister {
 		h.RegisterRoute(app)
+	}
+	for _, h := range s.handlers {
+		h.RegisterRoute(app.Group("/api"))
 	}
 
 	// start server

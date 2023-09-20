@@ -18,6 +18,7 @@ import (
 var HandlerSet = wire.NewSet(
 	handler.NewHandler,
 	handler.NewAccountHandler,
+	handler.NewDocsHandler,
 )
 
 var ServiceSet = wire.NewSet(

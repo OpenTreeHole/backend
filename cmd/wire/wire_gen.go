@@ -24,14 +24,15 @@ func NewApp() (*server.Server, func(), error) {
 	logger, cleanup := log.NewLogger(pointer)
 	validate := handler.NewValidater()
 	handlerHandler := handler.NewHandler(logger, validate)
-	serviceService := service.NewService(logger)
+	serviceService := service.NewService(logger, pointer)
 	db := repository.NewDB(pointer, logger)
 	cacheCache := cache.NewCache(pointer, logger)
 	repositoryRepository := repository.NewRepository(db, cacheCache, logger, pointer)
 	accountRepository := repository.NewAccountRepository(repositoryRepository)
 	accountService := service.NewAccountService(serviceService, accountRepository)
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
-	serverServer := server.NewServer(accountHandler, logger, pointer)
+	docsHandler := handler.NewDocsHandler()
+	serverServer := server.NewServer(accountHandler, docsHandler, logger, pointer)
 	return serverServer, func() {
 		cleanup()
 	}, nil
@@ -39,7 +40,7 @@ func NewApp() (*server.Server, func(), error) {
 
 // wire.go:
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, handler.NewDocsHandler)
 
 var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService)
 

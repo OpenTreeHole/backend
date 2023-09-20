@@ -20,6 +20,7 @@ import (
 	_ "github.com/opentreehole/backend/internal/docs"
 )
 
+//go:generate wire gen ./wire
 func main() {
 	server, cleanup, err := wire.NewApp()
 	if err != nil {

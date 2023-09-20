@@ -47,7 +47,11 @@ func (h *accountHandler) Login(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	tokenResponse, err := h.service.Login(c.Context(), body.Email, body.Password)
+	tokenResponse, err := h.service.Login(
+		c.Context(), // TODO: create new context wrapping the request context
+		body.Email,
+		body.Password,
+	)
 	if err != nil {
 		return err
 	}
@@ -73,7 +77,13 @@ func (h *accountHandler) Register(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	tokenResponse, err := h.service.Register(c.Context(), body.Email, body.Password, string(body.Verification))
+	tokenResponse, err := h.service.Register(
+		c.Context(),
+		body.Email,
+		body.Password,
+		string(body.Verification),
+		true,
+	)
 	if err != nil {
 		return err
 	}
@@ -99,7 +109,12 @@ func (h *accountHandler) ResetPassword(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	tokenResponse, err := h.service.ResetPassword(c.Context(), body.Email, body.Password, string(body.Verification))
+	tokenResponse, err := h.service.ResetPassword(
+		c.Context(),
+		body.Email,
+		body.Password,
+		string(body.Verification),
+	)
 	if err != nil {
 		return err
 	}

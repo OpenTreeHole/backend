@@ -1,7 +1,7 @@
 {
     "mode": "dev",
     "log_level": "debug",
-    "port": 0,
+    "port": 8000,
     "db": {
         "type": "sqlite",
         "dsn": "data/sqlite.db",

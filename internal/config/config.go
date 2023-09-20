@@ -21,7 +21,7 @@ type Config struct {
 	LogLevel string `yaml:"log_level" default:"debug" json:"log_level" validate:"oneof=debug info warn error dpanic panic fatal"`
 
 	// set port, default 8000
-	Port int `yaml:"port" json:"port"`
+	Port int `yaml:"port" json:"port" default:"8000"`
 
 	// relational database settings
 	DB struct {
@@ -123,7 +123,7 @@ type Config struct {
 	} `yaml:"email" json:"email"`
 
 	// feature settings, including standalone, shamir, emailVerification, emailNotification, registrationTest
-	Feature struct {
+	Features struct {
 		// enable external gateway mode, means jwt-auth with api gateway
 		ExternalGateway bool `yaml:"external_gateway" default:"false" json:"external_gateway"`
 

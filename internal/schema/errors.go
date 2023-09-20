@@ -164,7 +164,12 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		return nil
 	}
 
-	var httpError HttpError
+	var httpError = HttpError{
+		HttpBaseError: HttpBaseError{
+			Code:    500,
+			Message: err.Error(),
+		},
+	}
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		httpError.Code = 404

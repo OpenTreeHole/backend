@@ -61,6 +61,7 @@ func NewCache(conf *config.AtomicAllConfig, logger *log.Logger) *Cache {
 		cache.New[any](cacheStore),
 	)
 
+	// TODO: use self-defined marshaler
 	marshal := marshaler.New(metricsCache)
 	return &Cache{Marshaler: marshal}
 }
