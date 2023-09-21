@@ -26,6 +26,8 @@ import (
 )
 
 type AccountRepository interface {
+	Repository
+
 	// GetUserByEmail get a user by email
 	GetUserByEmail(ctx context.Context, email string) (user *model.User, err error)
 
@@ -65,10 +67,10 @@ type AccountRepository interface {
 }
 
 type accountRepository struct {
-	*Repository
+	Repository
 }
 
-func NewAccountRepository(repository *Repository) AccountRepository {
+func NewAccountRepository(repository Repository) AccountRepository {
 	return &accountRepository{Repository: repository}
 }
 
@@ -76,18 +78,18 @@ func NewAccountRepository(repository *Repository) AccountRepository {
 
 func (a *accountRepository) GetUserByEmail(ctx context.Context, email string) (user *model.User, err error) {
 	var u model.User
-	return &u, a.db.Where("identifier = ?", a.MakeIdentifier(ctx, email)).First(&u).Error
+	return &u, a.GetDB(ctx).Where("identifier = ?", a.MakeIdentifier(ctx, email)).First(&u).Error
 }
 
 func (a *accountRepository) CheckIfUserExists(ctx context.Context, email string) (bool, error) {
 	var exists bool
-	err := a.db.Raw("SELECT EXISTS (SELECT 1 FROM users WHERE identifier = ?)", a.MakeIdentifier(ctx, email)).Scan(&exists).Error
+	err := a.GetDB(ctx).Raw("SELECT EXISTS (SELECT 1 FROM users WHERE identifier = ?)", a.MakeIdentifier(ctx, email)).Scan(&exists).Error
 	return exists, err
 }
 
 func (a *accountRepository) CheckIfUserDeleted(ctx context.Context, email string) (bool, error) {
 	var exists bool
-	err := a.db.Raw("SELECT EXISTS (SELECT 1 FROM delete_identifier WHERE identifier = ?)", a.MakeIdentifier(ctx, email)).Scan(&exists).Error
+	err := a.GetDB(ctx).Raw("SELECT EXISTS (SELECT 1 FROM delete_identifier WHERE identifier = ?)", a.MakeIdentifier(ctx, email)).Scan(&exists).Error
 	return exists, err
 }
 
@@ -103,18 +105,18 @@ func (a *accountRepository) CreateUser(ctx context.Context, email, password stri
 		IsActive:      true,
 	}
 
-	return user, a.db.Create(user).Error
+	return user, a.GetDB(ctx).Create(user).Error
 }
 
 func (a *accountRepository) AddDeletedIdentifier(ctx context.Context, userID int, identifier string) error {
 	deleteIdentifier := model.DeleteIdentifier{UserID: userID, Identifier: identifier}
-	return a.db.
+	return a.GetDB(ctx).
 		Clauses(clause.OnConflict{DoNothing: true}).
 		Create(&deleteIdentifier).Error
 }
 
-func (a *accountRepository) MakeIdentifier(_ context.Context, email string) string {
-	decryptedIdentifierSalt := a.conf.Load().DecryptedIdentifierSalt
+func (a *accountRepository) MakeIdentifier(ctx context.Context, email string) string {
+	decryptedIdentifierSalt := a.GetConf(ctx).DecryptedIdentifierSalt
 	return hex.EncodeToString(
 		pbkdf2.Key([]byte(email), decryptedIdentifierSalt, 1, 64, sha3.New512),
 	)
@@ -174,7 +176,7 @@ func (a *accountRepository) CreateJWTToken(_ context.Context, user *model.User) 
 
 func (a *accountRepository) CheckVerificationCode(ctx context.Context, scope, email, verificationCode string) error {
 	var storedCode string
-	_, err := a.cache.Get(ctx, fmt.Sprintf("%v-%v", scope, a.MakeIdentifier(ctx, email)), &storedCode)
+	_, err := a.GetCache(ctx).Get(ctx, fmt.Sprintf("%v-%v", scope, a.MakeIdentifier(ctx, email)), &storedCode)
 	if err != nil {
 		return err
 	}
@@ -192,16 +194,16 @@ func (a *accountRepository) SetVerificationCode(ctx context.Context, email, scop
 	}
 	code := fmt.Sprintf("%06d", codeInt.Uint64())
 
-	return code, a.cache.Set(
+	return code, a.GetCache(ctx).Set(
 		ctx,
 		fmt.Sprintf("%v-%v", scope, a.MakeIdentifier(ctx, email)),
 		code,
-		store.WithExpiration(time.Second*time.Duration(a.conf.Load().Features.VerificationCodeExpires)),
+		store.WithExpiration(time.Second*time.Duration(a.GetConf(ctx).Features.VerificationCodeExpires)),
 	)
 }
 
 func (a *accountRepository) DeleteVerificationCode(ctx context.Context, email, scope string) error {
-	return a.cache.Delete(
+	return a.GetCache(ctx).Delete(
 		ctx,
 		fmt.Sprintf("%v-%v", scope, a.MakeIdentifier(ctx, email)),
 	)

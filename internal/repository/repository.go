@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -19,15 +20,22 @@ import (
 	"github.com/opentreehole/backend/pkg/log"
 )
 
-type Repository struct {
+type Repository interface {
+	Transaction(ctx context.Context, fn func(context.Context) error) error
+	GetDB(ctx context.Context) *gorm.DB
+	GetCache(ctx context.Context) *cache.Cache
+	GetConf(ctx context.Context) *config.AllConfig
+}
+
+type repository struct {
 	db     *gorm.DB
 	cache  *cache.Cache
 	logger *log.Logger
 	conf   *config.AtomicAllConfig
 }
 
-func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *config.AtomicAllConfig) *Repository {
-	return &Repository{db: db, cache: cache, logger: logger, conf: conf}
+func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *config.AtomicAllConfig) Repository {
+	return &repository{db: db, cache: cache, logger: logger, conf: conf}
 }
 
 func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
@@ -176,4 +184,33 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	}
 
 	return
+}
+
+// Transaction wraps the given function in a transaction.
+func (r *repository) Transaction(ctx context.Context, fn func(context.Context) error) error {
+	return r.GetDB(ctx).Transaction(func(tx *gorm.DB) error {
+		newCtx := context.WithValue(ctx, "DB", tx)
+		return fn(newCtx)
+	})
+}
+
+func (r *repository) GetDB(ctx context.Context) *gorm.DB {
+	if db, ok := ctx.Value("DB").(*gorm.DB); ok {
+		// check if db is in transaction
+		if _, ok := db.Statement.ConnPool.(gorm.TxCommitter); ok {
+			return db
+		} else {
+			return db.WithContext(ctx)
+		}
+	}
+
+	return r.db.WithContext(ctx)
+}
+
+func (r *repository) GetCache(_ context.Context) *cache.Cache {
+	return r.cache
+}
+
+func (r *repository) GetConf(_ context.Context) *config.AllConfig {
+	return r.conf.Load()
 }

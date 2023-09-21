@@ -118,26 +118,35 @@ func (a *accountService) Register(
 		}
 	}
 
-	// create user
-	user, err := a.repository.CreateUser(ctx, email, password)
+	var access, refresh string
+	// in transaction
+	err = a.repository.Transaction(ctx, func(ctx context.Context) error {
+		// create user
+		user, err := a.repository.CreateUser(ctx, email, password)
+		if err != nil {
+			return err
+		}
+
+		// create shamir emails
+		if a.repository.GetConf(ctx).Features.Shamir {
+			// TODO implement me
+		}
+
+		// create kong consumer
+		if a.repository.GetConf(ctx).Features.ExternalGateway {
+			// TODO implement me
+		}
+
+		// create jwt token
+		access, refresh, err = a.repository.CreateJWTToken(ctx, user)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
 		return nil, err
-	}
-
-	// create jwt token
-	access, refresh, err := a.repository.CreateJWTToken(ctx, user)
-	if err != nil {
-		return nil, err
-	}
-
-	// create shamir emails
-	if a.conf.Load().Features.Shamir {
-		// TODO implement me
-	}
-
-	// create kong consumer
-	if a.conf.Load().Features.ExternalGateway {
-		// TODO implement me
 	}
 
 	// response

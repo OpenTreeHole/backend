@@ -26,7 +26,7 @@ func NewAccountHandler(handler *Handler, service service.AccountService) Account
 func (h *accountHandler) RegisterRoute(router fiber.Router) {
 	router.Post("/login", h.Login)
 	router.Post("/register", h.Register)
-	router.Put("/reset-password", h.ResetPassword)
+	router.Put("/register", h.ResetPassword)
 }
 
 // Login godoc
