@@ -16,6 +16,234 @@
     },
     "basePath": "/api",
     "paths": {
+      "/divisions": {
+        "get": {
+          "description": "list all divisions",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Division"
+          ],
+          "summary": "list all divisions",
+          "responses": {
+            "200": {
+              "description": "OK",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/schema.DivisionResponse"
+                }
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpError"
+              }
+            },
+            "500": {
+              "description": "Internal Server Error",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            }
+          }
+        },
+        "post": {
+          "description": "create a division, only admin can create",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Division"
+          ],
+          "summary": "create a division",
+          "parameters": [
+            {
+              "description": "json",
+              "name": "json",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionCreateRequest"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Created",
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionResponse"
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpError"
+              }
+            },
+            "500": {
+              "description": "Internal Server Error",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            }
+          }
+        }
+      },
+      "/divisions/{id}": {
+        "get": {
+          "description": "get a division",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Division"
+          ],
+          "summary": "get a division",
+          "parameters": [
+            {
+              "type": "string",
+              "description": "division id",
+              "name": "id",
+              "in": "path",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionResponse"
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpError"
+              }
+            },
+            "500": {
+              "description": "Internal Server Error",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            }
+          }
+        },
+        "put": {
+          "description": "modify a division, only admin can modify",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Division"
+          ],
+          "summary": "modify a division",
+          "parameters": [
+            {
+              "type": "string",
+              "description": "division id",
+              "name": "id",
+              "in": "path",
+              "required": true
+            },
+            {
+              "description": "json",
+              "name": "json",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionModifyRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK",
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionResponse"
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpError"
+              }
+            },
+            "500": {
+              "description": "Internal Server Error",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            }
+          }
+        },
+        "delete": {
+          "description": "delete a division, only admin can delete",
+          "consumes": [
+            "application/json"
+          ],
+          "produces": [
+            "application/json"
+          ],
+          "tags": [
+            "Division"
+          ],
+          "summary": "delete a division",
+          "parameters": [
+            {
+              "type": "string",
+              "description": "division id",
+              "name": "id",
+              "in": "path",
+              "required": true
+            },
+            {
+              "description": "json",
+              "name": "json",
+              "in": "body",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/schema.DivisionDeleteRequest"
+              }
+            }
+          ],
+          "responses": {
+            "204": {
+              "description": "No Content",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            },
+            "400": {
+              "description": "Bad Request",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpError"
+              }
+            },
+            "500": {
+              "description": "Internal Server Error",
+              "schema": {
+                "$ref": "#/definitions/schema.HttpBaseError"
+              }
+            }
+          }
+        }
+      },
         "/login": {
             "post": {
                 "description": "login with email and password",
@@ -154,6 +382,77 @@
         }
     },
     "definitions": {
+      "schema.DivisionCreateRequest": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "分区详情：前端暂时不用",
+            "type": "string"
+          },
+          "name": {
+            "description": "分区名称: 树洞、评教等等",
+            "type": "string"
+          }
+        }
+      },
+      "schema.DivisionDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "description": "ID of the target division that all the deleted division's holes will be moved to",
+            "type": "integer",
+            "default": 1
+          }
+        }
+      },
+      "schema.DivisionModifyRequest": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "分区详情：前端暂时不用",
+            "type": "string"
+          },
+          "name": {
+            "description": "分区名称: 树洞、评教等等",
+            "type": "string"
+          },
+          "pinned": {
+            "description": "TODO: 置顶的树洞 id",
+            "type": "array",
+            "items": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "schema.DivisionResponse": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "分区详情：前端暂时不用",
+            "type": "string"
+          },
+          "division_id": {
+            "description": "旧版 id",
+            "type": "integer"
+          },
+          "id": {
+            "description": "新版 id",
+            "type": "integer"
+          },
+          "name": {
+            "description": "分区名称: 树洞、评教等等",
+            "type": "string"
+          },
+          "pinned": {
+            "description": "TODO: 置顶的树洞",
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
         "schema.HttpBaseError": {
             "type": "object",
             "properties": {

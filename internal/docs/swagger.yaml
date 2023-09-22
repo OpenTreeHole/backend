@@ -1,5 +1,56 @@
 basePath: /api
 definitions:
+  schema.DivisionCreateRequest:
+    properties:
+      description:
+        description: 分区详情：前端暂时不用
+        type: string
+      name:
+        description: '分区名称: 树洞、评教等等'
+        type: string
+    type: object
+  schema.DivisionDeleteRequest:
+    properties:
+      to:
+        default: 1
+        description: ID of the target division that all the deleted division's holes
+          will be moved to
+        type: integer
+    type: object
+  schema.DivisionModifyRequest:
+    properties:
+      description:
+        description: 分区详情：前端暂时不用
+        type: string
+      name:
+        description: '分区名称: 树洞、评教等等'
+        type: string
+      pinned:
+        description: 'TODO: 置顶的树洞 id'
+        items:
+          type: integer
+        type: array
+    type: object
+  schema.DivisionResponse:
+    properties:
+      description:
+        description: 分区详情：前端暂时不用
+        type: string
+      division_id:
+        description: 旧版 id
+        type: integer
+      id:
+        description: 新版 id
+        type: integer
+      name:
+        description: '分区名称: 树洞、评教等等'
+        type: string
+      pinned:
+        description: 'TODO: 置顶的树洞'
+        items:
+          type: object
+        type: array
+    type: object
   schema.HttpBaseError:
     properties:
       code:
@@ -103,6 +154,157 @@ info:
   title: Open Tree Hole Auth
   version: 3.0.0
 paths:
+  /divisions:
+    get:
+      consumes:
+        - application/json
+      description: list all divisions
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.DivisionResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: list all divisions
+      tags:
+        - Division
+    post:
+      consumes:
+        - application/json
+      description: create a division, only admin can create
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionCreateRequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/schema.DivisionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: create a division
+      tags:
+        - Division
+  /divisions/{id}:
+    delete:
+      consumes:
+        - application/json
+      description: delete a division, only admin can delete
+      parameters:
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionDeleteRequest'
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: delete a division
+      tags:
+        - Division
+    get:
+      consumes:
+        - application/json
+      description: get a division
+      parameters:
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.DivisionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get a division
+      tags:
+        - Division
+    put:
+      consumes:
+        - application/json
+      description: modify a division, only admin can modify
+      parameters:
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionModifyRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.DivisionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: modify a division
+      tags:
+        - Division
   /login:
     post:
       consumes:

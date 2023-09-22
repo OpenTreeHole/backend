@@ -31,8 +31,9 @@ func NewApp() (*server.Server, func(), error) {
 	accountRepository := repository.NewAccountRepository(repositoryRepository)
 	accountService := service.NewAccountService(serviceService, accountRepository)
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
+	divisionHandler := handler.NewDivisionHandler(handlerHandler)
 	docsHandler := handler.NewDocsHandler()
-	serverServer := server.NewServer(accountHandler, docsHandler, logger, pointer)
+	serverServer := server.NewServer(accountHandler, divisionHandler, docsHandler, logger, pointer)
 	return serverServer, func() {
 		cleanup()
 	}, nil
@@ -40,8 +41,8 @@ func NewApp() (*server.Server, func(), error) {
 
 // wire.go:
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, handler.NewDocsHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, handler.NewDocsHandler, handler.NewDivisionHandler)
 
-var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService)
+var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService, service.NewDivisionService)
 
-var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository)
+var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository, repository.NewDivisionRepository)

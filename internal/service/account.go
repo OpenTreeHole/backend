@@ -33,11 +33,11 @@ type AccountService interface {
 }
 
 type accountService struct {
-	*Service
+	Service
 	repository repository.AccountRepository
 }
 
-func NewAccountService(service *Service, repository repository.AccountRepository) AccountService {
+func NewAccountService(service Service, repository repository.AccountRepository) AccountService {
 	return &accountService{Service: service, repository: repository}
 }
 
@@ -128,12 +128,12 @@ func (a *accountService) Register(
 		}
 
 		// create shamir emails
-		if a.repository.GetConf(ctx).Features.Shamir {
+		if a.repository.GetConfig(ctx).Features.Shamir {
 			// TODO implement me
 		}
 
 		// create kong consumer
-		if a.repository.GetConf(ctx).Features.ExternalGateway {
+		if a.repository.GetConfig(ctx).Features.ExternalGateway {
 			// TODO implement me
 		}
 

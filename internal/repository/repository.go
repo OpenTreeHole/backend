@@ -24,7 +24,7 @@ type Repository interface {
 	Transaction(ctx context.Context, fn func(context.Context) error) error
 	GetDB(ctx context.Context) *gorm.DB
 	GetCache(ctx context.Context) *cache.Cache
-	GetConf(ctx context.Context) *config.AllConfig
+	GetConfig(ctx context.Context) *config.AllConfig
 }
 
 type repository struct {
@@ -211,6 +211,6 @@ func (r *repository) GetCache(_ context.Context) *cache.Cache {
 	return r.cache
 }
 
-func (r *repository) GetConf(_ context.Context) *config.AllConfig {
+func (r *repository) GetConfig(_ context.Context) *config.AllConfig {
 	return r.conf.Load()
 }

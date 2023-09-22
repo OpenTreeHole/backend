@@ -118,7 +118,7 @@ func (a *accountRepository) AddDeletedIdentifier(ctx context.Context, userID int
 }
 
 func (a *accountRepository) MakeIdentifier(ctx context.Context, email string) string {
-	decryptedIdentifierSalt := a.GetConf(ctx).DecryptedIdentifierSalt
+	decryptedIdentifierSalt := a.GetConfig(ctx).DecryptedIdentifierSalt
 	return hex.EncodeToString(
 		pbkdf2.Key([]byte(email), decryptedIdentifierSalt, 1, 64, sha3.New512),
 	)
@@ -180,11 +180,11 @@ func (a *accountRepository) CreateJWTToken(ctx context.Context, user *model.User
 		refreshToken string
 	)
 
-	if a.GetConf(ctx).Features.ExternalGateway {
+	if a.GetConfig(ctx).Features.ExternalGateway {
 		// TODO: get key from kong or other api gateway
 	}
 
-	if !a.GetConf(ctx).Features.RegistrationTest {
+	if !a.GetConfig(ctx).Features.RegistrationTest {
 		claim.HasAnsweredQuestions = true
 	}
 
@@ -239,7 +239,7 @@ func (a *accountRepository) SetVerificationCode(ctx context.Context, email, scop
 		ctx,
 		fmt.Sprintf("%v-%v", scope, a.MakeIdentifier(ctx, email)),
 		code,
-		store.WithExpiration(time.Second*time.Duration(a.GetConf(ctx).Features.VerificationCodeExpires)),
+		store.WithExpiration(time.Second*time.Duration(a.GetConfig(ctx).Features.VerificationCodeExpires)),
 	)
 }
 

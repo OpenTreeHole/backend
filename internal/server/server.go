@@ -24,6 +24,7 @@ type Server struct {
 
 func NewServer(
 	accountHandler handler.AccountHandler,
+	divisionHandler handler.DivisionHandler,
 	docsHandler handler.DocsHandler,
 	logger *log.Logger,
 	config *config.AtomicAllConfig,
@@ -36,6 +37,7 @@ func NewServer(
 		},
 		handlers: []handler.RouteRegister{
 			accountHandler,
+			divisionHandler,
 		},
 	}
 }
