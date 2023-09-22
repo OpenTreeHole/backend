@@ -16,12 +16,14 @@ import (
 	"time"
 
 	"github.com/eko/gocache/lib/v4/store"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/thanhpk/randstr"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/sha3"
 	"gorm.io/gorm/clause"
 
 	"github.com/opentreehole/backend/internal/model"
+	"github.com/opentreehole/backend/internal/schema"
 	"github.com/opentreehole/backend/pkg/utils"
 )
 
@@ -169,9 +171,48 @@ func (a *accountRepository) CheckPassword(_ context.Context, rawPassword, encryp
 	return nil
 }
 
-func (a *accountRepository) CreateJWTToken(_ context.Context, user *model.User) (access, refresh string, err error) {
-	// TODO implement me
-	return "", "", nil
+func (a *accountRepository) CreateJWTToken(ctx context.Context, user *model.User) (access, refresh string, err error) {
+	var (
+		key          = fmt.Sprintf("user_%d", user.ID)
+		secret       = user.UserJwtSecret
+		claim        = schema.UserClaims{}.FromUser(user)
+		accessToken  string
+		refreshToken string
+	)
+
+	if a.GetConf(ctx).Features.ExternalGateway {
+		// TODO: get key from kong or other api gateway
+	}
+
+	if !a.GetConf(ctx).Features.RegistrationTest {
+		claim.HasAnsweredQuestions = true
+	}
+
+	if user.UserJwtSecret == "" {
+		// generate jwt secret
+		user.UserJwtSecret = randstr.Base62(32)
+		err = a.GetDB(ctx).Model(user).Update("user_jwt_secret", user.UserJwtSecret).Error
+		if err != nil {
+			return "", "", err
+		}
+
+		secret = user.UserJwtSecret
+	}
+
+	claim.Issuer = key
+
+	claim.Type = schema.JWTTypeAccess
+	claim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(30 * time.Minute)) // 30 minutes
+	accessToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString([]byte(secret))
+	if err != nil {
+		return "", "", err
+	}
+
+	claim.Type = schema.JWTTypeRefresh
+	claim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(30 * 24 * time.Hour)) // 30 days
+	refreshToken, err = jwt.NewWithClaims(jwt.SigningMethodHS256, claim).SignedString([]byte(secret))
+
+	return accessToken, refreshToken, nil
 }
 
 func (a *accountRepository) CheckVerificationCode(ctx context.Context, scope, email, verificationCode string) error {

@@ -2,10 +2,9 @@
 
 开源树洞后端综合体
 
-- 单体架构
-- 高内聚、低耦合
-- 统一框架，避免重复代码
-- 基于 [nunu](https://github.com/go-nunu/nunu) 的框架设计
+- 单体架构，避免重复代码
+- 基于 [nunu](https://github.com/go-nunu/nunu) 的框架设计，分层架构更清晰
+- 基于 wire 的依赖注入设计
 
 ## 构建工具
 
