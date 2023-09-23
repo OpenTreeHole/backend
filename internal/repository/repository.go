@@ -178,6 +178,8 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 
 	err := db.AutoMigrate(
 		model.User{},
+		model.DeleteIdentifier{},
+		model.Division{},
 	)
 	if err != nil {
 		logger.Fatal("auto migrate error", zap.Error(err))
