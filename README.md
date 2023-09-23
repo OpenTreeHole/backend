@@ -41,11 +41,18 @@ API 文档详见启动项目之后的 http://localhost:8000/docs
 
 1. 使用 wire 作为依赖注入框架。如果创建了新的依赖项，需要在 `cmd/wire/wire.go` 中注册依赖项的构造函数，之后运行 `nunu wire`
    生成新的 `cmd/wire/wire_gen.go`
-2. 利用分层架构。本项目分层为 handler -> service -> repository。
+2. 基于数据流的分层架构。本项目分层为 `handler` -> `service` -> `repository`。
     1. `hander` 结构必须组合 `*Handler` 类型。`handler` 只负责接口接收、鉴权和响应，并且把控制权交给 `service`
     2. `service` 结构必须组合 `Service` 接口。`service` 负责主要业务逻辑，其中数据库操作调用 `repository`
        的接口，`Service.Transaction` 方法可以把多个 `repository` 接口调用合并到一个事务中。
     3. `repository` 结构必须组合 `Repository` 接口。与数据库、缓存的CURD操作相关的必须放在 `repository` 的绑定函数中实现。
+3. 分离接口**请求和响应模型** `schema` 和**数据库模型** `model`。
+    1. `handler` 接受和发送都只能使用 `schema`，`service` 负责 `schema` 和 `model` 的转换，`repository` 只使用 `model`
+    2. 如果 `model` 和 `schema` 之间的转换逻辑冗余，可以在 `schema`
+       中定义类似 `func (s *Schema) FromModel(m *Model) *Schema` 和 `func (s *Schema) ToModel() *Model`
+       绑定函数，保证模块的引用顺序是 `schema` -> `model`，避免循环引用。
+    3. 避免在 `model` 和 `schema` 中作数据库、缓存的CURD，这些都应该在 `service` 层中调用 `repository`
+       层的接口来完成。如果模型转换时需要用到数据库接口，需要作为函数参数传入转换函数。
 
 ## 计划路径
 

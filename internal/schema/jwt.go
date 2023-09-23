@@ -32,7 +32,7 @@ type UserClaims struct {
 	HasAnsweredQuestions bool `json:"has_answered_questions"`
 }
 
-func (UserClaims) FromUser(user *model.User) *UserClaims {
+func (UserClaims) FromModel(user *model.User) *UserClaims {
 	return &UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt: jwt.NewNumericDate(time.Now()),

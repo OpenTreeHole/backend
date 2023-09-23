@@ -175,7 +175,7 @@ func (a *accountRepository) CreateJWTToken(ctx context.Context, user *model.User
 	var (
 		key          = fmt.Sprintf("user_%d", user.ID)
 		secret       = user.UserJwtSecret
-		claim        = schema.UserClaims{}.FromUser(user)
+		claim        = schema.UserClaims{}.FromModel(user)
 		accessToken  string
 		refreshToken string
 	)

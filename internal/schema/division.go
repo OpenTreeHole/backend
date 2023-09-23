@@ -1,5 +1,11 @@
 package schema
 
+import (
+	"github.com/jinzhu/copier"
+
+	"github.com/opentreehole/backend/internal/model"
+)
+
 type DivisionCreateRequest struct {
 	// 分区名称: 树洞、评教等等
 	Name string `json:"name"`
@@ -36,4 +42,14 @@ type DivisionResponse struct {
 
 	// TODO: 置顶的树洞
 	Pinned []struct{} `json:"pinned"`
+}
+
+func (d *DivisionResponse) FromModel(m *model.Division, pinned []struct{}) *DivisionResponse {
+	err := copier.Copy(d, m)
+	if err != nil {
+		panic(err)
+	}
+
+	d.Pinned = pinned
+	return d
 }
