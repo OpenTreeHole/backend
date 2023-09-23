@@ -24,6 +24,9 @@ cd chatdan_backend
 go install github.com/swaggo/swag/cmd/swag@latest
 swag init -d cmd,internal/handler,internal/schema -p snakecase -o internal\docs
 
+# 将 config/config_default.json 复制为 config/config.json, 并且按照需求修改配置，否则会使用默认配置
+cp config/config_default.json config/config.json
+
 # 运行
 go run ./cmd
 
@@ -33,6 +36,16 @@ nunu run
 ```
 
 API 文档详见启动项目之后的 http://localhost:8000/docs
+
+### 开发指南
+
+1. 使用 wire 作为依赖注入框架。如果创建了新的依赖项，需要在 `cmd/wire/wire.go` 中注册依赖项的构造函数，之后运行 `nunu wire`
+   生成新的 `cmd/wire/wire_gen.go`
+2. 利用分层架构。本项目分层为 handler -> service -> repository。
+    1. `hander` 结构必须组合 `*Handler` 类型。`handler` 只负责接口接收、鉴权和响应，并且把控制权交给 `service`
+    2. `service` 结构必须组合 `Service` 接口。`service` 负责主要业务逻辑，其中数据库操作调用 `repository`
+       的接口，`Service.Transaction` 方法可以把多个 `repository` 接口调用合并到一个事务中。
+    3. `repository` 结构必须组合 `Repository` 接口。与数据库、缓存的CURD操作相关的必须放在 `repository` 的绑定函数中实现。
 
 ## 计划路径
 
