@@ -41,8 +41,9 @@ func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *co
 func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	var gormConfig = &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
-			SingularTable: true, // use singular table name, table for `User` would be `user` with this option enabled
+			SingularTable: true, // 表名使用单数, `User` -> `user`
 		},
+		DisableForeignKeyConstraintWhenMigrating: true, // 禁用自动创建外键约束，必须手动创建或者在业务逻辑层维护
 		Logger: gormlogger.New(
 			zap.NewStdLog(logger.Logger),
 			gormlogger.Config{
