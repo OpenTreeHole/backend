@@ -29,16 +29,30 @@ func NewServer(
 	logger *log.Logger,
 	config *config.AtomicAllConfig,
 ) *Server {
+	var handlers []handler.RouteRegister
+
+	if config.Load().Modules.Auth {
+		handlers = append(handlers, accountHandler)
+	}
+
+	if config.Load().Modules.Notification {
+		// TODO
+	}
+
+	if config.Load().Modules.Treehole {
+		handlers = append(handlers, divisionHandler)
+	}
+
+	if config.Load().Modules.CurriculumBoard {
+		// TODO
+	}
 	return &Server{
 		logger: logger,
 		config: config,
 		rootRegister: []handler.RouteRegister{
 			docsHandler,
 		},
-		handlers: []handler.RouteRegister{
-			accountHandler,
-			divisionHandler,
-		},
+		handlers: handlers,
 	}
 }
 

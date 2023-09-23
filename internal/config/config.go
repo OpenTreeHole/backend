@@ -122,7 +122,21 @@ type Config struct {
 		DevEmail string `yaml:"dev_email" json:"dev_email"`
 	} `yaml:"email" json:"email"`
 
-	// feature settings, including standalone, shamir, emailVerification, emailNotification, registrationTest
+	Modules struct {
+		// enable auth module
+		Auth bool `yaml:"auth" default:"false" json:"auth"`
+
+		// enable notification module
+		Notification bool `yaml:"notification" default:"false" json:"notification"`
+
+		// enable treehole module
+		Treehole bool `yaml:"treehole" default:"false" json:"treehole"`
+
+		// enable curriculum_board module
+		CurriculumBoard bool `yaml:"curriculum_board" default:"false" json:"curriculum_board"`
+	} `yaml:"modules" json:"modules"`
+
+	// feature settings
 	Features struct {
 		// enable external gateway mode, means jwt-auth with api gateway
 		ExternalGateway bool `yaml:"external_gateway" default:"false" json:"external_gateway"`

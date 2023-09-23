@@ -35,6 +35,12 @@
         "site_name": "Open Tree Hole",
         "dev_email": ""
     },
+    "modules": {
+        "auth": false,
+        "notification": false,
+        "treehole": false,
+        "curriculum_board": false
+    },
     "features": {
         "external_gateway": false,
         "shamir": false,
