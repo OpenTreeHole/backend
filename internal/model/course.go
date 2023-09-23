@@ -40,4 +40,7 @@ type Course struct {
 
 	// 课程组类型
 	CourseGroupID int `json:"course_group_id"`
+
+	// 所有评教
+	Reviews []*Review `json:"reviews"`
 }

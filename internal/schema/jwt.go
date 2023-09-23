@@ -32,8 +32,8 @@ type UserClaims struct {
 	HasAnsweredQuestions bool `json:"has_answered_questions"`
 }
 
-func (UserClaims) FromModel(user *model.User) *UserClaims {
-	return &UserClaims{
+func (u *UserClaims) FromModel(user *model.User) *UserClaims {
+	*u = UserClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
@@ -45,9 +45,27 @@ func (UserClaims) FromModel(user *model.User) *UserClaims {
 		IsAdmin:              user.IsAdmin,
 		HasAnsweredQuestions: user.HasCompletedRegistrationTest,
 	}
+	return u
 }
 
 const (
 	JWTTypeAccess  = "access"
 	JWTTypeRefresh = "refresh"
 )
+
+func (u *UserClaims) ToModel() *model.User {
+	var id = u.ID
+	if id == 0 {
+		id = u.UserID
+	}
+	if id == 0 {
+		id = u.UID
+	}
+	return &model.User{
+		ID:                           id,
+		Nickname:                     u.Nickname,
+		JoinedTime:                   u.JoinedTime,
+		IsAdmin:                      u.IsAdmin,
+		HasCompletedRegistrationTest: u.HasAnsweredQuestions,
+	}
+}

@@ -19,5 +19,5 @@ type Achievement struct {
 	Name string `json:"name"`
 
 	// 可能是成就作用域？
-	Domain *string `json:"domain"`
+	Domain string `json:"domain"`
 }

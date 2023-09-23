@@ -42,6 +42,7 @@ var RepositorySet = wire.NewSet(
 	repository.NewCourseGroupRepository,
 	repository.NewCourseRepository,
 	repository.NewReviewRepository,
+	repository.NewAchievementRepository,
 )
 
 func NewApp() (*server.Server, func(), error) {

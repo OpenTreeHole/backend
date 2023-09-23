@@ -16,7 +16,10 @@ import (
 	"time"
 
 	"github.com/eko/gocache/lib/v4/store"
+	"github.com/goccy/go-json"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/thanhpk/randstr"
 	"golang.org/x/crypto/pbkdf2"
 	"golang.org/x/crypto/sha3"
@@ -29,6 +32,9 @@ import (
 
 type AccountRepository interface {
 	Repository
+
+	// FindUserByID find a user by id
+	FindUserByID(ctx context.Context, id int) (user *model.User, err error)
 
 	// GetUserByEmail get a user by email
 	GetUserByEmail(ctx context.Context, email string) (user *model.User, err error)
@@ -66,6 +72,11 @@ type AccountRepository interface {
 
 	// DeleteVerificationCode delete verificationCode from cache
 	DeleteVerificationCode(ctx context.Context, email, scope string) error
+
+	/* 用于鉴权 */
+
+	// GetCurrentUser get current user
+	GetCurrentUser(ctx context.Context) (user *model.User, err error)
 }
 
 type accountRepository struct {
@@ -77,6 +88,12 @@ func NewAccountRepository(repository Repository) AccountRepository {
 }
 
 /* 接口实现 */
+
+func (a *accountRepository) FindUserByID(ctx context.Context, id int) (user *model.User, err error) {
+	var u model.User
+	// TODO: 缓存
+	return &u, a.GetDB(ctx).First(&u, id).Error
+}
 
 func (a *accountRepository) GetUserByEmail(ctx context.Context, email string) (user *model.User, err error) {
 	var u model.User
@@ -175,7 +192,7 @@ func (a *accountRepository) CreateJWTToken(ctx context.Context, user *model.User
 	var (
 		key          = fmt.Sprintf("user_%d", user.ID)
 		secret       = user.UserJwtSecret
-		claim        = schema.UserClaims{}.FromModel(user)
+		claim        = (&schema.UserClaims{}).FromModel(user)
 		accessToken  string
 		refreshToken string
 	)
@@ -250,6 +267,53 @@ func (a *accountRepository) DeleteVerificationCode(ctx context.Context, email, s
 	)
 }
 
+func (a *accountRepository) GetCurrentUser(ctx context.Context) (user *model.User, err error) {
+	// get fiber context
+	c := a.GetFiberCtx(ctx)
+
+	// 只有在开启 auth 模块的情况下才能从数据库里读 user
+	if a.GetConfig(ctx).Modules.Auth {
+		// get user id from header: X-Consumer-Username if through Kong
+		username := c.Get("X-Consumer-Username")
+		if username != "" {
+			id, err := strconv.Atoi(username)
+			if err == nil {
+				return a.FindUserByID(ctx, id)
+			}
+		}
+	}
+
+	// get user id from jwt
+	// ID and UserID are both valid
+	var userClaims schema.UserClaims
+
+	token := GetJWTToken(c)
+	if token == "" {
+		return nil, schema.Unauthorized("Unauthorized")
+	}
+
+	err = ParseJWTToken(token, &userClaims)
+	if err != nil {
+		return nil, schema.Unauthorized("Unauthorized")
+	}
+
+	if userClaims.ID == 0 && userClaims.UserID == 0 && userClaims.UID == 0 {
+		return nil, schema.Unauthorized("Unauthorized")
+	}
+
+	if userClaims.ExpiresAt != nil && userClaims.ExpiresAt.Time.Before(time.Now()) {
+		return nil, schema.Unauthorized("token expired")
+	}
+
+	user = userClaims.ToModel()
+
+	if a.GetConfig(ctx).Modules.Auth {
+		return a.FindUserByID(ctx, user.ID)
+	}
+
+	return user, schema.Unauthorized("Unauthorized")
+}
+
 /* 工具函数，非导出函数 */
 
 func passwordHash(bytePassword, salt []byte, iterations, KeyLen int, hash func() hash.Hash) string {
@@ -271,4 +335,50 @@ func saltGenerator(stringLen int) ([]byte, error) {
 		}
 	}
 	return builder.Bytes(), nil
+}
+
+// GetJWTToken extracts token from header or cookie
+// return empty string if not found
+func GetJWTToken(c *fiber.Ctx) string {
+	tokenString := c.Get("Authorization") // token in header
+	if tokenString == "" {
+		tokenString = c.Cookies("access") // token in cookie
+	}
+	return tokenString
+}
+
+var (
+	ErrJWTTokenRequired = schema.Unauthorized("jwt token required")
+	ErrInvalidJWTToken  = schema.Unauthorized("invalid jwt token")
+)
+
+// ParseJWTToken extracts and parse token, whatever start with "Bearer " or not
+func ParseJWTToken(token string, user any) error {
+	// remove "Bearer " prefix if exists
+	if strings.HasPrefix(token, "Bearer ") {
+		token = token[7:]
+	}
+	token = strings.TrimSpace(token)
+	payloads := strings.SplitN(token, ".", 3) // extract "Bearer "
+	if len(payloads) < 3 {
+		return ErrJWTTokenRequired
+	}
+
+	payloadString := payloads[1]
+
+	// jwt encoding ignores padding, so RawStdEncoding should be used instead of StdEncoding
+	// jwt encoding uses url safe base64 encoding, so RawURLEncoding should be used instead of RawStdEncoding
+	payloadBytes, err := base64.RawURLEncoding.DecodeString(payloadString) // the middle one is payload
+	if err != nil {
+		log.Err(err).Str("payload_string", payloadString).Msg("jwt parse error")
+		return ErrInvalidJWTToken
+	}
+
+	err = json.Unmarshal(payloadBytes, user)
+	if err != nil {
+		log.Err(err).Str("payload_string", payloadString).Msg("jwt parse error")
+		return ErrInvalidJWTToken
+	}
+
+	return nil
 }

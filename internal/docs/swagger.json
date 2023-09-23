@@ -16,285 +16,285 @@
     },
     "basePath": "/api",
     "paths": {
-      "/divisions": {
-        "get": {
-          "description": "list all divisions",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Division"
-          ],
-          "summary": "list all divisions",
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/schema.DivisionResponse"
+        "/divisions": {
+            "get": {
+                "description": "list all divisions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "list all divisions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.DivisionResponse"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
                 }
-              }
             },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
+            "post": {
+                "description": "create a division, only admin can create",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "create a division",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          }
         },
-        "post": {
-          "description": "create a division, only admin can create",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Division"
-          ],
-          "summary": "create a division",
-          "parameters": [
-            {
-              "description": "json",
-              "name": "json",
-              "in": "body",
-              "required": true,
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionCreateRequest"
-              }
-            }
-          ],
-          "responses": {
-            "201": {
-              "description": "Created",
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionResponse"
-              }
+        "/divisions/{id}": {
+            "get": {
+                "description": "get a division",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "get a division",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "division id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
+            "put": {
+                "description": "modify a division, only admin can modify",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "modify a division",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "division id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionModifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
+            "delete": {
+                "description": "delete a division, only admin can delete",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Division"
+                ],
+                "summary": "delete a division",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "division id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.DivisionDeleteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          }
-        }
-      },
-      "/divisions/{id}": {
-        "get": {
-          "description": "get a division",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Division"
-          ],
-          "summary": "get a division",
-          "parameters": [
-            {
-              "type": "string",
-              "description": "division id",
-              "name": "id",
-              "in": "path",
-              "required": true
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionResponse"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            }
-          }
         },
-        "put": {
-          "description": "modify a division, only admin can modify",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Division"
-          ],
-          "summary": "modify a division",
-          "parameters": [
-            {
-              "type": "string",
-              "description": "division id",
-              "name": "id",
-              "in": "path",
-              "required": true
-            },
-            {
-              "description": "json",
-              "name": "json",
-              "in": "body",
-              "required": true,
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionModifyRequest"
-              }
+        "/group/{id}": {
+            "get": {
+                "description": "get a course group, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "/group/{group_id}",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          ],
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionResponse"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            }
-          }
         },
-        "delete": {
-          "description": "delete a division, only admin can delete",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Division"
-          ],
-          "summary": "delete a division",
-          "parameters": [
-            {
-              "type": "string",
-              "description": "division id",
-              "name": "id",
-              "in": "path",
-              "required": true
-            },
-            {
-              "description": "json",
-              "name": "json",
-              "in": "body",
-              "required": true,
-              "schema": {
-                "$ref": "#/definitions/schema.DivisionDeleteRequest"
-              }
-            }
-          ],
-          "responses": {
-            "204": {
-              "description": "No Content",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            }
-          }
-        }
-      },
-      "/group/{id}": {
-        "get": {
-          "description": "get a course group, old version or v1 version",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "CourseGroup"
-          ],
-          "summary": "/group/{group_id}",
-          "deprecated": true,
-          "parameters": [
-            {
-              "type": "string",
-              "description": "course group id",
-              "name": "id",
-              "in": "path",
-              "required": true
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "$ref": "#/definitions/schema.CourseGroupV1Response"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "404": {
-              "description": "Not Found",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            }
-          }
-        }
-      },
         "/login": {
             "post": {
                 "description": "login with email and password",
@@ -433,162 +433,186 @@
         }
     },
     "definitions": {
-      "schema.CourseGroupV1Response": {
-        "type": "object",
-        "properties": {
-          "campus_name": {
-            "description": "开课校区",
-            "type": "string"
-          },
-          "code": {
-            "description": "课程组编号",
-            "type": "string"
-          },
-          "courses": {
-            "description": "课程组下的课程，slices 必须非空",
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/schema.CourseV1Response"
+        "schema.AchievementV1Response": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "description": "成就域",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "成就名称",
+                    "type": "string"
+                },
+                "obtain_date": {
+                    "description": "获取日期",
+                    "type": "string"
+                }
             }
-          },
-          "department": {
-            "description": "开课学院",
-            "type": "string"
-          },
-          "id": {
-            "description": "课程组 ID",
-            "type": "integer"
-          },
-          "name": {
-            "description": "课程组名称",
-            "type": "string"
-          }
-        }
-      },
-      "schema.CourseV1Response": {
-        "type": "object",
-        "properties": {
-          "campus_name": {
-            "description": "开课校区",
-            "type": "string"
-          },
-          "code": {
-            "description": "课程编号",
-            "type": "string"
-          },
-          "code_id": {
-            "description": "选课序号。用于区分同一课程编号的不同平行班",
-            "type": "string"
-          },
-          "credit": {
-            "description": "学分",
-            "type": "integer"
-          },
-          "department": {
-            "description": "开课学院",
-            "type": "string"
-          },
-          "id": {
-            "description": "课程 ID",
-            "type": "integer"
-          },
-          "max_student": {
-            "description": "最大选课人数",
-            "type": "integer"
-          },
-          "name": {
-            "description": "课程名称",
-            "type": "string"
-          },
-          "semester": {
-            "description": "学期",
-            "type": "integer"
-          },
-          "teachers": {
-            "description": "老师：多个老师用逗号分隔",
-            "type": "string"
-          },
-          "week_hour": {
-            "description": "周学时",
-            "type": "integer"
-          },
-          "year": {
-            "description": "学年",
-            "type": "integer"
-          }
-        }
-      },
-      "schema.DivisionCreateRequest": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "description": "分区详情：前端暂时不用",
-            "type": "string"
-          },
-          "name": {
-            "description": "分区名称: 树洞、评教等等",
-            "type": "string"
-          }
-        }
-      },
-      "schema.DivisionDeleteRequest": {
-        "type": "object",
-        "properties": {
-          "to": {
-            "description": "ID of the target division that all the deleted division's holes will be moved to",
-            "type": "integer",
-            "default": 1
-          }
-        }
-      },
-      "schema.DivisionModifyRequest": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "description": "分区详情：前端暂时不用",
-            "type": "string"
-          },
-          "name": {
-            "description": "分区名称: 树洞、评教等等",
-            "type": "string"
-          },
-          "pinned": {
-            "description": "TODO: 置顶的树洞 id",
-            "type": "array",
-            "items": {
-              "type": "integer"
+        },
+        "schema.CourseGroupV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程组编号",
+                    "type": "string"
+                },
+                "course_list": {
+                    "description": "课程组下的课程，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseV1Response"
+                    }
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程组名称",
+                    "type": "string"
+                }
             }
-          }
-        }
-      },
-      "schema.DivisionResponse": {
-        "type": "object",
-        "properties": {
-          "description": {
-            "description": "分区详情：前端暂时不用",
-            "type": "string"
-          },
-          "division_id": {
-            "description": "旧版 id",
-            "type": "integer"
-          },
-          "id": {
-            "description": "新版 id",
-            "type": "integer"
-          },
-          "name": {
-            "description": "分区名称: 树洞、评教等等",
-            "type": "string"
-          },
-          "pinned": {
-            "description": "TODO: 置顶的树洞",
-            "type": "array",
-            "items": {
-              "type": "object"
+        },
+        "schema.CourseV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程编号",
+                    "type": "string"
+                },
+                "code_id": {
+                    "description": "选课序号。用于区分同一课程编号的不同平行班",
+                    "type": "string"
+                },
+                "credit": {
+                    "description": "学分",
+                    "type": "integer"
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程 ID",
+                    "type": "integer"
+                },
+                "max_student": {
+                    "description": "最大选课人数",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程名称",
+                    "type": "string"
+                },
+                "review_list": {
+                    "description": "评教列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewV1Response"
+                    }
+                },
+                "semester": {
+                    "description": "学期",
+                    "type": "integer"
+                },
+                "teachers": {
+                    "description": "老师：多个老师用逗号分隔",
+                    "type": "string"
+                },
+                "week_hour": {
+                    "description": "周学时",
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "学年",
+                    "type": "integer"
+                }
             }
-          }
-        }
-      },
+        },
+        "schema.DivisionCreateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "分区详情：前端暂时不用",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "分区名称: 树洞、评教等等",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.DivisionDeleteRequest": {
+            "type": "object",
+            "properties": {
+                "to": {
+                    "description": "ID of the target division that all the deleted division's holes will be moved to",
+                    "type": "integer",
+                    "default": 1
+                }
+            }
+        },
+        "schema.DivisionModifyRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "分区详情：前端暂时不用",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "分区名称: 树洞、评教等等",
+                    "type": "string"
+                },
+                "pinned": {
+                    "description": "TODO: 置顶的树洞 id",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "schema.DivisionResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "description": "分区详情：前端暂时不用",
+                    "type": "string"
+                },
+                "division_id": {
+                    "description": "旧版 id",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "新版 id",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "分区名称: 树洞、评教等等",
+                    "type": "string"
+                },
+                "pinned": {
+                    "description": "TODO: 置顶的树洞",
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    }
+                }
+            }
+        },
         "schema.HttpBaseError": {
             "type": "object",
             "properties": {
@@ -665,6 +689,149 @@
                 }
             }
         },
+        "schema.ReviewHistoryV1": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "旧内容",
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "旧标题",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewHistoryV1Response": {
+            "type": "object",
+            "properties": {
+                "alter_by": {
+                    "description": "修改者",
+                    "type": "integer"
+                },
+                "original": {
+                    "description": "修改前的评教",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewHistoryV1"
+                        }
+                    ]
+                },
+                "time": {
+                    "description": "创建时间",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewRankV1": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "description": "考核方面",
+                    "type": "integer"
+                },
+                "content": {
+                    "description": "内容、风格方面",
+                    "type": "integer"
+                },
+                "overall": {
+                    "description": "总体方面",
+                    "type": "integer"
+                },
+                "workload": {
+                    "description": "工作量方面",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.ReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "description": "评教 ID",
+                    "type": "integer"
+                },
+                "is_me": {
+                    "description": "是否是自己的评教",
+                    "type": "boolean"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
         "schema.TokenResponse": {
             "type": "object",
             "properties": {
@@ -676,6 +843,18 @@
                 },
                 "refresh": {
                     "type": "string"
+                }
+            }
+        },
+        "schema.UserExtraV1": {
+            "type": "object",
+            "properties": {
+                "achievements": {
+                    "description": "用户成就，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.AchievementV1Response"
+                    }
                 }
             }
         },

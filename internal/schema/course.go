@@ -1,5 +1,11 @@
 package schema
 
+import (
+	"github.com/jinzhu/copier"
+
+	"github.com/opentreehole/backend/internal/model"
+)
+
 type CourseV1Response struct {
 	// 课程 ID
 	ID int `json:"id"`
@@ -36,4 +42,23 @@ type CourseV1Response struct {
 
 	// 学期
 	Semester int `json:"semester"`
+
+	// 评教列表
+	ReviewList []*ReviewV1Response `json:"review_list"`
+}
+
+func (r *CourseV1Response) FromModel(
+	user *model.User,
+	course *model.Course,
+) *CourseV1Response {
+	err := copier.Copy(r, course)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, review := range course.Reviews {
+		r.ReviewList = append(r.ReviewList, new(ReviewV1Response).FromModel(user, review))
+	}
+
+	return r
 }

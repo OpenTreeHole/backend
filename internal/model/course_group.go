@@ -16,4 +16,7 @@ type CourseGroup struct {
 
 	// 开课校区
 	CampusName string `json:"campus_name"`
+
+	// 所有课程
+	Courses []*Course `json:"courses"`
 }

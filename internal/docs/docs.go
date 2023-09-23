@@ -440,6 +440,23 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "schema.AchievementV1Response": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "description": "成就域",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "成就名称",
+                    "type": "string"
+                },
+                "obtain_date": {
+                    "description": "获取日期",
+                    "type": "string"
+                }
+            }
+        },
         "schema.CourseGroupV1Response": {
             "type": "object",
             "properties": {
@@ -451,7 +468,7 @@ const docTemplate = `{
                     "description": "课程组编号",
                     "type": "string"
                 },
-                "courses": {
+                "course_list": {
                     "description": "课程组下的课程，slices 必须非空",
                     "type": "array",
                     "items": {
@@ -506,6 +523,13 @@ const docTemplate = `{
                 "name": {
                     "description": "课程名称",
                     "type": "string"
+                },
+                "review_list": {
+                    "description": "评教列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewV1Response"
+                    }
                 },
                 "semester": {
                     "description": "学期",
@@ -672,6 +696,149 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.ReviewHistoryV1": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "旧内容",
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "旧标题",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewHistoryV1Response": {
+            "type": "object",
+            "properties": {
+                "alter_by": {
+                    "description": "修改者",
+                    "type": "integer"
+                },
+                "original": {
+                    "description": "修改前的评教",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewHistoryV1"
+                        }
+                    ]
+                },
+                "time": {
+                    "description": "创建时间",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewRankV1": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "description": "考核方面",
+                    "type": "integer"
+                },
+                "content": {
+                    "description": "内容、风格方面",
+                    "type": "integer"
+                },
+                "overall": {
+                    "description": "总体方面",
+                    "type": "integer"
+                },
+                "workload": {
+                    "description": "工作量方面",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.ReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "description": "评教 ID",
+                    "type": "integer"
+                },
+                "is_me": {
+                    "description": "是否是自己的评教",
+                    "type": "boolean"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
         "schema.TokenResponse": {
             "type": "object",
             "properties": {
@@ -683,6 +850,18 @@ const docTemplate = `{
                 },
                 "refresh": {
                     "type": "string"
+                }
+            }
+        },
+        "schema.UserExtraV1": {
+            "type": "object",
+            "properties": {
+                "achievements": {
+                    "description": "用户成就，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.AchievementV1Response"
+                    }
                 }
             }
         },

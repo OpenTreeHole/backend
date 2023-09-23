@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"context"
+
 	"github.com/gofiber/fiber/v2"
 
-	"github.com/opentreehole/backend/internal/schema"
+	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/service"
 )
 
@@ -13,11 +15,20 @@ type CourseGroupHandler interface {
 
 type courseGroupHandler struct {
 	*Handler
-	service service.CourseGroupService
+	courseGroupService service.CourseGroupService
+	accountRepository  repository.AccountRepository
 }
 
-func NewCourseGroupHandler(handler *Handler, service service.CourseGroupService) CourseGroupHandler {
-	return &courseGroupHandler{Handler: handler, service: service}
+func NewCourseGroupHandler(
+	handler *Handler,
+	groupService service.CourseGroupService,
+	accountRepository repository.AccountRepository,
+) CourseGroupHandler {
+	return &courseGroupHandler{
+		Handler:            handler,
+		courseGroupService: groupService,
+		accountRepository:  accountRepository,
+	}
 }
 
 func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
@@ -38,6 +49,22 @@ func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 // @Failure 404 {object} schema.HttpBaseError
 // @Failure 500 {object} schema.HttpBaseError
 func (h *courseGroupHandler) GetCourseGroupV1(c *fiber.Ctx) (err error) {
-	// TODO
-	return c.JSON(schema.CourseGroupV1Response{CourseList: make([]schema.CourseV1Response, 0)})
+	ctx := context.WithValue(c.Context(), "FiberCtx", c)
+
+	user, err := h.accountRepository.GetCurrentUser(ctx)
+	if err != nil {
+		return err
+	}
+
+	groupID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	response, err := h.courseGroupService.GetGroupByIDV1(ctx, user, groupID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(response)
 }

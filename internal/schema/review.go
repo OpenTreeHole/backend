@@ -2,6 +2,10 @@ package schema
 
 import (
 	"time"
+
+	"github.com/jinzhu/copier"
+
+	"github.com/opentreehole/backend/internal/model"
 )
 
 // ReviewRankV1 旧版本评分
@@ -22,7 +26,7 @@ type ReviewRankV1 struct {
 // AchievementV1Response 旧版本成就响应
 type AchievementV1Response struct {
 	// 成就名称
-	Name int `json:"name"`
+	Name string `json:"name"`
 
 	// 成就域
 	Domain string `json:"domain"`
@@ -31,10 +35,25 @@ type AchievementV1Response struct {
 	ObtainDate time.Time `json:"obtain_date"`
 }
 
+func (r *AchievementV1Response) FromModel(
+	achievement *model.Achievement,
+	userAchievement *model.UserAchievement,
+) *AchievementV1Response {
+	err := copier.Copy(r, userAchievement)
+	if err != nil {
+		panic(err)
+	}
+
+	r.Name = achievement.Name
+	r.Domain = achievement.Domain
+
+	return r
+}
+
 // UserExtraV1 旧版本用户额外信息
 type UserExtraV1 struct {
 	// 用户成就，slices 必须非空
-	Achievements []AchievementV1Response `json:"achievements"`
+	Achievements []*AchievementV1Response `json:"achievements"`
 }
 
 // ReviewV1Response 旧版本评教响应
@@ -70,10 +89,30 @@ type ReviewV1Response struct {
 	IsMe bool `json:"is_me"`
 
 	// 修改历史，slices 必须非空
-	History []ReviewHistoryV1Response `json:"history"`
+	History []*ReviewHistoryV1Response `json:"history"`
 
 	// 额外信息
 	Extra UserExtraV1 `json:"extra"`
+}
+
+func (r *ReviewV1Response) FromModel(
+	user *model.User,
+	review *model.Review,
+) *ReviewV1Response {
+	err := copier.Copy(r, review)
+	if err != nil {
+		panic(err)
+	}
+
+	r.IsMe = user.ID == review.ReviewerID
+	for _, history := range review.History {
+		r.History = append(r.History, new(ReviewHistoryV1Response).FromModel(review, history))
+	}
+
+	for _, userAchievement := range review.UserAchievements {
+		r.Extra.Achievements = append(r.Extra.Achievements, new(AchievementV1Response).FromModel(userAchievement.Achievement, userAchievement))
+	}
+	return r
 }
 
 type ReviewHistoryV1 struct {
@@ -109,4 +148,28 @@ type ReviewHistoryV1Response struct {
 
 	// 修改前的评教
 	Original ReviewHistoryV1 `json:"original"`
+}
+
+func (r *ReviewHistoryV1Response) FromModel(
+	review *model.Review,
+	history *model.ReviewHistory,
+) *ReviewHistoryV1Response {
+	r.Time = history.UpdatedAt
+	r.AlterBy = history.AlterBy
+	r.Original = ReviewHistoryV1{
+		Title:       history.Title,
+		Content:     history.Content,
+		TimeCreated: history.CreatedAt,
+		TimeUpdated: history.UpdatedAt,
+		ReviewerID:  review.ReviewerID,
+		Rank: ReviewRankV1{
+			Overall:    review.RankOverall,
+			Content:    review.RankContent,
+			Workload:   review.RankWorkload,
+			Assessment: review.RankAssessment,
+		},
+		Remark: review.UpvoteCount - review.DownvoteCount,
+	}
+
+	return r
 }

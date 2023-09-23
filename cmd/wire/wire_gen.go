@@ -35,7 +35,7 @@ func NewApp() (*server.Server, func(), error) {
 	divisionHandler := handler.NewDivisionHandler(handlerHandler)
 	courseGroupRepository := repository.NewCourseGroupRepository(repositoryRepository)
 	courseGroupService := service.NewCourseGroupService(serviceService, courseGroupRepository)
-	courseGroupHandler := handler.NewCourseGroupHandler(handlerHandler, courseGroupService)
+	courseGroupHandler := handler.NewCourseGroupHandler(handlerHandler, courseGroupService, accountRepository)
 	courseRepository := repository.NewCourseRepository(repositoryRepository)
 	courseService := service.NewCourseService(serviceService, courseRepository)
 	courseHandler := handler.NewCourseHandler(handlerHandler, courseService)
@@ -54,4 +54,4 @@ var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, hand
 
 var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService, service.NewDivisionService, service.NewCourseGroupService, service.NewCourseService, service.NewReviewService)
 
-var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository, repository.NewDivisionRepository, repository.NewCourseGroupRepository, repository.NewCourseRepository, repository.NewReviewRepository)
+var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository, repository.NewDivisionRepository, repository.NewCourseGroupRepository, repository.NewCourseRepository, repository.NewReviewRepository, repository.NewAchievementRepository)

@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -25,6 +26,10 @@ type Repository interface {
 	GetDB(ctx context.Context) *gorm.DB
 	GetCache(ctx context.Context) *cache.Cache
 	GetConfig(ctx context.Context) *config.AllConfig
+
+	// GetFiberCtx 获取 fiber.Ctx
+	// 必须在 ctx 中设置 "FiberCtx" 为 fiber.Ctx，否则会 panic
+	GetFiberCtx(ctx context.Context) *fiber.Ctx
 }
 
 type repository struct {
@@ -232,4 +237,8 @@ func (r *repository) GetCache(_ context.Context) *cache.Cache {
 
 func (r *repository) GetConfig(_ context.Context) *config.AllConfig {
 	return r.conf.Load()
+}
+
+func (r *repository) GetFiberCtx(ctx context.Context) *fiber.Ctx {
+	return ctx.Value("FiberCtx").(*fiber.Ctx)
 }

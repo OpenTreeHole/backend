@@ -45,6 +45,15 @@ type Review struct {
 
 	// 点踩数
 	DownvoteCount int `json:"downvote_count"`
+
+	// 评教修改历史
+	History []*ReviewHistory `json:"history"`
+
+	// 评教点赞/点踩详情
+	Vote []*ReviewVote `json:"vote"`
+
+	// 用户成就
+	UserAchievements []*UserAchievement `json:"achievements" gorm:"foreignKey:UserID;references:ReviewerID"`
 }
 
 // ReviewHistory 评教修改历史
