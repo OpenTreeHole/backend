@@ -73,8 +73,12 @@ func NewServer(
 }
 
 func (s *Server) Run() {
+	var disableStartupMessage = true
+	if s.config.Load().Mode == "dev" {
+		disableStartupMessage = false
+	}
 	var app = fiber.New(fiber.Config{
-		DisableStartupMessage: true,
+		DisableStartupMessage: disableStartupMessage,
 		ErrorHandler:          schema.ErrorHandler,
 	})
 

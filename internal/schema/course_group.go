@@ -18,5 +18,5 @@ type CourseGroupV1Response struct {
 	CampusName string `json:"campus_name"`
 
 	// 课程组下的课程，slices 必须非空
-	Courses []CourseV1Response `json:"courses"`
+	CourseList []CourseV1Response `json:"course_list"`
 }

@@ -21,7 +21,7 @@ func NewCourseGroupHandler(handler *Handler, service service.CourseGroupService)
 }
 
 func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
-	router.Get("/group", h.GetCourseGroupV1)
+	router.Get("/group/:id", h.GetCourseGroupV1)
 }
 
 // GetCourseGroupV1 godoc
@@ -39,5 +39,5 @@ func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 // @Failure 500 {object} schema.HttpBaseError
 func (h *courseGroupHandler) GetCourseGroupV1(c *fiber.Ctx) (err error) {
 	// TODO
-	return c.JSON(schema.CourseGroupV1Response{})
+	return c.JSON(schema.CourseGroupV1Response{CourseList: make([]schema.CourseV1Response, 0)})
 }
