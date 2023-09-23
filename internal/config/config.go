@@ -141,7 +141,7 @@ type Config struct {
 
 		// enable registration test
 		RegistrationTest bool `yaml:"registration_test" default:"false" json:"registration_test"`
-	} `yaml:"feature" json:"feature"`
+	} `yaml:"features" json:"features"`
 
 	// notification settings, used for notification server
 	Notification struct {

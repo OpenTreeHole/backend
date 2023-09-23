@@ -35,7 +35,7 @@
         "site_name": "Open Tree Hole",
         "dev_email": ""
     },
-    "feature": {
+    "features": {
         "external_gateway": false,
         "shamir": false,
         "email_verification": false,
