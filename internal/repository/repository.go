@@ -176,11 +176,27 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 		db = db.Debug()
 	}
 
-	err := db.AutoMigrate(
+	var models = []any{
 		model.User{},
+		model.UserAchievement{},
+		model.Achievement{},
 		model.DeleteIdentifier{},
-		model.Division{},
-	)
+	}
+	if conf.Load().Modules.Treehole {
+		models = append(models, model.Division{})
+	}
+	if conf.Load().Modules.CurriculumBoard {
+		models = append(
+			models,
+			model.Review{},
+			model.Course{},
+			model.CourseGroup{},
+			model.ReviewHistory{},
+			model.ReviewVote{},
+		)
+	}
+
+	err := db.AutoMigrate(models...)
 	if err != nil {
 		logger.Fatal("auto migrate error", zap.Error(err))
 	}
