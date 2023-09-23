@@ -8,11 +8,6 @@ import (
 
 type DivisionHandler interface {
 	RouteRegister
-	ListDivisions(c *fiber.Ctx) (err error)
-	GetDivision(c *fiber.Ctx) (err error)
-	CreateDivision(c *fiber.Ctx) (err error)
-	ModifyDivision(c *fiber.Ctx) (err error)
-	DeleteDivision(c *fiber.Ctx) (err error)
 }
 
 type divisionHandler struct {
@@ -24,7 +19,11 @@ func NewDivisionHandler(handler *Handler) DivisionHandler {
 }
 
 func (h *divisionHandler) RegisterRoute(router fiber.Router) {
-	// TODO: register routes
+	router.Get("/divisions", h.ListDivisions)
+	router.Get("/divisions/:id", h.GetDivision)
+	router.Post("/divisions", h.CreateDivision)
+	router.Put("/divisions/:id", h.ModifyDivision)
+	router.Delete("/divisions/:id", h.DeleteDivision)
 }
 
 // ListDivisions godoc

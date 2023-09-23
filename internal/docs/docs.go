@@ -251,6 +251,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/group/{id}": {
+            "get": {
+                "description": "get a course group, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "/group/{group_id}",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "login with email and password",
@@ -389,6 +440,91 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "schema.CourseGroupV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程组编号",
+                    "type": "string"
+                },
+                "courses": {
+                    "description": "课程组下的课程，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseV1Response"
+                    }
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程组名称",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.CourseV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程编号",
+                    "type": "string"
+                },
+                "code_id": {
+                    "description": "选课序号。用于区分同一课程编号的不同平行班",
+                    "type": "string"
+                },
+                "credit": {
+                    "description": "学分",
+                    "type": "integer"
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程 ID",
+                    "type": "integer"
+                },
+                "max_student": {
+                    "description": "最大选课人数",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程名称",
+                    "type": "string"
+                },
+                "semester": {
+                    "description": "学期",
+                    "type": "integer"
+                },
+                "teachers": {
+                    "description": "老师：多个老师用逗号分隔",
+                    "type": "string"
+                },
+                "week_hour": {
+                    "description": "周学时",
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "学年",
+                    "type": "integer"
+                }
+            }
+        },
         "schema.DivisionCreateRequest": {
             "type": "object",
             "properties": {

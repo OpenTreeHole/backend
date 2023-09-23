@@ -23,9 +23,21 @@ type Server struct {
 }
 
 func NewServer(
-	accountHandler handler.AccountHandler,
-	divisionHandler handler.DivisionHandler,
+	// docs
 	docsHandler handler.DocsHandler,
+
+	// auth
+	accountHandler handler.AccountHandler,
+
+	// treehole
+	divisionHandler handler.DivisionHandler,
+
+	// curriculum board
+	courseGroupHandler handler.CourseGroupHandler,
+	courseHandler handler.CourseHandler,
+	reviewHandler handler.ReviewHandler,
+
+	// others
 	logger *log.Logger,
 	config *config.AtomicAllConfig,
 ) *Server {
@@ -44,7 +56,11 @@ func NewServer(
 	}
 
 	if config.Load().Modules.CurriculumBoard {
-		// TODO
+		handlers = append(handlers,
+			courseGroupHandler,
+			courseHandler,
+			reviewHandler,
+		)
 	}
 	return &Server{
 		logger: logger,

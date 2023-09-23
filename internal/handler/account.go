@@ -9,9 +9,6 @@ import (
 
 type AccountHandler interface {
 	RouteRegister
-	Login(c *fiber.Ctx) (err error)
-	Register(c *fiber.Ctx) (err error)
-	ResetPassword(c *fiber.Ctx) (err error)
 }
 
 type accountHandler struct {

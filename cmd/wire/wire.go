@@ -20,12 +20,18 @@ var HandlerSet = wire.NewSet(
 	handler.NewAccountHandler,
 	handler.NewDocsHandler,
 	handler.NewDivisionHandler,
+	handler.NewCourseGroupHandler,
+	handler.NewCourseHandler,
+	handler.NewReviewHandler,
 )
 
 var ServiceSet = wire.NewSet(
 	service.NewService,
 	service.NewAccountService,
 	service.NewDivisionService,
+	service.NewCourseGroupService,
+	service.NewCourseService,
+	service.NewReviewService,
 )
 
 var RepositorySet = wire.NewSet(
@@ -33,6 +39,9 @@ var RepositorySet = wire.NewSet(
 	repository.NewRepository,
 	repository.NewAccountRepository,
 	repository.NewDivisionRepository,
+	repository.NewCourseGroupRepository,
+	repository.NewCourseRepository,
+	repository.NewReviewRepository,
 )
 
 func NewApp() (*server.Server, func(), error) {

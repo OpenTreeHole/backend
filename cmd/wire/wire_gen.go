@@ -20,6 +20,7 @@ import (
 // Injectors from wire.go:
 
 func NewApp() (*server.Server, func(), error) {
+	docsHandler := handler.NewDocsHandler()
 	pointer := config.NewConfig()
 	logger, cleanup := log.NewLogger(pointer)
 	validate := handler.NewValidater()
@@ -32,8 +33,16 @@ func NewApp() (*server.Server, func(), error) {
 	accountService := service.NewAccountService(serviceService, accountRepository)
 	accountHandler := handler.NewAccountHandler(handlerHandler, accountService)
 	divisionHandler := handler.NewDivisionHandler(handlerHandler)
-	docsHandler := handler.NewDocsHandler()
-	serverServer := server.NewServer(accountHandler, divisionHandler, docsHandler, logger, pointer)
+	courseGroupRepository := repository.NewCourseGroupRepository(repositoryRepository)
+	courseGroupService := service.NewCourseGroupService(serviceService, courseGroupRepository)
+	courseGroupHandler := handler.NewCourseGroupHandler(handlerHandler, courseGroupService)
+	courseRepository := repository.NewCourseRepository(repositoryRepository)
+	courseService := service.NewCourseService(serviceService, courseRepository)
+	courseHandler := handler.NewCourseHandler(handlerHandler, courseService)
+	reviewRepository := repository.NewReviewRepository(repositoryRepository)
+	reviewService := service.NewReviewService(serviceService, reviewRepository)
+	reviewHandler := handler.NewReviewHandler(handlerHandler, reviewService)
+	serverServer := server.NewServer(docsHandler, accountHandler, divisionHandler, courseGroupHandler, courseHandler, reviewHandler, logger, pointer)
 	return serverServer, func() {
 		cleanup()
 	}, nil
@@ -41,8 +50,8 @@ func NewApp() (*server.Server, func(), error) {
 
 // wire.go:
 
-var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, handler.NewDocsHandler, handler.NewDivisionHandler)
+var HandlerSet = wire.NewSet(handler.NewHandler, handler.NewAccountHandler, handler.NewDocsHandler, handler.NewDivisionHandler, handler.NewCourseGroupHandler, handler.NewCourseHandler, handler.NewReviewHandler)
 
-var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService, service.NewDivisionService)
+var ServiceSet = wire.NewSet(service.NewService, service.NewAccountService, service.NewDivisionService, service.NewCourseGroupService, service.NewCourseService, service.NewReviewService)
 
-var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository, repository.NewDivisionRepository)
+var RepositorySet = wire.NewSet(repository.NewDB, repository.NewRepository, repository.NewAccountRepository, repository.NewDivisionRepository, repository.NewCourseGroupRepository, repository.NewCourseRepository, repository.NewReviewRepository)
