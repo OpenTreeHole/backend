@@ -82,7 +82,6 @@ func (h *accountHandler) Register(c *fiber.Ctx) (err error) {
 		body.Email,
 		body.Password,
 		string(body.Verification),
-		true,
 	)
 	if err != nil {
 		return err

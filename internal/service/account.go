@@ -8,6 +8,7 @@ import (
 )
 
 type AccountService interface {
+	Service
 	Login(
 		ctx context.Context,
 		email, password string,
@@ -18,7 +19,6 @@ type AccountService interface {
 	Register(
 		ctx context.Context,
 		email, password, verificationCode string,
-		shouldCheckVerificationCode bool,
 	) (
 		response *schema.TokenResponse,
 		err error,
@@ -76,7 +76,6 @@ func (a *accountService) Login(
 func (a *accountService) Register(
 	ctx context.Context,
 	email, password, verificationCode string,
-	shouldCheckVerificationCode bool,
 ) (
 	response *schema.TokenResponse,
 	err error,
@@ -84,7 +83,7 @@ func (a *accountService) Register(
 	scope := "register"
 
 	// check verification code
-	if shouldCheckVerificationCode {
+	if a.GetConfig(ctx).Features.EmailVerification {
 		err = a.repository.CheckVerificationCode(ctx, scope, email, verificationCode)
 		if err != nil {
 			return nil, err

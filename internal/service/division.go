@@ -7,6 +7,7 @@ import (
 )
 
 type DivisionService interface {
+	Service
 	// ListDivisions 获取所有分区
 	ListDivisions(ctx context.Context) (response []*schema.DivisionResponse, err error)
 
