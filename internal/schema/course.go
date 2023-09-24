@@ -56,6 +56,7 @@ func (r *CourseV1Response) FromModel(
 		panic(err)
 	}
 
+	r.ReviewList = make([]*ReviewV1Response, 0, len(course.Reviews))
 	for _, review := range course.Reviews {
 		r.ReviewList = append(r.ReviewList, new(ReviewV1Response).FromModel(user, review))
 	}

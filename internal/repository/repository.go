@@ -40,6 +40,7 @@ type repository struct {
 }
 
 func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *config.AtomicAllConfig) Repository {
+	dbMigration(db, conf, logger)
 	return &repository{db: db, cache: cache, logger: logger, conf: conf}
 }
 
@@ -181,7 +182,10 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	if conf.Load().Mode == "dev" {
 		db = db.Debug()
 	}
+	return
+}
 
+func dbMigration(db *gorm.DB, conf *config.AtomicAllConfig, logger *log.Logger) {
 	var models = []any{
 		model.User{},
 		model.UserAchievement{},
@@ -206,8 +210,6 @@ func NewDB(conf *config.AtomicAllConfig, logger *log.Logger) (db *gorm.DB) {
 	if err != nil {
 		logger.Fatal("auto migrate error", zap.Error(err))
 	}
-
-	return
 }
 
 // Transaction wraps the given function in a transaction.

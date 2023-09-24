@@ -177,6 +177,8 @@ func ErrorHandler(c *fiber.Ctx, err error) error {
 		switch e := err.(type) {
 		case *HttpError:
 			httpError = *e
+		case *HttpBaseError:
+			httpError.HttpBaseError = *e
 		case *fiber.Error:
 			httpError.Code = e.Code
 		case ValidationErrors:

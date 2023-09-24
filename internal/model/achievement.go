@@ -16,7 +16,7 @@ type Achievement struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// 成就名称
-	Name string `json:"name"`
+	Name string `json:"name" gorm:"not null"`
 
 	// 可能是成就作用域？
 	Domain string `json:"domain"`

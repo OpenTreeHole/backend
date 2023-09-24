@@ -23,6 +23,14 @@ type ReviewRankV1 struct {
 	Assessment int `json:"assessment"`
 }
 
+func (r *ReviewRankV1) FromModel(rank *model.ReviewRank) *ReviewRankV1 {
+	err := copier.Copy(r, rank)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
 // AchievementV1Response 旧版本成就响应
 type AchievementV1Response struct {
 	// 成就名称
@@ -77,7 +85,7 @@ type ReviewV1Response struct {
 	ReviewerID int `json:"reviewer_id"`
 
 	// 评价
-	Rank ReviewRankV1 `json:"rank"`
+	Rank *ReviewRankV1 `json:"rank"`
 
 	// 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
 	Vote int `json:"vote"`
@@ -105,10 +113,14 @@ func (r *ReviewV1Response) FromModel(
 	}
 
 	r.IsMe = user.ID == review.ReviewerID
+	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
+	// TODO: vote
+	r.History = make([]*ReviewHistoryV1Response, 0, len(review.History))
 	for _, history := range review.History {
-		r.History = append(r.History, new(ReviewHistoryV1Response).FromModel(review, history))
+		r.History = append(r.History, new(ReviewHistoryV1Response).FromModel(review, history, r.Rank))
 	}
 
+	r.Extra.Achievements = make([]*AchievementV1Response, 0, len(review.UserAchievements))
 	for _, userAchievement := range review.UserAchievements {
 		r.Extra.Achievements = append(r.Extra.Achievements, new(AchievementV1Response).FromModel(userAchievement.Achievement, userAchievement))
 	}
@@ -132,7 +144,7 @@ type ReviewHistoryV1 struct {
 	ReviewerID int `json:"reviewer_id"`
 
 	// 评价
-	Rank ReviewRankV1 `json:"rank"`
+	Rank *ReviewRankV1 `json:"rank"`
 
 	// Remark = 点赞数 - 点踩数
 	Remark int `json:"remark"`
@@ -147,28 +159,24 @@ type ReviewHistoryV1Response struct {
 	AlterBy int `json:"alter_by"`
 
 	// 修改前的评教
-	Original ReviewHistoryV1 `json:"original"`
+	Original *ReviewHistoryV1 `json:"original"`
 }
 
 func (r *ReviewHistoryV1Response) FromModel(
 	review *model.Review,
 	history *model.ReviewHistory,
+	rank *ReviewRankV1,
 ) *ReviewHistoryV1Response {
-	r.Time = history.UpdatedAt
+	r.Time = history.CreatedAt
 	r.AlterBy = history.AlterBy
-	r.Original = ReviewHistoryV1{
+	r.Original = &ReviewHistoryV1{
 		Title:       history.Title,
 		Content:     history.Content,
-		TimeCreated: history.CreatedAt,
-		TimeUpdated: history.UpdatedAt,
+		TimeCreated: review.CreatedAt,
+		TimeUpdated: history.CreatedAt,
 		ReviewerID:  review.ReviewerID,
-		Rank: ReviewRankV1{
-			Overall:    review.RankOverall,
-			Content:    review.RankContent,
-			Workload:   review.RankWorkload,
-			Assessment: review.RankAssessment,
-		},
-		Remark: review.UpvoteCount - review.DownvoteCount,
+		Rank:        rank,
+		Remark:      review.UpvoteCount - review.DownvoteCount,
 	}
 
 	return r

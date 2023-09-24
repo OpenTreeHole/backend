@@ -36,6 +36,7 @@ func (r *CourseGroupV1Response) FromModel(
 		panic(err)
 	}
 
+	r.CourseList = make([]*CourseV1Response, 0, len(group.Courses))
 	for _, course := range group.Courses {
 		r.CourseList = append(r.CourseList, new(CourseV1Response).FromModel(user, course))
 	}
