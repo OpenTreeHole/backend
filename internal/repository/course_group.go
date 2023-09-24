@@ -29,6 +29,14 @@ type findGroupByIdOptions struct {
 
 type FindGroupByIDOption func(*findGroupByIdOptions)
 
+func WithGroupCourses() FindGroupByIDOption {
+	return func(o *findGroupByIdOptions) {
+		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
+			return db.Preload("Courses")
+		})
+	}
+}
+
 func WithGroupReviews() FindGroupByIDOption {
 	return func(o *findGroupByIdOptions) {
 		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {

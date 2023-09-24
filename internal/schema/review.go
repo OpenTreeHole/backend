@@ -106,6 +106,7 @@ type ReviewV1Response struct {
 func (r *ReviewV1Response) FromModel(
 	user *model.User,
 	review *model.Review,
+	votesMap map[int]map[int]*model.ReviewVote,
 ) *ReviewV1Response {
 	err := copier.Copy(r, review)
 	if err != nil {
@@ -114,7 +115,11 @@ func (r *ReviewV1Response) FromModel(
 
 	r.IsMe = user.ID == review.ReviewerID
 	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
-	// TODO: vote
+	if votesMap[review.ID] != nil && votesMap[review.ID][user.ID] != nil {
+		r.Vote = votesMap[review.ID][user.ID].Data
+	} else {
+		r.Vote = 0
+	}
 	r.History = make([]*ReviewHistoryV1Response, 0, len(review.History))
 	for _, history := range review.History {
 		r.History = append(r.History, new(ReviewHistoryV1Response).FromModel(review, history, r.Rank))

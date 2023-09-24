@@ -126,6 +126,8 @@ func main() {
 				"rank_content":    int(review.Rank.Content),
 				"rank_workload":   int(review.Rank.Workload),
 				"rank_assessment": int(review.Rank.Assessment),
+				"upvote_count":    len(review.Upvoters), // TODO: 这里的 upvote_count 和 downvote_count 有问题，需要从 vote 表中统计
+				"downvote_count":  len(review.Downvoters),
 			}).Error
 			if err != nil {
 				return err

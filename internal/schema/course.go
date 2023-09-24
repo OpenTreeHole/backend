@@ -50,6 +50,7 @@ type CourseV1Response struct {
 func (r *CourseV1Response) FromModel(
 	user *model.User,
 	course *model.Course,
+	votesMap map[int]map[int]*model.ReviewVote,
 ) *CourseV1Response {
 	err := copier.Copy(r, course)
 	if err != nil {
@@ -58,7 +59,7 @@ func (r *CourseV1Response) FromModel(
 
 	r.ReviewList = make([]*ReviewV1Response, 0, len(course.Reviews))
 	for _, review := range course.Reviews {
-		r.ReviewList = append(r.ReviewList, new(ReviewV1Response).FromModel(user, review))
+		r.ReviewList = append(r.ReviewList, new(ReviewV1Response).FromModel(user, review, votesMap))
 	}
 
 	return r
