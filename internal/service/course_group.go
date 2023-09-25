@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"gorm.io/gorm"
+
 	"github.com/opentreehole/backend/internal/model"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/schema"
@@ -45,7 +47,9 @@ func (c *courseGroupService) GetGroupByIDV1(ctx context.Context, user *model.Use
 	for i, course := range group.Courses {
 		courseIDs[i] = course.ID
 	}
-	reviews, err := c.reviewRepository.FindReviewsByCourseIDs(ctx, courseIDs, repository.ReviewWithHistory(), repository.ReviewWithUserAchievements())
+	reviews, err := c.reviewRepository.FindReviews(ctx, func(db *gorm.DB) *gorm.DB {
+		return db.Where("course_id IN ?", courseIDs)
+	})
 	if err != nil {
 		return nil, err
 	}

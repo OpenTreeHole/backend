@@ -11,16 +11,16 @@ import (
 // ReviewRankV1 旧版本评分
 type ReviewRankV1 struct {
 	// 总体方面
-	Overall int `json:"overall"`
+	Overall int `json:"overall" validate:"min=1,max=5"`
 
 	// 内容、风格方面
-	Content int `json:"content"`
+	Content int `json:"content" validate:"min=1,max=5"`
 
 	// 工作量方面
-	Workload int `json:"workload"`
+	Workload int `json:"workload" validate:"min=1,max=5"`
 
 	// 考核方面
-	Assessment int `json:"assessment"`
+	Assessment int `json:"assessment" validate:"min=1,max=5"`
 }
 
 func (r *ReviewRankV1) FromModel(rank *model.ReviewRank) *ReviewRankV1 {
@@ -29,6 +29,15 @@ func (r *ReviewRankV1) FromModel(rank *model.ReviewRank) *ReviewRankV1 {
 		panic(err)
 	}
 	return r
+}
+
+func (r *ReviewRankV1) ToModel() (rank *model.ReviewRank) {
+	rank = new(model.ReviewRank)
+	err := copier.Copy(r, rank)
+	if err != nil {
+		panic(err)
+	}
+	return
 }
 
 // AchievementV1Response 旧版本成就响应
@@ -191,4 +200,24 @@ func (r *ReviewHistoryV1Response) FromModel(
 	}
 
 	return r
+}
+
+type CreateReviewV1Request struct {
+	Title   string       `json:"title" validate:"required,min=1,max=64"`
+	Content string       `json:"content" validate:"required,min=1,max=10240"`
+	Rank    ReviewRankV1 `json:"rank" validate:"required,dive"`
+}
+
+type ModifyReviewV1Request = CreateReviewV1Request
+
+func (r *CreateReviewV1Request) ToModel(reviewerID, courseID int) *model.Review {
+	review := new(model.Review)
+	err := copier.Copy(review, r)
+	if err != nil {
+		panic(err)
+	}
+	review.ReviewerID = reviewerID
+	review.CourseID = courseID
+	review.Rank = r.Rank.ToModel()
+	return review
 }

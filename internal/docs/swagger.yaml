@@ -116,6 +116,23 @@ definitions:
       - week_hour
       - year
     type: object
+  schema.CreateReviewV1Request:
+    properties:
+      content:
+        maxLength: 10240
+        minLength: 1
+        type: string
+      rank:
+        $ref: '#/definitions/schema.ReviewRankV1'
+      title:
+        maxLength: 64
+        minLength: 1
+        type: string
+    required:
+      - content
+      - rank
+      - title
+    type: object
   schema.DivisionCreateRequest:
     properties:
       description:
@@ -197,6 +214,23 @@ definitions:
         minLength: 8
         type: string
     type: object
+  schema.ModifyReviewV1Request:
+    properties:
+      content:
+        maxLength: 10240
+        minLength: 1
+        type: string
+      rank:
+        $ref: '#/definitions/schema.ReviewRankV1'
+      title:
+        maxLength: 64
+        minLength: 1
+        type: string
+    required:
+      - content
+      - rank
+      - title
+    type: object
   schema.RegisterRequest:
     properties:
       email:
@@ -267,15 +301,23 @@ definitions:
     properties:
       assessment:
         description: 考核方面
+        maximum: 5
+        minimum: 1
         type: integer
       content:
         description: 内容、风格方面
+        maximum: 5
+        minimum: 1
         type: integer
       overall:
         description: 总体方面
+        maximum: 5
+        minimum: 1
         type: integer
       workload:
         description: 工作量方面
+        maximum: 5
+        minimum: 1
         type: integer
     type: object
   schema.ReviewV1Response:
@@ -430,6 +472,41 @@ paths:
       summary: create a course
       tags:
         - Course
+  /courses/{course_id}/reviews:
+    post:
+      consumes:
+        - application/json
+      description: create a review
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.CreateReviewV1Request'
+        - description: course id
+          in: path
+          name: course_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: create a review
+      tags:
+        - Review
   /courses/{id}:
     get:
       consumes:
@@ -736,4 +813,39 @@ paths:
       summary: reset password
       tags:
         - Account
+  /reviews/{review_id}:
+    put:
+      consumes:
+        - application/json
+      description: modify a review, admin or owner can modify
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.ModifyReviewV1Request'
+        - description: review id
+          in: path
+          name: review_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: modify a review
+      tags:
+        - Review
 swagger: "2.0"

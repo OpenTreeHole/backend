@@ -16,134 +16,187 @@
     },
     "basePath": "/api",
     "paths": {
-      "/courses": {
-        "get": {
-          "description": "list all course_groups and courses, no reviews, old version or v1 version",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Course"
-          ],
-          "summary": "list courses",
-          "deprecated": true,
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "type": "array",
-                "items": {
-                  "$ref": "#/definitions/schema.CourseGroupV1Response"
+        "/courses": {
+            "get": {
+                "description": "list all course_groups and courses, no reviews, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "list courses",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.CourseGroupV1Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
                 }
-              }
             },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "404": {
-              "description": "Not Found",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
+            "post": {
+                "description": "create a course, only admin can create",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "create a course",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateCourseV1Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          }
         },
-        "post": {
-          "description": "create a course, only admin can create",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Course"
-          ],
-          "summary": "create a course",
-          "parameters": [
-            {
-              "description": "json",
-              "name": "json",
-              "in": "body",
-              "required": true,
-              "schema": {
-                "$ref": "#/definitions/schema.CreateCourseV1Request"
-              }
+        "/courses/{course_id}/reviews": {
+            "post": {
+                "description": "create a review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "create a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "course id",
+                        "name": "course_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          ],
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "$ref": "#/definitions/schema.CourseV1Response"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "500": {
-              "description": "Internal Server Error",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
+        },
+        "/courses/{id}": {
+            "get": {
+                "description": "get a course with reviews, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "get a course",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "course_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
-          }
-        }
-      },
-      "/courses/{id}": {
-        "get": {
-          "description": "get a course with reviews, old version or v1 version",
-          "consumes": [
-            "application/json"
-          ],
-          "produces": [
-            "application/json"
-          ],
-          "tags": [
-            "Course"
-          ],
-          "summary": "get a course",
-          "deprecated": true,
-          "parameters": [
-            {
-              "type": "integer",
-              "description": "course_id",
-              "name": "id",
-              "in": "path",
-              "required": true
-            }
-          ],
-          "responses": {
-            "200": {
-              "description": "OK",
-              "schema": {
-                "$ref": "#/definitions/schema.CourseV1Response"
-              }
-            },
-            "400": {
-              "description": "Bad Request",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpError"
-              }
-            },
-            "404": {
-              "description": "Not Found",
-              "schema": {
-                "$ref": "#/definitions/schema.HttpBaseError"
-              }
-            }
-          }
-        }
-      },
+        },
         "/divisions": {
             "get": {
                 "description": "list all divisions",
@@ -558,6 +611,59 @@
                     }
                 }
             }
+        },
+        "/reviews/{review_id}": {
+            "put": {
+                "description": "modify a review, admin or owner can modify",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "modify a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifyReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -627,7 +733,7 @@
                 },
                 "credit": {
                     "description": "学分",
-                  "type": "number"
+                    "type": "number"
                 },
                 "department": {
                     "description": "开课学院",
@@ -670,54 +776,77 @@
                 }
             }
         },
-      "schema.CreateCourseV1Request": {
-        "type": "object",
-        "required": [
-          "campus_name",
-          "code",
-          "code_id",
-          "credit",
-          "department",
-          "max_student",
-          "name",
-          "semester",
-          "teachers",
-          "week_hour",
-          "year"
-        ],
-        "properties": {
-          "campus_name": {
-            "type": "string"
-          },
-          "code": {
-            "type": "string"
-          },
-          "code_id": {
-            "type": "string"
-          },
-          "credit": {
-            "type": "number"
-          },
-          "department": {
-            "type": "string"
-          },
-          "max_student": {
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "semester": {
-            "type": "integer"
-          },
-          "teachers": {
-            "type": "string"
-          },
-          "week_hour": {
-            "type": "integer"
-          },
-          "year": {
-            "type": "integer"
+        "schema.CreateCourseV1Request": {
+            "type": "object",
+            "required": [
+                "campus_name",
+                "code",
+                "code_id",
+                "credit",
+                "department",
+                "max_student",
+                "name",
+                "semester",
+                "teachers",
+                "week_hour",
+                "year"
+            ],
+            "properties": {
+                "campus_name": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "code_id": {
+                    "type": "string"
+                },
+                "credit": {
+                    "type": "number"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "max_student": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "semester": {
+                    "type": "integer"
+                },
+                "teachers": {
+                    "type": "string"
+                },
+                "week_hour": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.CreateReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "rank",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
                 }
             }
         },
@@ -834,6 +963,29 @@
                 }
             }
         },
+        "schema.ModifyReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "rank",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                }
+            }
+        },
         "schema.RegisterRequest": {
             "type": "object",
             "properties": {
@@ -931,19 +1083,27 @@
             "properties": {
                 "assessment": {
                     "description": "考核方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "content": {
                     "description": "内容、风格方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "overall": {
                     "description": "总体方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "workload": {
                     "description": "工作量方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 }
             }
         },

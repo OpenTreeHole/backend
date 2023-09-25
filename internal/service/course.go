@@ -61,7 +61,9 @@ func (s *courseService) GetCourseV1(ctx context.Context, user *model.User, id in
 	}
 
 	// 获取课程的评论，同时加载评论的历史记录和用户成就
-	course.Reviews, err = s.reviewRepository.FindReviewsByCourseID(ctx, course.ID, repository.ReviewWithHistory(), repository.ReviewWithUserAchievements())
+	course.Reviews, err = s.reviewRepository.FindReviews(ctx, func(db *gorm.DB) *gorm.DB {
+		return db.Where("course_id = ?", course.ID)
+	})
 
 	// 获取所有评论的自己的投票
 	reviewIDs := make([]int, 0)

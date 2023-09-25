@@ -106,6 +106,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/{course_id}/reviews": {
+            "post": {
+                "description": "create a review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "create a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "course id",
+                        "name": "course_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{id}": {
             "get": {
                 "description": "get a course with reviews, old version or v1 version",
@@ -565,6 +618,59 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/reviews/{review_id}": {
+            "put": {
+                "description": "modify a review, admin or owner can modify",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "modify a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifyReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -728,6 +834,29 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.CreateReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "rank",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                }
+            }
+        },
         "schema.DivisionCreateRequest": {
             "type": "object",
             "properties": {
@@ -841,6 +970,29 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.ModifyReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "rank",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                }
+            }
+        },
         "schema.RegisterRequest": {
             "type": "object",
             "properties": {
@@ -938,19 +1090,27 @@ const docTemplate = `{
             "properties": {
                 "assessment": {
                     "description": "考核方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "content": {
                     "description": "内容、风格方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "overall": {
                     "description": "总体方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 },
                 "workload": {
                     "description": "工作量方面",
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
                 }
             }
         },

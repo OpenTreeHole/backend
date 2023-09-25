@@ -40,8 +40,8 @@ func NewApp() (*server.Server, func(), error) {
 	courseRepository := repository.NewCourseRepository(repositoryRepository)
 	courseService := service.NewCourseService(serviceService, courseRepository, courseGroupRepository, reviewRepository)
 	courseHandler := handler.NewCourseHandler(handlerHandler, courseService, courseGroupService, accountRepository)
-	reviewService := service.NewReviewService(serviceService, reviewRepository)
-	reviewHandler := handler.NewReviewHandler(handlerHandler, reviewService)
+	reviewService := service.NewReviewService(serviceService, reviewRepository, courseRepository)
+	reviewHandler := handler.NewReviewHandler(handlerHandler, reviewService, accountRepository)
 	serverServer := server.NewServer(docsHandler, accountHandler, divisionHandler, courseGroupHandler, courseHandler, reviewHandler, logger, pointer)
 	return serverServer, func() {
 		cleanup()

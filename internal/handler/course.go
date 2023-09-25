@@ -37,7 +37,7 @@ func NewCourseHandler(
 
 func (h *courseHandler) RegisterRoute(router fiber.Router) {
 	router.Get("/courses", h.ListCoursesV1)
-	router.Get("/courses/:id", h.GetCourseV1)
+	router.Get("/courses/:course_id<int>", h.GetCourseV1)
 	router.Post("/courses", h.CreateCourseV1)
 }
 
@@ -90,12 +90,12 @@ func (h *courseHandler) GetCourseV1(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	id, err := c.ParamsInt("id")
+	courseID, err := c.ParamsInt("course_id")
 	if err != nil {
 		return err
 	}
 
-	response, err := h.courseService.GetCourseV1(c.Context(), user, id)
+	response, err := h.courseService.GetCourseV1(c.Context(), user, courseID)
 	if err != nil {
 		return err
 	}
