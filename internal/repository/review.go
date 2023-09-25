@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 
 	"gorm.io/gorm"
 
@@ -12,18 +13,15 @@ type ReviewRepository interface {
 	Repository
 
 	FindReviewsByCourseIDs(ctx context.Context, courseIDs []int, condition func(db *gorm.DB) *gorm.DB) (reviews []*model.Review, err error)
-
 	FindReviews(ctx context.Context, condition func(db *gorm.DB) *gorm.DB) (reviews []*model.Review, err error)
-
 	GetReviewByID(ctx context.Context, id int) (review *model.Review, err error)
-
 	GetReview(ctx context.Context, condition func(tx *gorm.DB) *gorm.DB) (review *model.Review, err error)
-
 	FindReviewVotes(ctx context.Context, reviewIDs []int, userIDs []int) (votes []*model.ReviewVote, err error)
 
 	CreateReview(ctx context.Context, review *model.Review) (err error)
 
 	UpdateReview(ctx context.Context, userID int, oldReview *model.Review, newReview *model.Review) (err error)
+	UpdateReviewVote(ctx context.Context, userID int, review *model.Review, data int) (err error)
 }
 
 type reviewRepository struct {
@@ -105,4 +103,28 @@ func (r *reviewRepository) UpdateReview(ctx context.Context, userID int, oldRevi
 	// 更新 review
 	return r.GetDB(ctx).Model(oldReview).
 		Select("Title", "Content", "Rank").Updates(newReview).Error
+}
+
+func (r *reviewRepository) UpdateReviewVote(ctx context.Context, userID int, review *model.Review, data int) (err error) {
+	return r.Transaction(ctx, func(ctx context.Context) error {
+		if data == 0 {
+			err = r.GetDB(ctx).Where("review_id = ? AND user_id = ?", review.ID, userID).Delete(&model.ReviewVote{}).Error
+		} else {
+			err = r.GetDB(ctx).Save(&model.ReviewVote{
+				UserID:   userID,
+				ReviewID: review.ID,
+				Data:     data,
+			}).Error
+		}
+		if err != nil {
+			return err
+		}
+
+		// update review vote count
+		return r.GetDB(ctx).Exec(`
+update review
+set upvote_count = (select count(*) from review_vote where review_id = @review_id and data = 1), 
+downvote_count = (select count(*) from review_vote where review_id = @review_id and data = -1) 
+where id = @review_id`, sql.Named("review_id", review.ID)).Error
+	})
 }

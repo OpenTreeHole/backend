@@ -52,13 +52,13 @@ func (h *Handler) ValidateStruct(ctx context.Context, model any) error {
 		return nil
 	}
 
-	var rawValidationErrors *validator.ValidationErrors
+	var rawValidationErrors validator.ValidationErrors
 	if ok := errors.As(err, &rawValidationErrors); ok {
 		var validationErrors schema.ValidationErrors
-		for _, fe := range *rawValidationErrors {
+		for _, fe := range rawValidationErrors {
 			validationErrors = append(validationErrors,
 				schema.ValidateFieldError{
-					Tag:   fe.Error(),
+					Tag:   fe.Tag(),
 					Field: fe.Field(),
 					Kind:  fe.Kind(),
 					Param: fe.Param(),

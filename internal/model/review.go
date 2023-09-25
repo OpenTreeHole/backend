@@ -29,7 +29,8 @@ type Review struct {
 	UpdatedAt time.Time `json:"updated_at" gorm:"not null"`
 
 	// 课程 ID
-	CourseID int `json:"course_id" gorm:"not null;index"`
+	CourseID int     `json:"course_id" gorm:"not null;index"`
+	Course   *Course `json:"course"`
 
 	// 标题
 	Title string `json:"title" gorm:"not null"`
