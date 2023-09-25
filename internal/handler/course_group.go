@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/opentreehole/backend/data"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/service"
 )
@@ -31,6 +32,11 @@ func NewCourseGroupHandler(
 
 func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 	router.Get("/group/:id<int>", h.GetCourseGroupV1)
+
+	// static
+	router.Get("/static/cedict_ts.u8", func(c *fiber.Ctx) error {
+		return c.Send(data.CreditTs)
+	})
 }
 
 // GetCourseGroupV1 godoc

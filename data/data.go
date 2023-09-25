@@ -11,6 +11,9 @@ import (
 //go:embed names.json
 var NamesFile []byte
 
+//go:embed cedict_ts.u8
+var CreditTs []byte
+
 var NamesMapping map[string]string
 
 func init() {
