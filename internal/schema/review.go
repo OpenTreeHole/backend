@@ -113,9 +113,15 @@ func (r *ReviewV1Response) FromModel(
 		panic(err)
 	}
 
-	r.IsMe = user.ID == review.ReviewerID
+	if user != nil {
+		r.IsMe = user.ID == review.ReviewerID
+	} else {
+		r.IsMe = false
+	}
+
 	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
-	if votesMap[review.ID] != nil && votesMap[review.ID][user.ID] != nil {
+	r.Remark = review.UpvoteCount - review.DownvoteCount
+	if votesMap != nil && votesMap[review.ID] != nil && votesMap[review.ID][user.ID] != nil {
 		r.Vote = votesMap[review.ID][user.ID].Data
 	} else {
 		r.Vote = 0

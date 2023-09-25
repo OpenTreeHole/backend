@@ -24,7 +24,7 @@ type CourseGroupV1Response struct {
 	CampusName string `json:"campus_name"`
 
 	// 课程组下的课程，slices 必须非空
-	CourseList []*CourseV1Response `json:"course_list"`
+	CourseList []*CourseV1Response `json:"course_list,omitempty"`
 }
 
 func (r *CourseGroupV1Response) FromModel(
@@ -37,6 +37,9 @@ func (r *CourseGroupV1Response) FromModel(
 		panic(err)
 	}
 
+	if group.Courses == nil {
+		return r
+	}
 	r.CourseList = make([]*CourseV1Response, 0, len(group.Courses))
 	for _, course := range group.Courses {
 		r.CourseList = append(r.CourseList, new(CourseV1Response).FromModel(user, course, votesMap))

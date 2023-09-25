@@ -11,7 +11,9 @@ import (
 type CourseGroupRepository interface {
 	Repository
 
-	FindGroupByID(ctx context.Context, id int, options ...FindGroupByIDOption) (group *model.CourseGroup, err error)
+	FindAllGroups(ctx context.Context, options ...FindGroupOption) (groups []*model.CourseGroup, err error)
+
+	FindGroupByID(ctx context.Context, id int, options ...FindGroupOption) (group *model.CourseGroup, err error)
 }
 
 type courseGroupRepository struct {
@@ -23,38 +25,38 @@ func NewCourseGroupRepository(repository Repository) CourseGroupRepository {
 }
 
 /* 接口选项类型 */
-type findGroupByIdOptions struct {
+type findGroupOptions struct {
 	PreloadFuncs []func(db *gorm.DB) *gorm.DB
 }
 
-type FindGroupByIDOption func(*findGroupByIdOptions)
+type FindGroupOption func(*findGroupOptions)
 
-func WithGroupCourses() FindGroupByIDOption {
-	return func(o *findGroupByIdOptions) {
+func WithGroupCourses() FindGroupOption {
+	return func(o *findGroupOptions) {
 		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Courses")
 		})
 	}
 }
 
-func WithGroupReviews() FindGroupByIDOption {
-	return func(o *findGroupByIdOptions) {
+func WithGroupReviews() FindGroupOption {
+	return func(o *findGroupOptions) {
 		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Courses.Reviews")
 		})
 	}
 }
 
-func WithReviewsAndHistory() FindGroupByIDOption {
-	return func(o *findGroupByIdOptions) {
+func WithReviewsAndHistory() FindGroupOption {
+	return func(o *findGroupOptions) {
 		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Courses.Reviews.History")
 		})
 	}
 }
 
-func WithReviewsUserAchievements() FindGroupByIDOption {
-	return func(o *findGroupByIdOptions) {
+func WithReviewsUserAchievements() FindGroupOption {
+	return func(o *findGroupOptions) {
 		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
 			return db.Preload("Courses.Reviews.UserAchievements.Achievement")
 		})
@@ -63,8 +65,22 @@ func WithReviewsUserAchievements() FindGroupByIDOption {
 
 /* 接口实现 */
 
-func (r *courseGroupRepository) FindGroupByID(ctx context.Context, id int, options ...FindGroupByIDOption) (group *model.CourseGroup, err error) {
-	var option findGroupByIdOptions
+func (r *courseGroupRepository) FindAllGroups(ctx context.Context, options ...FindGroupOption) (groups []*model.CourseGroup, err error) {
+	var option findGroupOptions
+	for _, opt := range options {
+		opt(&option)
+	}
+	groups = make([]*model.CourseGroup, 5)
+	db := r.GetDB(ctx)
+	for _, f := range option.PreloadFuncs {
+		db = f(db)
+	}
+	err = db.Find(&groups).Error
+	return
+}
+
+func (r *courseGroupRepository) FindGroupByID(ctx context.Context, id int, options ...FindGroupOption) (group *model.CourseGroup, err error) {
+	var option findGroupOptions
 	for _, opt := range options {
 		opt(&option)
 	}

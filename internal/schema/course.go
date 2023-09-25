@@ -44,7 +44,7 @@ type CourseV1Response struct {
 	Semester int `json:"semester"`
 
 	// 评教列表
-	ReviewList []*ReviewV1Response `json:"review_list"`
+	ReviewList []*ReviewV1Response `json:"review_list,omitempty"`
 }
 
 func (r *CourseV1Response) FromModel(
@@ -57,6 +57,9 @@ func (r *CourseV1Response) FromModel(
 		panic(err)
 	}
 
+	if course.Reviews == nil {
+		return r
+	}
 	r.ReviewList = make([]*ReviewV1Response, 0, len(course.Reviews))
 	for _, review := range course.Reviews {
 		r.ReviewList = append(r.ReviewList, new(ReviewV1Response).FromModel(user, review, votesMap))

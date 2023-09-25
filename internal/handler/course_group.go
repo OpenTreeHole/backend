@@ -32,7 +32,7 @@ func NewCourseGroupHandler(
 }
 
 func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
-	router.Get("/group/:id", h.GetCourseGroupV1)
+	router.Get("/group/:id<int>", h.GetCourseGroupV1)
 }
 
 // GetCourseGroupV1 godoc
