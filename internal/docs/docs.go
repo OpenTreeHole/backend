@@ -35,7 +35,7 @@ const docTemplate = `{
                 "tags": [
                     "Course"
                 ],
-                "summary": "/courses",
+                "summary": "list courses",
                 "deprecated": true,
                 "responses": {
                     "200": {
@@ -45,6 +45,95 @@ const docTemplate = `{
                             "items": {
                                 "$ref": "#/definitions/schema.CourseGroupV1Response"
                             }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "create a course, only admin can create",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "create a course",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateCourseV1Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}": {
+            "get": {
+                "description": "get a course with reviews, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "get a course",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "course_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
                         }
                     },
                     "400": {
@@ -545,7 +634,7 @@ const docTemplate = `{
                 },
                 "credit": {
                     "description": "学分",
-                    "type": "integer"
+                    "type": "number"
                 },
                 "department": {
                     "description": "开课学院",
@@ -584,6 +673,57 @@ const docTemplate = `{
                 },
                 "year": {
                     "description": "学年",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.CreateCourseV1Request": {
+            "type": "object",
+            "required": [
+                "campus_name",
+                "code",
+                "code_id",
+                "credit",
+                "department",
+                "max_student",
+                "name",
+                "semester",
+                "teachers",
+                "week_hour",
+                "year"
+            ],
+            "properties": {
+                "campus_name": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "code_id": {
+                    "type": "string"
+                },
+                "credit": {
+                    "type": "number"
+                },
+                "department": {
+                    "type": "string"
+                },
+                "max_student": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "semester": {
+                    "type": "integer"
+                },
+                "teachers": {
+                    "type": "string"
+                },
+                "week_hour": {
+                    "type": "integer"
+                },
+                "year": {
                     "type": "integer"
                 }
             }

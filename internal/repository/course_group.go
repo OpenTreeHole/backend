@@ -12,8 +12,9 @@ type CourseGroupRepository interface {
 	Repository
 
 	FindAllGroups(ctx context.Context, options ...FindGroupOption) (groups []*model.CourseGroup, err error)
-
 	FindGroupByID(ctx context.Context, id int, options ...FindGroupOption) (group *model.CourseGroup, err error)
+	FindGroupByCode(ctx context.Context, code string, options ...FindGroupOption) (group *model.CourseGroup, err error)
+	CreateGroup(ctx context.Context, group *model.CourseGroup) (err error)
 }
 
 type courseGroupRepository struct {
@@ -91,4 +92,22 @@ func (r *courseGroupRepository) FindGroupByID(ctx context.Context, id int, optio
 	}
 	err = db.First(group, id).Error
 	return
+}
+
+func (r *courseGroupRepository) FindGroupByCode(ctx context.Context, code string, options ...FindGroupOption) (group *model.CourseGroup, err error) {
+	var option findGroupOptions
+	for _, opt := range options {
+		opt(&option)
+	}
+	group = &model.CourseGroup{}
+	db := r.GetDB(ctx)
+	for _, f := range option.PreloadFuncs {
+		db = f(db)
+	}
+	err = db.Where("code = ?", code).First(group).Error
+	return
+}
+
+func (r *courseGroupRepository) CreateGroup(ctx context.Context, group *model.CourseGroup) (err error) {
+	return r.GetDB(ctx).Create(group).Error
 }

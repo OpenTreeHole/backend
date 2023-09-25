@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"context"
-
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/opentreehole/backend/internal/repository"
@@ -49,9 +47,9 @@ func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 // @Failure 404 {object} schema.HttpBaseError
 // @Failure 500 {object} schema.HttpBaseError
 func (h *courseGroupHandler) GetCourseGroupV1(c *fiber.Ctx) (err error) {
-	ctx := context.WithValue(c.Context(), "FiberCtx", c)
+	c.Context().SetUserValue("FiberCtx", c)
 
-	user, err := h.accountRepository.GetCurrentUser(ctx)
+	user, err := h.accountRepository.GetCurrentUser(c.Context())
 	if err != nil {
 		return err
 	}
@@ -61,7 +59,7 @@ func (h *courseGroupHandler) GetCourseGroupV1(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	response, err := h.courseGroupService.GetGroupByIDV1(ctx, user, groupID)
+	response, err := h.courseGroupService.GetGroupByIDV1(c.Context(), user, groupID)
 	if err != nil {
 		return err
 	}

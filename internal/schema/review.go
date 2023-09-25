@@ -70,10 +70,10 @@ type ReviewV1Response struct {
 	ID int `json:"id"`
 
 	// 创建时间
-	TimeCreated time.Time `json:"time_created"`
+	TimeCreated time.Time `json:"time_created" copier:"CreatedAt"`
 
 	// 更新时间
-	TimeUpdated time.Time `json:"time_updated"`
+	TimeUpdated time.Time `json:"time_updated" copier:"UpdatedAt"`
 
 	// 评教标题
 	Title string `json:"title"`
@@ -106,7 +106,7 @@ type ReviewV1Response struct {
 func (r *ReviewV1Response) FromModel(
 	user *model.User,
 	review *model.Review,
-	votesMap map[int]map[int]*model.ReviewVote,
+	votesMap map[int]*model.ReviewVote,
 ) *ReviewV1Response {
 	err := copier.Copy(r, review)
 	if err != nil {
@@ -121,8 +121,8 @@ func (r *ReviewV1Response) FromModel(
 
 	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
 	r.Remark = review.UpvoteCount - review.DownvoteCount
-	if votesMap != nil && votesMap[review.ID] != nil && votesMap[review.ID][user.ID] != nil {
-		r.Vote = votesMap[review.ID][user.ID].Data
+	if votesMap != nil && votesMap[review.ID] != nil {
+		r.Vote = votesMap[review.ID].Data
 	} else {
 		r.Vote = 0
 	}

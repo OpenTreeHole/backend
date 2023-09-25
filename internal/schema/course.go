@@ -20,7 +20,7 @@ type CourseV1Response struct {
 	CodeID string `json:"code_id"`
 
 	// 学分
-	Credit int `json:"credit"`
+	Credit float64 `json:"credit"`
 
 	// 开课学院
 	Department string `json:"department"`
@@ -50,7 +50,7 @@ type CourseV1Response struct {
 func (r *CourseV1Response) FromModel(
 	user *model.User,
 	course *model.Course,
-	votesMap map[int]map[int]*model.ReviewVote,
+	votesMap map[int]*model.ReviewVote,
 ) *CourseV1Response {
 	err := copier.Copy(r, course)
 	if err != nil {
@@ -66,4 +66,37 @@ func (r *CourseV1Response) FromModel(
 	}
 
 	return r
+}
+
+type CreateCourseV1Request struct {
+	Name       string  `json:"name" validate:"required"`
+	Code       string  `json:"code" validate:"required"`
+	CodeID     string  `json:"code_id" validate:"required"`
+	Credit     float64 `json:"credit" validate:"required"`
+	Department string  `json:"department" validate:"required"`
+	CampusName string  `json:"campus_name" validate:"required"`
+	Teachers   string  `json:"teachers" validate:"required"`
+	MaxStudent int     `json:"max_student" validate:"required"`
+	WeekHour   int     `json:"week_hour" validate:"required"`
+	Year       int     `json:"year" validate:"required"`
+	Semester   int     `json:"semester" validate:"required"`
+}
+
+func (r *CreateCourseV1Request) ToModel(groupID int) *model.Course {
+	var course model.Course
+	err := copier.Copy(&course, r)
+	if err != nil {
+		panic(err)
+	}
+	course.CourseGroupID = groupID
+	return &course
+}
+
+func (r *CreateCourseV1Request) ToCourseGroupModel() *model.CourseGroup {
+	var courseGroup model.CourseGroup
+	err := copier.Copy(&courseGroup, r)
+	if err != nil {
+		panic(err)
+	}
+	return &courseGroup
 }

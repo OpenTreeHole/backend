@@ -38,7 +38,7 @@ func NewApp() (*server.Server, func(), error) {
 	courseGroupService := service.NewCourseGroupService(serviceService, courseGroupRepository, reviewRepository)
 	courseGroupHandler := handler.NewCourseGroupHandler(handlerHandler, courseGroupService, accountRepository)
 	courseRepository := repository.NewCourseRepository(repositoryRepository)
-	courseService := service.NewCourseService(serviceService, courseRepository, courseGroupRepository)
+	courseService := service.NewCourseService(serviceService, courseRepository, courseGroupRepository, reviewRepository)
 	courseHandler := handler.NewCourseHandler(handlerHandler, courseService, courseGroupService, accountRepository)
 	reviewService := service.NewReviewService(serviceService, reviewRepository)
 	reviewHandler := handler.NewReviewHandler(handlerHandler, reviewService)

@@ -30,7 +30,7 @@ type CourseGroupV1Response struct {
 func (r *CourseGroupV1Response) FromModel(
 	user *model.User,
 	group *model.CourseGroup,
-	votesMap map[int]map[int]*model.ReviewVote,
+	votesMap map[int]*model.ReviewVote,
 ) *CourseGroupV1Response {
 	err := copier.Copy(r, group)
 	if err != nil {

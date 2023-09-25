@@ -25,7 +25,7 @@ type Course struct {
 	CodeID string `json:"code_id" gorm:"not null"`
 
 	// 学分
-	Credit int `json:"credit" gorm:"not null"`
+	Credit float64 `json:"credit" gorm:"not null"`
 
 	// 开课学院
 	Department string `json:"department" gorm:"not null"`

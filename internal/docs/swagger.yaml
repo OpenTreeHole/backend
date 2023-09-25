@@ -48,7 +48,7 @@ definitions:
         type: string
       credit:
         description: 学分
-        type: integer
+        type: number
       department:
         description: 开课学院
         type: string
@@ -78,6 +78,43 @@ definitions:
       year:
         description: 学年
         type: integer
+    type: object
+  schema.CreateCourseV1Request:
+    properties:
+      campus_name:
+        type: string
+      code:
+        type: string
+      code_id:
+        type: string
+      credit:
+        type: number
+      department:
+        type: string
+      max_student:
+        type: integer
+      name:
+        type: string
+      semester:
+        type: integer
+      teachers:
+        type: string
+      week_hour:
+        type: integer
+      year:
+        type: integer
+    required:
+      - campus_name
+      - code
+      - code_id
+      - credit
+      - department
+      - max_student
+      - name
+      - semester
+      - teachers
+      - week_hour
+      - year
     type: object
   schema.DivisionCreateRequest:
     properties:
@@ -361,7 +398,66 @@ paths:
           description: Not Found
           schema:
             $ref: '#/definitions/schema.HttpBaseError'
-      summary: /courses
+      summary: list courses
+      tags:
+        - Course
+    post:
+      consumes:
+        - application/json
+      description: create a course, only admin can create
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.CreateCourseV1Request'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: create a course
+      tags:
+        - Course
+  /courses/{id}:
+    get:
+      consumes:
+        - application/json
+      deprecated: true
+      description: get a course with reviews, old version or v1 version
+      parameters:
+        - description: course_id
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get a course
       tags:
         - Course
   /divisions:

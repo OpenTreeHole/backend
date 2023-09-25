@@ -74,13 +74,10 @@ func (c *courseGroupService) GetGroupByIDV1(ctx context.Context, user *model.Use
 		return nil, err
 	}
 
-	// 转换为 map, 便于查找。前一个 key 为 reviewID, 后一个 key 为 userID
-	votesMap := make(map[int]map[int]*model.ReviewVote)
+	// 转换为 map, 便于查找
+	votesMap := make(map[int]*model.ReviewVote)
 	for _, vote := range votes {
-		if votesMap[vote.ReviewID] == nil {
-			votesMap[vote.ReviewID] = make(map[int]*model.ReviewVote)
-		}
-		votesMap[vote.ReviewID][vote.UserID] = vote
+		votesMap[vote.ReviewID] = vote
 	}
 
 	// 将课程组转换为响应
