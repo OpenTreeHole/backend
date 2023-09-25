@@ -52,7 +52,7 @@ type Course struct {
 	CourseGroupID int `json:"course_group_id" gorm:"not null;index"`
 
 	// 评教数量
-	ReviewCount int `json:"review_count" gorm:"not null"`
+	ReviewCount int `json:"review_count" gorm:"not null;default:0"`
 
 	// 所有评教
 	Reviews []*Review `json:"reviews"`

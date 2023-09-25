@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/opentreehole/backend/internal/config"
@@ -59,99 +58,109 @@ func main() {
 	defer cancel()
 	db := repository.NewDB(conf, logger)
 
-	var reviews []*ReviewOld
-	err := db.Table("review").Find(&reviews).Error
-	if err != nil {
-		logger.Fatal("failed to load reviews", zap.Error(err))
-	}
+	var (
+		reviews []*ReviewOld
+		err     error
+	)
 
-	err = db.Table("review").FindInBatches(&reviews, 1000, func(tx *gorm.DB, batch int) error {
-		// update History
-		var (
-			newHistory    []*model.ReviewHistory
-			newReviewVote []*model.ReviewVote
-		)
-		for _, review := range reviews {
-			// history
-			for _, history := range review.History {
-				var data []byte
-				switch h := history.Original.(type) {
-				case []byte:
-					data = h
-				case string:
-					data = []byte(h)
-				default:
-					data, err = json.Marshal(h)
+	err = db.Transaction(func(tx *gorm.DB) error {
+		err = db.Table("review").FindInBatches(&reviews, 1000, func(tx *gorm.DB, batch int) error {
+			// update History
+			var (
+				newHistory    []*model.ReviewHistory
+				newReviewVote []*model.ReviewVote
+			)
+			for _, review := range reviews {
+				// history
+				for _, history := range review.History {
+					var data []byte
+					switch h := history.Original.(type) {
+					case []byte:
+						data = h
+					case string:
+						data = []byte(h)
+					default:
+						data, err = json.Marshal(h)
+						if err != nil {
+							return err
+						}
+					}
+					var original ReviewHistoryOriginalOld
+					err = json.Unmarshal(data, &original)
 					if err != nil {
 						return err
 					}
+					history.Original = original
+
+					newHistory = append(newHistory, &model.ReviewHistory{
+						CreatedAt: history.Time.Time,
+						UpdatedAt: history.Time.Time,
+						ReviewID:  review.ID,
+						AlterBy:   history.AlterBy,
+						Title:     original.Title,
+						Content:   original.Content,
+					})
 				}
-				var original ReviewHistoryOriginalOld
-				err = json.Unmarshal(data, &original)
-				if err != nil {
-					return err
+
+				// vote
+				type ReviewVote struct {
+					UserID   int
+					ReviewID int
 				}
-				history.Original = original
+				var reviewVoteMap = make(map[ReviewVote]int)
+				for _, userID := range review.Downvoters {
+					reviewVoteMap[ReviewVote{userID, review.ID}] = -1
+				}
+				for _, userID := range review.Upvoters {
+					reviewVoteMap[ReviewVote{userID, review.ID}] = 1
+				}
 
-				newHistory = append(newHistory, &model.ReviewHistory{
-					CreatedAt: history.Time.Time,
-					UpdatedAt: history.Time.Time,
-					ReviewID:  review.ID,
-					AlterBy:   history.AlterBy,
-					Title:     original.Title,
-					Content:   original.Content,
-				})
-			}
-
-			// vote
-			type ReviewVote struct {
-				UserID   int
-				ReviewID int
-			}
-			var reviewVoteMap = make(map[ReviewVote]int)
-			for _, userID := range review.Downvoters {
-				reviewVoteMap[ReviewVote{userID, review.ID}] = -1
-			}
-			for _, userID := range review.Upvoters {
-				reviewVoteMap[ReviewVote{userID, review.ID}] = 1
+				for k, v := range reviewVoteMap {
+					newReviewVote = append(newReviewVote, &model.ReviewVote{UserID: k.UserID, ReviewID: k.ReviewID, Data: v})
+				}
 			}
 
-			for k, v := range reviewVoteMap {
-				newReviewVote = append(newReviewVote, &model.ReviewVote{UserID: k.UserID, ReviewID: k.ReviewID, Data: v})
-			}
-
-			// rank
-			err = tx.Model(&model.Review{ID: review.ID}).UpdateColumns(map[string]any{
-				"rank_overall":    int(review.Rank.Overall),
-				"rank_content":    int(review.Rank.Content),
-				"rank_workload":   int(review.Rank.Workload),
-				"rank_assessment": int(review.Rank.Assessment),
-				"upvote_count":    len(review.Upvoters), // TODO: 这里的 upvote_count 和 downvote_count 有问题，需要从 vote 表中统计
-				"downvote_count":  len(review.Downvoters),
-			}).Error
+			err = tx.Create(&newHistory).Error
 			if err != nil {
 				return err
 			}
-		}
 
-		err = tx.Create(&newHistory).Error
+			err = tx.Create(&newReviewVote).Error
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}).Error
+
 		if err != nil {
 			return err
 		}
 
-		err = tx.Create(&newReviewVote).Error
+		// update course.review_count
+		err = db.Exec(`update course set review_count = (select count(*) from review where review.course_id = course.id) where true`).Error
 		if err != nil {
 			return err
 		}
 
-		// review_count
-		err = tx.Exec(`update course set review_count = (select count(*) from review where review.course_id = course.id)`).Error
+		// update review.upvote_count and review.downvote_count
+		// extract review.rank_* from review.rank
+		err = db.Exec(`update review 
+set upvote_count = (select count(*) from review_vote where review_vote.review_id = review.id and review_vote.data = 1), 
+    downvote_count = (select count(*) from review_vote where review_vote.review_id = review.id and review_vote.data = -1),
+	rank_overall = JSON_EXTRACT(review.rank, '$.overall'),
+	rank_content = JSON_EXTRACT(review.rank, '$.content'),
+	rank_assessment = JSON_EXTRACT(review.rank, '$.assessment'),
+	rank_workload = JSON_EXTRACT(review.rank, '$.workload')
+where true`).Error
+		if err != nil {
+			return err
+		}
 
 		return nil
-	}).Error
+	})
 
 	if err != nil {
 		panic(err)
 	}
-
 }
