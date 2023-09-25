@@ -195,7 +195,7 @@ definitions:
         type: string
       rank:
         allOf:
-          - $ref: '#/definitions/schema.ReviewRankV1'
+        - $ref: '#/definitions/schema.ReviewRankV1'
         description: 评价
       remark:
         description: Remark = 点赞数 - 点踩数
@@ -220,7 +220,7 @@ definitions:
         type: integer
       original:
         allOf:
-          - $ref: '#/definitions/schema.ReviewHistoryV1'
+        - $ref: '#/definitions/schema.ReviewHistoryV1'
         description: 修改前的评教
       time:
         description: 创建时间
@@ -248,7 +248,7 @@ definitions:
         type: string
       extra:
         allOf:
-          - $ref: '#/definitions/schema.UserExtraV1'
+        - $ref: '#/definitions/schema.UserExtraV1'
         description: 额外信息
       history:
         description: 修改历史，slices 必须非空
@@ -263,7 +263,7 @@ definitions:
         type: boolean
       rank:
         allOf:
-          - $ref: '#/definitions/schema.ReviewRankV1'
+        - $ref: '#/definitions/schema.ReviewRankV1'
         description: 评价
       remark:
         description: Remark = 点赞数 - 点踩数
@@ -340,10 +340,10 @@ paths:
   /divisions:
     get:
       consumes:
-        - application/json
+      - application/json
       description: list all divisions
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -361,20 +361,20 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: list all divisions
       tags:
-        - Division
+      - Division
     post:
       consumes:
-        - application/json
+      - application/json
       description: create a division, only admin can create
       parameters:
-        - description: json
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.DivisionCreateRequest'
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.DivisionCreateRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
@@ -390,26 +390,26 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: create a division
       tags:
-        - Division
+      - Division
   /divisions/{id}:
     delete:
       consumes:
-        - application/json
+      - application/json
       description: delete a division, only admin can delete
       parameters:
-        - description: division id
-          in: path
-          name: id
-          required: true
-          type: string
-        - description: json
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.DivisionDeleteRequest'
+      - description: division id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.DivisionDeleteRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "204":
           description: No Content
@@ -425,19 +425,19 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: delete a division
       tags:
-        - Division
+      - Division
     get:
       consumes:
-        - application/json
+      - application/json
       description: get a division
       parameters:
-        - description: division id
-          in: path
-          name: id
-          required: true
-          type: string
+      - description: division id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -453,25 +453,25 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: get a division
       tags:
-        - Division
+      - Division
     put:
       consumes:
-        - application/json
+      - application/json
       description: modify a division, only admin can modify
       parameters:
-        - description: division id
-          in: path
-          name: id
-          required: true
-          type: string
-        - description: json
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.DivisionModifyRequest'
+      - description: division id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.DivisionModifyRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -487,21 +487,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: modify a division
       tags:
-        - Division
+      - Division
   /group/{id}:
     get:
       consumes:
-        - application/json
+      - application/json
       deprecated: true
       description: get a course group, old version or v1 version
       parameters:
-        - description: course group id
-          in: path
-          name: id
-          required: true
-          type: string
+      - description: course group id
+        in: path
+        name: id
+        required: true
+        type: string
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -521,21 +521,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: /group/{group_id}
       tags:
-        - CourseGroup
+      - CourseGroup
   /login:
     post:
       consumes:
-        - application/json
+      - application/json
       description: login with email and password
       parameters:
-        - description: LoginRequest
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.LoginRequest'
+      - description: LoginRequest
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.LoginRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "200":
           description: OK
@@ -551,22 +551,22 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: login
       tags:
-        - Account
+      - Account
   /register:
     post:
       consumes:
-        - application/json
+      - application/json
       description: register with email, password and optional verification code if
         enabled
       parameters:
-        - description: RegisterRequest
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.RegisterRequest'
+      - description: RegisterRequest
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.RegisterRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
@@ -582,21 +582,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: register
       tags:
-        - Account
+      - Account
     put:
       consumes:
-        - application/json
+      - application/json
       description: reset password with email, password and optional verification code
         if enabled
       parameters:
-        - description: ResetPasswordRequest
-          in: body
-          name: json
-          required: true
-          schema:
-            $ref: '#/definitions/schema.ResetPasswordRequest'
+      - description: ResetPasswordRequest
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.ResetPasswordRequest'
       produces:
-        - application/json
+      - application/json
       responses:
         "201":
           description: Created
@@ -612,5 +612,5 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: reset password
       tags:
-        - Account
+      - Account
 swagger: "2.0"

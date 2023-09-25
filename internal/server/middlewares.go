@@ -7,7 +7,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/rs/zerolog/log"
 
 	"github.com/opentreehole/backend/internal/config"
@@ -95,7 +94,7 @@ func StackTraceHandler(_ *fiber.Ctx, e any) {
 
 func RegisterMiddlewares(conf *config.AtomicAllConfig) func(app *fiber.App) {
 	return func(app *fiber.App) {
-		app.Use(fiberrecover.New(fiberrecover.Config{EnableStackTrace: true, StackTraceHandler: StackTraceHandler}))
+		//app.Use(fiberrecover.New(fiberrecover.Config{EnableStackTrace: true, StackTraceHandler: StackTraceHandler}))
 		app.Use(MiddlewareGetUserID)
 		if conf.Load().Mode != "bench" {
 			app.Use(MiddlewareCustomLogger)

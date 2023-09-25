@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
-
+	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/schema"
+	"github.com/opentreehole/backend/internal/service"
 )
 
 type DivisionHandler interface {
@@ -12,10 +14,12 @@ type DivisionHandler interface {
 
 type divisionHandler struct {
 	*Handler
+	service service.DivisionService
+	account repository.AccountRepository
 }
 
-func NewDivisionHandler(handler *Handler) DivisionHandler {
-	return &divisionHandler{Handler: handler}
+func NewDivisionHandler(handler *Handler, service service.DivisionService, account repository.AccountRepository) DivisionHandler {
+	return &divisionHandler{Handler: handler, service: service, account: account}
 }
 
 func (h *divisionHandler) RegisterRoute(router fiber.Router) {
@@ -37,8 +41,12 @@ func (h *divisionHandler) RegisterRoute(router fiber.Router) {
 // @Failure 400 {object} schema.HttpError
 // @Failure 500 {object} schema.HttpBaseError
 func (h *divisionHandler) ListDivisions(c *fiber.Ctx) (err error) {
-	// TODO:
-	return c.JSON([]schema.DivisionResponse{})
+	divisions, err := h.service.ListDivisions(c.Context())
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(divisions)
 }
 
 // GetDivision godoc
@@ -53,8 +61,18 @@ func (h *divisionHandler) ListDivisions(c *fiber.Ctx) (err error) {
 // @Failure 400 {object} schema.HttpError
 // @Failure 500 {object} schema.HttpBaseError
 func (h *divisionHandler) GetDivision(c *fiber.Ctx) (err error) {
-	// TODO:
-	return c.JSON(schema.DivisionResponse{})
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	division, err := h.service.GetDivision(c.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(division)
 }
 
 // CreateDivision godoc
@@ -75,9 +93,24 @@ func (h *divisionHandler) CreateDivision(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	// TODO: add service.CreateDivision
+	c.Context().SetUserValue("FiberCtx", c)
+	user, err := h.account.GetCurrentUser(c.Context())
+	h.logger.Info(fmt.Sprintf("user: %+v", user))
+	if err != nil {
+		h.logger.Info(fmt.Sprintf("err: %v", err))
+		return err
+	}
+	if !user.IsAdmin {
+		h.logger.Info(fmt.Sprintf("user: %+v", user))
+		return c.JSON(schema.Forbidden())
+	}
 
-	return c.JSON(schema.DivisionResponse{})
+	response, err := h.service.CreateDivision(c.Context(), &body)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(response)
 }
 
 // ModifyDivision godoc
@@ -93,15 +126,34 @@ func (h *divisionHandler) CreateDivision(c *fiber.Ctx) (err error) {
 // @Failure 400 {object} schema.HttpError
 // @Failure 500 {object} schema.HttpBaseError
 func (h *divisionHandler) ModifyDivision(c *fiber.Ctx) (err error) {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
 	var body schema.DivisionModifyRequest
 	err = h.ValidateBody(c, &body)
 	if err != nil {
 		return err
 	}
 
-	// TODO: add service.ModifyDivision
+	c.Context().SetUserValue("FiberCtx", c)
+	user, err := h.account.GetCurrentUser(c.Context())
+	if err != nil {
+		return err
+	}
+	if !user.IsAdmin {
+		return c.JSON(schema.Forbidden())
+	}
 
-	return c.JSON(schema.DivisionResponse{})
+	h.logger.Info(fmt.Sprintf("user_id: %d", user.ID))
+
+	response, err := h.service.ModifyDivision(c.Context(), id, &body)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(response)
 }
 
 // DeleteDivision godoc
@@ -123,7 +175,24 @@ func (h *divisionHandler) DeleteDivision(c *fiber.Ctx) (err error) {
 		return err
 	}
 
-	// TODO: add service.DeleteDivision
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
 
-	return c.JSON(schema.DivisionResponse{})
+	c.Context().SetUserValue("FiberCtx", c)
+	user, err := h.account.GetCurrentUser(c.Context())
+	if err != nil {
+		return err
+	}
+	if !user.IsAdmin {
+		return c.JSON(schema.Forbidden())
+	}
+
+	_, err = h.service.DeleteDivision(c.Context(), id, &body)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(nil)
 }

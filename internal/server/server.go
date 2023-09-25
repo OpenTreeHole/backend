@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -81,11 +82,14 @@ func (s *Server) Run() {
 		DisableStartupMessage: disableStartupMessage,
 		ErrorHandler:          schema.ErrorHandler,
 	})
+	s.logger.Info(fmt.Sprintf("register: %v", s.rootRegister))
 
 	RegisterMiddlewares(s.config)(app)
 	for _, h := range s.rootRegister {
 		h.RegisterRoute(app)
 	}
+	s.logger.Info(fmt.Sprintf("handlers: %v", s.handlers))
+
 	for _, h := range s.handlers {
 		h.RegisterRoute(app.Group("/api"))
 	}
