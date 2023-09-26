@@ -62,8 +62,85 @@ func DankeV3() {
 	logger.Info("migrate danke v3")
 
 	err = db.Transaction(func(tx *gorm.DB) error {
-		logger.Info("migrate danke v3: get reviews")
-		err = db.Table("review").FindInBatches(&reviews, 1000, func(tx *gorm.DB, batch int) error {
+		m := tx.Migrator()
+
+		if m.HasConstraint(&model.Course{}, "course_ibfk_1") {
+			err = m.DropConstraint(&model.Course{}, "course_ibfk_1")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasConstraint(&model.Review{}, "review_ibfk_1") {
+			err = m.DropConstraint(&model.Review{}, "review_ibfk_1")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasTable("coursegroup") {
+			err = m.RenameTable("coursegroup", "course_group")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Course{}, "coursegroup_id") {
+			err = m.RenameColumn(&model.Course{}, "coursegroup_id", "course_group_id")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Review{}, "time_created") {
+			err = m.RenameColumn(&model.Review{}, "time_created", "created_at")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Review{}, "time_updated") {
+			err = m.RenameColumn(&model.Review{}, "time_updated", "updated_at")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasIndex(&model.Course{}, "coursegroup_id") {
+			err = m.RenameIndex(&model.Course{}, "coursegroup_id", "idx_course_course_group_id")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasIndex(&model.Review{}, "course_id") {
+			err = m.RenameIndex(&model.Review{}, "course_id", "idx_review_course_id")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasIndex(&model.Review{}, "reviewer_id") {
+			err = m.RenameIndex(&model.Review{}, "reviewer_id", "idx_review_reviewer_id")
+			if err != nil {
+				return err
+			}
+		}
+
+		err = m.AutoMigrate(
+			&model.Course{},
+			&model.Review{},
+			&model.ReviewHistory{},
+			&model.ReviewVote{},
+			&model.CourseGroup{},
+			&model.UserAchievement{},
+		)
+		if err != nil {
+			return err
+		}
+
+		logger.Info("migrate danke v3: update review history and vote")
+		err = tx.Table("review").FindInBatches(&reviews, 1000, func(tx *gorm.DB, batch int) error {
 			// update History
 			var (
 				newHistory    []*model.ReviewHistory
@@ -152,6 +229,39 @@ set upvote_count = (select count(*) from review_vote where review_vote.review_id
 	rank_assessment = JSON_EXTRACT(review.rank, '$.assessment'),
 	rank_workload = JSON_EXTRACT(review.rank, '$.workload')
 where true`).Error
+		if err != nil {
+			return err
+		}
+
+		if m.HasColumn(&model.Review{}, "upvoters") {
+			err = m.DropColumn(&model.Review{}, "upvoters")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Review{}, "downvoters") {
+			err = m.DropColumn(&model.Review{}, "downvoters")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Review{}, "rank") {
+			err = m.DropColumn(&model.Review{}, "rank")
+			if err != nil {
+				return err
+			}
+		}
+
+		if m.HasColumn(&model.Review{}, "history") {
+			err = m.DropColumn(&model.Review{}, "history")
+			if err != nil {
+				return err
+			}
+		}
+
+		err = m.DropTable("userextra", "aerich", "seaql_migrations")
 		if err != nil {
 			return err
 		}
