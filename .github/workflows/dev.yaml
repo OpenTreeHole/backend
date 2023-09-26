@@ -33,5 +33,3 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.APP_NAME }}:dev
-            registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ env.APP_NAME }}:latest
-            registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ env.APP_NAME }}:dev
