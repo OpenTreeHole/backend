@@ -16,17 +16,34 @@ package main
 import (
 	_ "time/tzdata"
 
+	"github.com/spf13/cobra"
+
+	"github.com/opentreehole/backend/cmd/migrate"
 	"github.com/opentreehole/backend/cmd/wire"
 	_ "github.com/opentreehole/backend/internal/docs"
 )
 
+var rootCmd = &cobra.Command{
+	Use: "opentreehole_backend",
+	Run: func(cmd *cobra.Command, args []string) {
+		server, cleanup, err := wire.NewApp()
+		if err != nil {
+			panic(err)
+		}
+
+		defer cleanup()
+		server.Run()
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(migrate.Cmd)
+}
+
 //go:generate wire gen ./wire
 func main() {
-	server, cleanup, err := wire.NewApp()
+	err := rootCmd.Execute()
 	if err != nil {
 		panic(err)
 	}
-
-	defer cleanup()
-	server.Run()
 }

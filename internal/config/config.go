@@ -15,31 +15,31 @@ import (
 )
 
 type EnvConfig struct {
-	Mode string `env:"MODE" default:"dev" validate:"oneof=dev production test bench"`
+	Mode string `env:"MODE"`
 
-	LogLevel string `env:"LOG_LEVEL" default:"debug" validate:"oneof=debug info warn error dpanic panic fatal"`
+	LogLevel string `env:"LOG_LEVEL" `
 
-	Port int `env:"PORT" default:"8000"`
+	Port int `env:"PORT" `
 
-	DBType string `env:"DB_TYPE" default:"sqlite" validate:"oneof=mysql sqlite postgres memory"`
+	DBType string `env:"DB_TYPE"`
 
-	DBDSN string `env:"DB_DSN" default:"data/sqlite.db"`
+	DBDSN string `env:"DB_DSN"`
 
-	CacheType string `env:"CACHE_TYPE" default:"memory" validate:"oneof=redis memory"`
+	CacheType string `env:"CACHE_TYPE" `
 
-	CacheUrl string `env:"CACHE_URL" default:"redis:6379"`
+	CacheUrl string `env:"CACHE_URL" `
 
-	SearchEngineType string `env:"SEARCH_ENGINE_TYPE" default:"elasticsearch" validate:"oneof=elasticsearch meilisearch"`
+	SearchEngineType string `env:"SEARCH_ENGINE_TYPE" `
 
-	SearchEngineUrl string `env:"SEARCH_ENGINE_URL" default:"http://elasticsearch:9200"`
+	SearchEngineUrl string `env:"SEARCH_ENGINE_URL" `
 
-	ModulesAuth bool `env:"MODULES_AUTH" default:"false"`
+	ModulesAuth bool `env:"MODULES_AUTH" `
 
-	ModulesNotification bool `env:"MODULES_NOTIFICATION" default:"false"`
+	ModulesNotification bool `env:"MODULES_NOTIFICATION"`
 
-	ModulesTreehole bool `env:"MODULES_TREEHOLE" default:"false"`
+	ModulesTreehole bool `env:"MODULES_TREEHOLE"`
 
-	ModulesCurriculumBoard bool `env:"MODULES_CURRICULUM_BOARD" default:"false"`
+	ModulesCurriculumBoard bool `env:"MODULES_CURRICULUM_BOARD"`
 }
 
 type Config struct {
@@ -357,17 +357,55 @@ func (config *Config) WriteIntoFile(name string) {
 }
 
 func CopyEnvConfigToConfig(envConfig *EnvConfig, config *Config) {
-	config.Mode = envConfig.Mode
-	config.LogLevel = envConfig.LogLevel
-	config.Port = envConfig.Port
-	config.DB.Type = envConfig.DBType
-	config.DB.DSN = envConfig.DBDSN
-	config.Cache.Type = envConfig.CacheType
-	config.Cache.Url = envConfig.CacheUrl
-	config.SearchEngine.Type = envConfig.SearchEngineType
-	config.SearchEngine.Url = envConfig.SearchEngineUrl
-	config.Modules.Auth = envConfig.ModulesAuth
-	config.Modules.Notification = envConfig.ModulesNotification
-	config.Modules.Treehole = envConfig.ModulesTreehole
-	config.Modules.CurriculumBoard = envConfig.ModulesCurriculumBoard
+	if envConfig.Mode != "" {
+		config.Mode = envConfig.Mode
+	}
+
+	if envConfig.LogLevel != "" {
+		config.LogLevel = envConfig.LogLevel
+	}
+
+	if envConfig.Port != 0 {
+		config.Port = envConfig.Port
+	}
+
+	if envConfig.DBType != "" {
+		config.DB.Type = envConfig.DBType
+	}
+
+	if envConfig.DBDSN != "" {
+		config.DB.DSN = envConfig.DBDSN
+	}
+
+	if envConfig.CacheType != "" {
+		config.Cache.Type = envConfig.CacheType
+	}
+
+	if envConfig.CacheUrl != "" {
+		config.Cache.Url = envConfig.CacheUrl
+	}
+
+	if envConfig.SearchEngineType != "" {
+		config.SearchEngine.Type = envConfig.SearchEngineType
+	}
+
+	if envConfig.SearchEngineUrl != "" {
+		config.SearchEngine.Url = envConfig.SearchEngineUrl
+	}
+
+	if envConfig.ModulesAuth {
+		config.Modules.Auth = envConfig.ModulesAuth
+	}
+
+	if envConfig.ModulesNotification {
+		config.Modules.Notification = envConfig.ModulesNotification
+	}
+
+	if envConfig.ModulesTreehole {
+		config.Modules.Treehole = envConfig.ModulesTreehole
+	}
+
+	if envConfig.ModulesCurriculumBoard {
+		config.Modules.CurriculumBoard = envConfig.ModulesCurriculumBoard
+	}
 }

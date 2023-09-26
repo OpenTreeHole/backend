@@ -1,7 +1,4 @@
-//! 迁移旧版本蛋壳到新版本
-//! `review`.`history` -> `review_history`
-
-package main
+package migrate
 
 import (
 	"time"
@@ -52,7 +49,7 @@ type ReviewOld struct {
 	Downvoters  []int               `json:"downvoters" gorm:"serializer:json"`
 }
 
-func main() {
+func DankeV3() {
 	conf := config.NewConfig()
 	logger, cancel := log.NewLogger(conf)
 	defer cancel()
@@ -62,8 +59,10 @@ func main() {
 		reviews []*ReviewOld
 		err     error
 	)
+	logger.Info("migrate danke v3")
 
 	err = db.Transaction(func(tx *gorm.DB) error {
+		logger.Info("migrate danke v3: get reviews")
 		err = db.Table("review").FindInBatches(&reviews, 1000, func(tx *gorm.DB, batch int) error {
 			// update History
 			var (
@@ -138,14 +137,14 @@ func main() {
 		}
 
 		// update course.review_count
-		err = db.Exec(`update course set review_count = (select count(*) from review where review.course_id = course.id) where true`).Error
+		err = tx.Exec(`update course set review_count = (select count(*) from review where review.course_id = course.id) where true`).Error
 		if err != nil {
 			return err
 		}
 
 		// update review.upvote_count and review.downvote_count
 		// extract review.rank_* from review.rank
-		err = db.Exec(`update review 
+		err = tx.Exec(`update review 
 set upvote_count = (select count(*) from review_vote where review_vote.review_id = review.id and review_vote.data = 1), 
     downvote_count = (select count(*) from review_vote where review_vote.review_id = review.id and review_vote.data = -1),
 	rank_overall = JSON_EXTRACT(review.rank, '$.overall'),
