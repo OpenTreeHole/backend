@@ -1,6 +1,7 @@
 package data
 
 import (
+	"embed"
 	_ "embed"
 	"os"
 
@@ -13,6 +14,9 @@ var NamesFile []byte
 
 //go:embed cedict_ts.u8
 var CreditTs []byte
+
+//go:embed keys
+var Keys embed.FS
 
 var NamesMapping map[string]string
 

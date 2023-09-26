@@ -41,13 +41,14 @@ func NewCourseService(
 }
 
 func (s *courseService) ListCoursesV1(ctx context.Context) (response []*schema.CourseGroupV1Response, err error) {
-	groups, err := s.courseGroupRepository.FindAllGroups(ctx, repository.WithGroupCourses())
+	groups, _, err := s.courseGroupRepository.FindGroupsWithCourses(ctx, false)
 	if err != nil {
 		return nil, err
 	}
 
 	response = make([]*schema.CourseGroupV1Response, 0, len(groups))
 	for _, group := range groups {
+
 		response = append(response, new(schema.CourseGroupV1Response).FromModel(nil, group, nil))
 	}
 
@@ -85,7 +86,9 @@ func (s *courseService) GetCourseV1(ctx context.Context, user *model.User, id in
 }
 
 func (s *courseService) AddCourseV1(ctx context.Context, request *schema.CreateCourseV1Request) (response *schema.CourseV1Response, err error) {
-	group, err := s.courseGroupRepository.FindGroupByCode(ctx, request.Code)
+	group, err := s.courseGroupRepository.FindGroupByCode(ctx, request.Code, func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Courses")
+	})
 	if err != nil {
 		// create group if not found
 		if !errors.Is(err, gorm.ErrRecordNotFound) {

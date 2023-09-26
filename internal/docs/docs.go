@@ -106,6 +106,85 @@ const docTemplate = `{
                 }
             }
         },
+        "/courses/hash": {
+            "get": {
+                "description": "get course group hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "get course group hash",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupHashV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/refresh": {
+            "get": {
+                "description": "refresh course group hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "refresh course group hash",
+                "responses": {
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "418": {
+                        "description": "I'm a teapot"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
         "/courses/{course_id}/reviews": {
             "post": {
                 "description": "create a review",
@@ -619,6 +698,79 @@ const docTemplate = `{
                 }
             }
         },
+        "/reviews/me": {
+            "get": {
+                "description": "list my reviews, old version. load history and achievements, no ` + "`" + `is_me` + "`" + ` field",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "list my reviews",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.MyReviewV1Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/random": {
+            "get": {
+                "description": "get random review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "get random review",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.RandomReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
         "/reviews/{review_id}": {
             "put": {
                 "description": "modify a review, admin or owner can modify",
@@ -670,6 +822,57 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "vote for a review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "vote for a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.VoteForReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
             }
         }
     },
@@ -687,6 +890,14 @@ const docTemplate = `{
                 },
                 "obtain_date": {
                     "description": "获取日期",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.CourseGroupHashV1Response": {
+            "type": "object",
+            "properties": {
+                "hash": {
                     "type": "string"
                 }
             }
@@ -800,37 +1011,47 @@ const docTemplate = `{
             ],
             "properties": {
                 "campus_name": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "code": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 4
                 },
                 "code_id": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 4
                 },
                 "credit": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0.5
                 },
                 "department": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "max_student": {
                     "type": "integer"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
                 },
                 "semester": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "teachers": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1
                 },
                 "week_hour": {
                     "type": "integer"
                 },
                 "year": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 2000
                 }
             }
         },
@@ -838,7 +1059,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "content",
-                "rank",
                 "title"
             ],
             "properties": {
@@ -974,7 +1194,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "content",
-                "rank",
                 "title"
             ],
             "properties": {
@@ -990,6 +1209,150 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 64,
                     "minLength": 1
+                }
+            }
+        },
+        "schema.MyReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "course": {
+                    "description": "课程信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    ]
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "课程组信息",
+                    "type": "integer"
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "description": "评教 ID",
+                    "type": "integer"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.RandomReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "course": {
+                    "description": "课程信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    ]
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "课程组信息",
+                    "type": "integer"
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "description": "评教 ID",
+                    "type": "integer"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
                 }
             }
         },
@@ -1225,6 +1588,14 @@ const docTemplate = `{
                 },
                 "value": {
                     "description": "Value is the actual value that failed validation"
+                }
+            }
+        },
+        "schema.VoteForReviewV1Request": {
+            "type": "object",
+            "properties": {
+                "upvote": {
+                    "type": "boolean"
                 }
             }
         }

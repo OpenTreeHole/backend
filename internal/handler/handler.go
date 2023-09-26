@@ -104,19 +104,17 @@ func (h *Handler) ValidateBody(c *fiber.Ctx, model any) error {
 	body := c.Body()
 
 	// empty request body, return default value
-	if len(body) == 0 {
-		return defaults.Set(model)
-	}
-
-	// parse json, xml and form by fiber.BodyParser into struct
-	// see https://docs.gofiber.io/api/ctx/#bodyparser
-	err := c.BodyParser(model)
-	if err != nil {
-		return schema.BadRequest(err.Error())
+	if len(body) > 0 {
+		// parse json, xml and form by fiber.BodyParser into struct
+		// see https://docs.gofiber.io/api/ctx/#bodyparser
+		err := c.BodyParser(model)
+		if err != nil {
+			return schema.BadRequest(err.Error())
+		}
 	}
 
 	// set default value
-	err = defaults.Set(model)
+	err := defaults.Set(model)
 	if err != nil {
 		return err
 	}

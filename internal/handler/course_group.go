@@ -32,6 +32,8 @@ func NewCourseGroupHandler(
 
 func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 	router.Get("/group/:id<int>", h.GetCourseGroupV1)
+	router.Get("/courses/hash", h.GetCourseGroupHashV1)
+	router.Get("/courses/refresh", h.RefreshCourseGroupHashV1)
 
 	// static
 	router.Get("/static/cedict_ts.u8", func(c *fiber.Ctx) error {
@@ -71,4 +73,48 @@ func (h *courseGroupHandler) GetCourseGroupV1(c *fiber.Ctx) (err error) {
 	}
 
 	return c.JSON(response)
+}
+
+// GetCourseGroupHashV1 godoc
+// @Summary get course group hash
+// @Description get course group hash
+// @Tags CourseGroup
+// @Accept json
+// @Produce json
+// @Router /courses/hash [get]
+// @Success 200 {object} schema.CourseGroupHashV1Response
+// @Failure 400 {object} schema.HttpError
+// @Failure 404 {object} schema.HttpBaseError
+// @Failure 500 {object} schema.HttpBaseError
+func (h *courseGroupHandler) GetCourseGroupHashV1(c *fiber.Ctx) (err error) {
+	c.Context().SetUserValue("FiberCtx", c)
+
+	response, err := h.courseGroupService.GetCourseGroupHash(c.Context())
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(response)
+}
+
+// RefreshCourseGroupHashV1 godoc
+// @Summary refresh course group hash
+// @Description refresh course group hash
+// @Tags CourseGroup
+// @Accept json
+// @Produce json
+// @Router /courses/refresh [get]
+// @Success 418
+// @Failure 400 {object} schema.HttpError
+// @Failure 404 {object} schema.HttpBaseError
+// @Failure 500 {object} schema.HttpBaseError
+func (h *courseGroupHandler) RefreshCourseGroupHashV1(c *fiber.Ctx) (err error) {
+	c.Context().SetUserValue("FiberCtx", c)
+
+	err = h.courseGroupService.RefreshCourseGroupHash(c.Context())
+	if err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusTeapot)
 }

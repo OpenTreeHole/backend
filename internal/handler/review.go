@@ -163,8 +163,8 @@ func (h *reviewHandler) VoteForReviewV1(c *fiber.Ctx) (err error) {
 // @Produce json
 // @Router /reviews/me [get]
 // @Success 200 {array} schema.MyReviewV1Response
-// @Failure 400 {object} HttpError
-// @Failure 404 {object} HttpBaseError
+// @Failure 400 {object} schema.HttpError
+// @Failure 404 {object} schema.HttpBaseError
 func (h *reviewHandler) ListMyReviewsV1(c *fiber.Ctx) (err error) {
 	c.Context().SetUserValue("FiberCtx", c)
 
@@ -189,8 +189,8 @@ func (h *reviewHandler) ListMyReviewsV1(c *fiber.Ctx) (err error) {
 // @Produce json
 // @Router /reviews/random [get]
 // @Success 200 {object} schema.RandomReviewV1Response
-// @Failure 400 {object} HttpError
-// @Failure 404 {object} HttpBaseError
+// @Failure 400 {object} schema.HttpError
+// @Failure 404 {object} schema.HttpBaseError
 func (h *reviewHandler) GetRandomReviewV1(c *fiber.Ctx) (err error) {
 	c.Context().SetUserValue("FiberCtx", c)
 

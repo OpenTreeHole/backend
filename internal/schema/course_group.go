@@ -47,3 +47,12 @@ func (r *CourseGroupV1Response) FromModel(
 
 	return r
 }
+
+type CourseGroupHashV1Response struct {
+	Hash string `json:"hash"`
+}
+
+func (r *CourseGroupHashV1Response) FromModel(hash string) *CourseGroupHashV1Response {
+	r.Hash = hash
+	return r
+}

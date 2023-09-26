@@ -14,6 +14,8 @@ type CourseGroupService interface {
 	Service
 
 	GetGroupByIDV1(ctx context.Context, user *model.User, id int) (response *schema.CourseGroupV1Response, err error)
+	GetCourseGroupHash(ctx context.Context) (response *schema.CourseGroupHashV1Response, err error)
+	RefreshCourseGroupHash(ctx context.Context) (err error)
 }
 
 type courseGroupService struct {
@@ -37,7 +39,9 @@ func NewCourseGroupService(
 func (c *courseGroupService) GetGroupByIDV1(ctx context.Context, user *model.User, id int) (response *schema.CourseGroupV1Response, err error) {
 	// 获取课程组，同时加载课程
 	// 这里不预加载课程的评论，因为评论作为动态的数据，应该独立作缓存，提高缓存粒度和缓存更新频率
-	group, err := c.courseGroupRepository.FindGroupByID(ctx, id, repository.WithGroupCourses())
+	group, err := c.courseGroupRepository.FindGroupByID(ctx, id, func(db *gorm.DB) *gorm.DB {
+		return db.Preload("Courses")
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -86,5 +90,19 @@ func (c *courseGroupService) GetGroupByIDV1(ctx context.Context, user *model.Use
 
 	// 将课程组转换为响应
 	response = new(schema.CourseGroupV1Response).FromModel(user, group, votesMap)
+	return
+}
+
+func (c *courseGroupService) GetCourseGroupHash(ctx context.Context) (response *schema.CourseGroupHashV1Response, err error) {
+	_, hash, err := c.courseGroupRepository.FindGroupsWithCourses(ctx, false)
+	if err != nil {
+		return nil, err
+	}
+	response = new(schema.CourseGroupHashV1Response).FromModel(hash)
+	return
+}
+
+func (c *courseGroupService) RefreshCourseGroupHash(ctx context.Context) (err error) {
+	_, _, err = c.courseGroupRepository.FindGroupsWithCourses(ctx, true)
 	return
 }

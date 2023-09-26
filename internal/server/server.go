@@ -89,6 +89,12 @@ func (s *Server) Run() {
 	for _, h := range s.handlers {
 		h.RegisterRoute(app.Group("/api"))
 	}
+	app.Get("/api", func(c *fiber.Ctx) error {
+		// TODO: add meta info
+		return c.JSON(fiber.Map{
+			"message": "Hello, World!",
+		})
+	})
 
 	// start server
 	go func() {

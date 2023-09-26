@@ -12,6 +12,11 @@ definitions:
         description: 获取日期
         type: string
     type: object
+  schema.CourseGroupHashV1Response:
+    properties:
+      hash:
+        type: string
+    type: object
   schema.CourseGroupV1Response:
     properties:
       campus_name:
@@ -82,26 +87,36 @@ definitions:
   schema.CreateCourseV1Request:
     properties:
       campus_name:
+        minLength: 1
         type: string
       code:
+        minLength: 4
         type: string
       code_id:
+        minLength: 4
         type: string
       credit:
+        minimum: 0.5
         type: number
       department:
+        minLength: 1
         type: string
       max_student:
         type: integer
       name:
+        maxLength: 255
+        minLength: 1
         type: string
       semester:
+        minimum: 1
         type: integer
       teachers:
+        minLength: 1
         type: string
       week_hour:
         type: integer
       year:
+        minimum: 2000
         type: integer
     required:
       - campus_name
@@ -130,7 +145,6 @@ definitions:
         type: string
     required:
       - content
-      - rank
       - title
     type: object
   schema.DivisionCreateRequest:
@@ -228,8 +242,101 @@ definitions:
         type: string
     required:
       - content
-      - rank
       - title
+    type: object
+  schema.MyReviewV1Response:
+    properties:
+      content:
+        description: 评教内容
+        type: string
+      course:
+        allOf:
+          - $ref: '#/definitions/schema.CourseV1Response'
+        description: 课程信息
+      extra:
+        allOf:
+          - $ref: '#/definitions/schema.UserExtraV1'
+        description: 额外信息
+      group_id:
+        description: 课程组信息
+        type: integer
+      history:
+        description: 修改历史，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.ReviewHistoryV1Response'
+        type: array
+      id:
+        description: 评教 ID
+        type: integer
+      rank:
+        allOf:
+          - $ref: '#/definitions/schema.ReviewRankV1'
+        description: 评价
+      remark:
+        description: Remark = 点赞数 - 点踩数
+        type: integer
+      reviewer_id:
+        description: 评教者 ID
+        type: integer
+      time_created:
+        description: 创建时间
+        type: string
+      time_updated:
+        description: 更新时间
+        type: string
+      title:
+        description: 评教标题
+        type: string
+      vote:
+        description: 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+        type: integer
+    type: object
+  schema.RandomReviewV1Response:
+    properties:
+      content:
+        description: 评教内容
+        type: string
+      course:
+        allOf:
+          - $ref: '#/definitions/schema.CourseV1Response'
+        description: 课程信息
+      extra:
+        allOf:
+          - $ref: '#/definitions/schema.UserExtraV1'
+        description: 额外信息
+      group_id:
+        description: 课程组信息
+        type: integer
+      history:
+        description: 修改历史，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.ReviewHistoryV1Response'
+        type: array
+      id:
+        description: 评教 ID
+        type: integer
+      rank:
+        allOf:
+          - $ref: '#/definitions/schema.ReviewRankV1'
+        description: 评价
+      remark:
+        description: Remark = 点赞数 - 点踩数
+        type: integer
+      reviewer_id:
+        description: 评教者 ID
+        type: integer
+      time_created:
+        description: 创建时间
+        type: string
+      time_updated:
+        description: 更新时间
+        type: string
+      title:
+        description: 评教标题
+        type: string
+      vote:
+        description: 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+        type: integer
     type: object
   schema.RegisterRequest:
     properties:
@@ -403,6 +510,11 @@ definitions:
       value:
         description: Value is the actual value that failed validation
     type: object
+  schema.VoteForReviewV1Request:
+    properties:
+      upvote:
+        type: boolean
+    type: object
 info:
   contact:
     email: dev@fduhole.com
@@ -537,6 +649,58 @@ paths:
       summary: get a course
       tags:
         - Course
+  /courses/hash:
+    get:
+      consumes:
+        - application/json
+      description: get course group hash
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseGroupHashV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get course group hash
+      tags:
+        - CourseGroup
+  /courses/refresh:
+    get:
+      consumes:
+        - application/json
+      description: refresh course group hash
+      produces:
+        - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "418":
+          description: I'm a teapot
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: refresh course group hash
+      tags:
+        - CourseGroup
   /divisions:
     get:
       consumes:
@@ -814,6 +978,40 @@ paths:
       tags:
         - Account
   /reviews/{review_id}:
+    patch:
+      consumes:
+        - application/json
+      description: vote for a review
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.VoteForReviewV1Request'
+        - description: review id
+          in: path
+          name: review_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: vote for a review
+      tags:
+        - Review
     put:
       consumes:
         - application/json
@@ -846,6 +1044,55 @@ paths:
           schema:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: modify a review
+      tags:
+        - Review
+  /reviews/me:
+    get:
+      consumes:
+        - application/json
+      description: list my reviews, old version. load history and achievements, no
+        `is_me` field
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.MyReviewV1Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: list my reviews
+      tags:
+        - Review
+  /reviews/random:
+    get:
+      consumes:
+        - application/json
+      description: get random review
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.RandomReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get random review
       tags:
         - Review
 swagger: "2.0"

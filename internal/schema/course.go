@@ -69,17 +69,17 @@ func (r *CourseV1Response) FromModel(
 }
 
 type CreateCourseV1Request struct {
-	Name       string  `json:"name" validate:"required"`
-	Code       string  `json:"code" validate:"required"`
-	CodeID     string  `json:"code_id" validate:"required"`
-	Credit     float64 `json:"credit" validate:"required"`
-	Department string  `json:"department" validate:"required"`
-	CampusName string  `json:"campus_name" validate:"required"`
-	Teachers   string  `json:"teachers" validate:"required"`
+	Name       string  `json:"name" validate:"required,min=1,max=255"`
+	Code       string  `json:"code" validate:"required,min=4"`
+	CodeID     string  `json:"code_id" validate:"required,min=4"`
+	Credit     float64 `json:"credit" validate:"required,min=0.5"`
+	Department string  `json:"department" validate:"required,min=1"`
+	CampusName string  `json:"campus_name" validate:"required,min=1"`
+	Teachers   string  `json:"teachers" validate:"required,min=1"`
 	MaxStudent int     `json:"max_student" validate:"required"`
 	WeekHour   int     `json:"week_hour" validate:"required"`
-	Year       int     `json:"year" validate:"required"`
-	Semester   int     `json:"semester" validate:"required"`
+	Year       int     `json:"year" validate:"required,min=2000"`
+	Semester   int     `json:"semester" validate:"required,min=1"`
 }
 
 func (r *CreateCourseV1Request) ToModel(groupID int) *model.Course {

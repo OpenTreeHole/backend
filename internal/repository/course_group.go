@@ -2,7 +2,12 @@ package repository
 
 import (
 	"context"
+	"encoding/base64"
+	"time"
 
+	"github.com/eko/gocache/lib/v4/store"
+	"github.com/vmihailenco/msgpack/v5"
+	"golang.org/x/crypto/sha3"
 	"gorm.io/gorm"
 
 	"github.com/opentreehole/backend/internal/model"
@@ -11,100 +16,74 @@ import (
 type CourseGroupRepository interface {
 	Repository
 
-	FindAllGroups(ctx context.Context, options ...FindGroupOption) (groups []*model.CourseGroup, err error)
-	FindGroupByID(ctx context.Context, id int, options ...FindGroupOption) (group *model.CourseGroup, err error)
-	FindGroupByCode(ctx context.Context, code string, options ...FindGroupOption) (group *model.CourseGroup, err error)
+	FindGroups(ctx context.Context, condition func(db *gorm.DB) *gorm.DB) (groups []*model.CourseGroup, err error)
+	FindGroupByID(ctx context.Context, id int, condition func(db *gorm.DB) *gorm.DB) (group *model.CourseGroup, err error)
+	FindGroupByCode(ctx context.Context, code string, condition func(db *gorm.DB) *gorm.DB) (group *model.CourseGroup, err error)
 	CreateGroup(ctx context.Context, group *model.CourseGroup) (err error)
+	FindGroupsWithCourses(ctx context.Context, refresh bool) (groups []*model.CourseGroup, hash string, err error)
 }
 
 type courseGroupRepository struct {
 	Repository
+	courseGroupHash string
 }
 
 func NewCourseGroupRepository(repository Repository) CourseGroupRepository {
 	return &courseGroupRepository{Repository: repository}
 }
 
-/* 接口选项类型 */
-type findGroupOptions struct {
-	PreloadFuncs []func(db *gorm.DB) *gorm.DB
-}
-
-type FindGroupOption func(*findGroupOptions)
-
-func WithGroupCourses() FindGroupOption {
-	return func(o *findGroupOptions) {
-		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
-			return db.Preload("Courses")
-		})
-	}
-}
-
-func WithGroupReviews() FindGroupOption {
-	return func(o *findGroupOptions) {
-		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
-			return db.Preload("Courses.Reviews")
-		})
-	}
-}
-
-func WithReviewsAndHistory() FindGroupOption {
-	return func(o *findGroupOptions) {
-		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
-			return db.Preload("Courses.Reviews.History")
-		})
-	}
-}
-
-func WithReviewsUserAchievements() FindGroupOption {
-	return func(o *findGroupOptions) {
-		o.PreloadFuncs = append(o.PreloadFuncs, func(db *gorm.DB) *gorm.DB {
-			return db.Preload("Courses.Reviews.UserAchievements.Achievement")
-		})
-	}
-}
-
 /* 接口实现 */
 
-func (r *courseGroupRepository) FindAllGroups(ctx context.Context, options ...FindGroupOption) (groups []*model.CourseGroup, err error) {
-	var option findGroupOptions
-	for _, opt := range options {
-		opt(&option)
-	}
+func (r *courseGroupRepository) FindGroups(ctx context.Context, condition func(db *gorm.DB) *gorm.DB) (groups []*model.CourseGroup, err error) {
 	groups = make([]*model.CourseGroup, 5)
-	db := r.GetDB(ctx)
-	for _, f := range option.PreloadFuncs {
-		db = f(db)
-	}
-	err = db.Find(&groups).Error
+	err = condition(r.GetDB(ctx)).Find(&groups).Error
 	return
 }
 
-func (r *courseGroupRepository) FindGroupByID(ctx context.Context, id int, options ...FindGroupOption) (group *model.CourseGroup, err error) {
-	var option findGroupOptions
-	for _, opt := range options {
-		opt(&option)
+func (r *courseGroupRepository) FindGroupsWithCourses(ctx context.Context, refresh bool) (groups []*model.CourseGroup, hash string, err error) {
+	groups = make([]*model.CourseGroup, 5)
+	if !refresh {
+		// get from cache
+		_, err = r.GetCache(ctx).Get(ctx, "danke:course_group", &groups)
+		hash = r.courseGroupHash
 	}
-	group = &model.CourseGroup{}
-	db := r.GetDB(ctx)
-	for _, f := range option.PreloadFuncs {
-		db = f(db)
+	if err != nil || refresh {
+		// get from db
+		err = r.GetDB(ctx).Preload("Courses").Find(&groups).Error
+		if err != nil {
+			return nil, "", err
+		}
+
+		// set cache
+		err = r.GetCache(ctx).Set(ctx, "danke:course_group", groups, store.WithExpiration(24*time.Hour))
+		if err != nil {
+			return nil, "", err
+		}
+
+		// set hash
+		data, err := msgpack.Marshal(groups)
+		if err != nil {
+			return nil, "", err
+		}
+		hashBytes := sha3.Sum256(data)
+		if err != nil {
+			return nil, "", err
+		}
+		hash = base64.RawStdEncoding.EncodeToString(hashBytes[:])
+		r.courseGroupHash = hash
 	}
-	err = db.First(group, id).Error
 	return
 }
 
-func (r *courseGroupRepository) FindGroupByCode(ctx context.Context, code string, options ...FindGroupOption) (group *model.CourseGroup, err error) {
-	var option findGroupOptions
-	for _, opt := range options {
-		opt(&option)
-	}
-	group = &model.CourseGroup{}
-	db := r.GetDB(ctx)
-	for _, f := range option.PreloadFuncs {
-		db = f(db)
-	}
-	err = db.Where("code = ?", code).First(group).Error
+func (r *courseGroupRepository) FindGroupByID(ctx context.Context, id int, condition func(db *gorm.DB) *gorm.DB) (group *model.CourseGroup, err error) {
+	group = new(model.CourseGroup)
+	err = condition(r.GetDB(ctx)).First(group, id).Error
+	return
+}
+
+func (r *courseGroupRepository) FindGroupByCode(ctx context.Context, code string, condition func(db *gorm.DB) *gorm.DB) (group *model.CourseGroup, err error) {
+	group = new(model.CourseGroup)
+	err = condition(r.GetDB(ctx)).Where("code = ?", code).First(group).Error
 	return
 }
 
