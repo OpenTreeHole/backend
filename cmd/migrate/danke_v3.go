@@ -196,14 +196,18 @@ func DankeV3() {
 				}
 			}
 
-			err = tx.Create(&newHistory).Error
-			if err != nil {
-				return err
+			if len(newHistory) > 0 {
+				err = tx.Create(&newHistory).Error
+				if err != nil {
+					return err
+				}
 			}
 
-			err = tx.Create(&newReviewVote).Error
-			if err != nil {
-				return err
+			if len(newReviewVote) > 0 {
+				err = tx.Create(&newReviewVote).Error
+				if err != nil {
+					return err
+				}
 			}
 
 			return nil
