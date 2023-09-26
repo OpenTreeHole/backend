@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/caarlos0/env/v9"
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/pflag"
@@ -13,9 +14,37 @@ import (
 	"github.com/opentreehole/backend/pkg/utils"
 )
 
+type EnvConfig struct {
+	Mode string `env:"MODE" default:"dev" validate:"oneof=dev production test bench"`
+
+	LogLevel string `env:"LOG_LEVEL" default:"debug" validate:"oneof=debug info warn error dpanic panic fatal"`
+
+	Port int `env:"PORT" default:"8000"`
+
+	DBType string `env:"DB_TYPE" default:"sqlite" validate:"oneof=mysql sqlite postgres memory"`
+
+	DBDSN string `env:"DB_DSN" default:"data/sqlite.db"`
+
+	CacheType string `env:"CACHE_TYPE" default:"memory" validate:"oneof=redis memory"`
+
+	CacheUrl string `env:"CACHE_URL" default:"redis:6379"`
+
+	SearchEngineType string `env:"SEARCH_ENGINE_TYPE" default:"elasticsearch" validate:"oneof=elasticsearch meilisearch"`
+
+	SearchEngineUrl string `env:"SEARCH_ENGINE_URL" default:"http://elasticsearch:9200"`
+
+	ModulesAuth bool `env:"MODULES_AUTH" default:"false"`
+
+	ModulesNotification bool `env:"MODULES_NOTIFICATION" default:"false"`
+
+	ModulesTreehole bool `env:"MODULES_TREEHOLE" default:"false"`
+
+	ModulesCurriculumBoard bool `env:"MODULES_CURRICULUM_BOARD" default:"false"`
+}
+
 type Config struct {
 	// app mode: dev, production, test, bench, default is dev
-	Mode string `yaml:"mode" default:"dev" json:"mode"`
+	Mode string `yaml:"mode" default:"dev" json:"mode" validate:"oneof=dev production test bench"`
 
 	// LogLevel is the log level, default is debug
 	LogLevel string `yaml:"log_level" default:"debug" json:"log_level" validate:"oneof=debug info warn error dpanic panic fatal"`
@@ -217,12 +246,16 @@ func NewConfig() *AtomicAllConfig {
 		defaultIdentifierSaltFile,
 		"identifier salt file path",
 	)
+	pflag.Parse()
+
+	// get env config
+	envConfig := GetEnvConfig()
 
 	// read config from file
-	err = config.ReadFromFile(configFilename)
-	if err != nil {
-		panic(err)
-	}
+	config.ReadFromFile(configFilename)
+
+	// copy env config to config
+	CopyEnvConfigToConfig(envConfig, &config)
 
 	err = validator.New().Struct(&config)
 	if err != nil {
@@ -230,25 +263,24 @@ func NewConfig() *AtomicAllConfig {
 	}
 
 	// save config
-	err = config.WriteIntoFile(configFilename)
-	if err != nil {
-		panic(err)
-	}
+	config.WriteIntoFile(configFilename)
 
-	// parse identifier salt from file
-	identifierSaltBytes, err := os.ReadFile(identifierSaltFilename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if config.Mode == "production" {
-				panic("identifier salt file not found")
-			} else {
-				fileConfig.DecryptedIdentifierSalt = []byte("123456")
-			}
-		}
-	} else {
-		fileConfig.DecryptedIdentifierSalt, err = base64.StdEncoding.DecodeString(utils.BytesToString(identifierSaltBytes))
+	if config.Modules.Auth {
+		// parse identifier salt from file
+		identifierSaltBytes, err := os.ReadFile(identifierSaltFilename)
 		if err != nil {
-			panic("decode identifier salt error")
+			if os.IsNotExist(err) {
+				if config.Mode == "production" {
+					panic("identifier salt file not found")
+				} else {
+					fileConfig.DecryptedIdentifierSalt = []byte("123456")
+				}
+			}
+		} else {
+			fileConfig.DecryptedIdentifierSalt, err = base64.StdEncoding.DecodeString(utils.BytesToString(identifierSaltBytes))
+			if err != nil {
+				panic("decode identifier salt error")
+			}
 		}
 	}
 
@@ -259,20 +291,32 @@ func NewConfig() *AtomicAllConfig {
 	return &allConfig
 }
 
+func GetEnvConfig() *EnvConfig {
+	var envConfig EnvConfig
+	err := env.Parse(&envConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	defer defaults.MustSet(&envConfig)
+
+	return &envConfig
+}
+
 // ReadFromFile read config from file
 // if file not exist, create it with default value; else read it
-func (config *Config) ReadFromFile(name string) (err error) {
+func (config *Config) ReadFromFile(name string) {
 	var file *os.File
 
 	// set default value finally
 	defer defaults.MustSet(config)
 
-	file, err = os.Open(name)
+	file, err := os.Open(name)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return
 		}
-		return
+		panic(err)
 	}
 
 	defer func(file *os.File) {
@@ -284,20 +328,16 @@ func (config *Config) ReadFromFile(name string) (err error) {
 
 	err = json.NewDecoder(file).Decode(config)
 	if err != nil {
-		return
+		panic(err)
 	}
-
-	return
 }
 
 // WriteIntoFile write config into file
 // if file not exist, create it; else truncate it
-func (config *Config) WriteIntoFile(name string) (err error) {
-	var file *os.File
-
-	file, err = os.OpenFile(name, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+func (config *Config) WriteIntoFile(name string) {
+	file, err := os.OpenFile(name, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	defer func(file *os.File) {
@@ -311,8 +351,23 @@ func (config *Config) WriteIntoFile(name string) (err error) {
 	encoder.SetIndent("", "    ")
 	err = encoder.Encode(config)
 	if err != nil {
-		return
+		panic(err)
 	}
 
-	return
+}
+
+func CopyEnvConfigToConfig(envConfig *EnvConfig, config *Config) {
+	config.Mode = envConfig.Mode
+	config.LogLevel = envConfig.LogLevel
+	config.Port = envConfig.Port
+	config.DB.Type = envConfig.DBType
+	config.DB.DSN = envConfig.DBDSN
+	config.Cache.Type = envConfig.CacheType
+	config.Cache.Url = envConfig.CacheUrl
+	config.SearchEngine.Type = envConfig.SearchEngineType
+	config.SearchEngine.Url = envConfig.SearchEngineUrl
+	config.Modules.Auth = envConfig.ModulesAuth
+	config.Modules.Notification = envConfig.ModulesNotification
+	config.Modules.Treehole = envConfig.ModulesTreehole
+	config.Modules.CurriculumBoard = envConfig.ModulesCurriculumBoard
 }

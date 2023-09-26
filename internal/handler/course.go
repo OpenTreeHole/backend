@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"fmt"
-
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/opentreehole/backend/internal/repository"
@@ -56,11 +54,10 @@ func (h *courseHandler) ListCoursesV1(c *fiber.Ctx) (err error) {
 	//ctx := context.WithValue(c.Context(), "FiberCtx", c)
 	c.Context().SetUserValue("FiberCtx", c)
 
-	user, err := h.accountRepository.GetCurrentUser(c.Context())
+	_, err = h.accountRepository.GetCurrentUser(c.Context())
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v", *user)
 
 	response, err := h.courseService.ListCoursesV1(c.Context())
 	if err != nil {
