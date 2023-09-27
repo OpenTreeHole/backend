@@ -43,8 +43,17 @@ func (r *courseRepository) FindCoursesByGroupID(ctx context.Context, groupID int
 }
 
 func (r *courseRepository) CreateCourse(ctx context.Context, course *model.Course) (err error) {
-	err = r.GetDB(ctx).Create(course).Error
+	err = r.Transaction(ctx, func(ctx context.Context) error {
+		err = r.GetDB(ctx).Create(course).Error
+		if err != nil {
+			return err
+		}
 
+		return r.GetDB(ctx).Model(&model.CourseGroup{ID: course.CourseGroupID}).Update("course_count", gorm.Expr("course_count + 1")).Error
+	})
+	if err != nil {
+		return err
+	}
 	// clear cache
 	return r.GetCache(ctx).Delete(ctx, "danke:course_group")
 }

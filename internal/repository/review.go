@@ -78,7 +78,14 @@ func (r *reviewRepository) GetReview(ctx context.Context, condition func(tx *gor
 }
 
 func (r *reviewRepository) CreateReview(ctx context.Context, review *model.Review) (err error) {
-	return r.GetDB(ctx).Create(review).Error
+	return r.Transaction(ctx, func(ctx context.Context) error {
+		err = r.GetDB(ctx).Create(review).Error
+		if err != nil {
+			return err
+		}
+		return r.GetDB(ctx).Model(&model.Course{ID: review.CourseID}).
+			Update("review_count", gorm.Expr("review_count + 1")).Error
+	})
 }
 
 func (r *reviewRepository) GetReviewByID(ctx context.Context, id int) (review *model.Review, err error) {
@@ -101,8 +108,15 @@ func (r *reviewRepository) UpdateReview(ctx context.Context, userID int, oldRevi
 	}
 
 	// 更新 review
-	return r.GetDB(ctx).Model(oldReview).
-		Select("Title", "Content", "Rank").Updates(newReview).Error
+	return r.GetDB(ctx).Model(oldReview).Updates(map[string]any{
+		"title":           newReview.Title,
+		"content":         newReview.Content,
+		"modify_count":    gorm.Expr("modify_count + 1"),
+		"rank_overall":    newReview.Rank.Overall,
+		"rank_content":    newReview.Rank.Content,
+		"rank_workload":   newReview.Rank.Workload,
+		"rank_assessment": newReview.Rank.Assessment,
+	}).Error
 }
 
 func (r *reviewRepository) UpdateReviewVote(ctx context.Context, userID int, review *model.Review, data int) (err error) {

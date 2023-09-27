@@ -232,16 +232,56 @@ type ReviewRankV3 = ReviewRankV1
 
 type AchievementV3Response = AchievementV1Response
 
-type UserExtraV3 = UserExtraV1
+type UserExtraV3 struct {
+	Achievements []*AchievementV3Response `json:"achievements"`
+}
 
 type ReviewV3Response struct {
-	ID         int           `json:"id"`
-	CreatedAt  time.Time     `json:"created_at"`  // 创建时间
-	UpdatedAt  time.Time     `json:"updated_at"`  // 更新时间
-	Title      string        `json:"title"`       // 评教标题
-	Content    string        `json:"content"`     // 评教内容
-	ReviewerID int           `json:"reviewer_id"` // 评教者 ID
-	Rank       *ReviewRankV3 `json:"rank"`        // 评价
-	MyVote     int           `json:"my_vote"`     // 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
-	VoterCount int           `json:"voter_count"` // 点赞数 + 点踩数
+	ID            int           `json:"id"`
+	CreatedAt     time.Time     `json:"created_at"`     // 创建时间
+	UpdatedAt     time.Time     `json:"updated_at"`     // 更新时间
+	CourseID      int           `json:"course_id"`      // 课程 ID
+	Title         string        `json:"title"`          // 评教标题
+	Content       string        `json:"content"`        // 评教内容
+	ReviewerID    int           `json:"reviewer_id"`    // 评教者 ID
+	Rank          *ReviewRankV3 `json:"rank"`           // 评价
+	MyVote        int           `json:"my_vote"`        // 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+	UpvoteCount   int           `json:"upvote_count"`   // 点赞数
+	DownvoteCount int           `json:"downvote_count"` // 点踩数
+	IsMe          bool          `json:"is_me"`          // 是否是自己的评教
+	Extra         UserExtraV3   `json:"extra"`          // 额外信息
+}
+
+func (r *ReviewV3Response) FromModel(
+	user *model.User,
+	review *model.Review,
+	votesMap map[int]*model.ReviewVote,
+) *ReviewV3Response {
+	err := copier.Copy(r, review)
+	if err != nil {
+		panic(err)
+	}
+
+	if user != nil {
+		r.IsMe = user.ID == review.ReviewerID
+	} else {
+		r.IsMe = false
+	}
+
+	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
+	if votesMap != nil && votesMap[review.ID] != nil {
+		r.MyVote = votesMap[review.ID].Data
+	} else {
+		r.MyVote = 0
+	}
+
+	r.Extra.Achievements = make([]*AchievementV1Response, 0, len(review.UserAchievements))
+	for _, userAchievement := range review.UserAchievements {
+		if userAchievement.Achievement == nil {
+			continue
+		}
+		r.Extra.Achievements = append(r.Extra.Achievements, new(AchievementV1Response).FromModel(userAchievement.Achievement, userAchievement))
+	}
+	return r
+
 }

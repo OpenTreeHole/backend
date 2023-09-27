@@ -42,7 +42,7 @@ func NewApp() (*server.Server, func(), error) {
 	courseHandler := handler.NewCourseHandler(handlerHandler, courseService, courseGroupService, accountRepository)
 	reviewService := service.NewReviewService(serviceService, reviewRepository, courseRepository)
 	reviewHandler := handler.NewReviewHandler(handlerHandler, reviewService, accountRepository)
-	serverServer := server.NewServer(docsHandler, accountHandler, divisionHandler, courseGroupHandler, courseHandler, reviewHandler, logger, pointer)
+	serverServer := server.NewServer(docsHandler, accountHandler, divisionHandler, courseGroupHandler, courseHandler, reviewHandler, logger, pointer, db)
 	return serverServer, func() {
 		cleanup()
 	}, nil

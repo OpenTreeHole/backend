@@ -3,9 +3,9 @@ package main
 import (
 	"testing"
 
-	"github.com/opentreehole/backend/tests/auth"
+	"github.com/opentreehole/backend/tests"
 )
 
 func TestAuth(t *testing.T) {
-	auth.TestAuth(t)
+	tests.TestAuth(t)
 }
