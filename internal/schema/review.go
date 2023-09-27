@@ -10,17 +10,10 @@ import (
 
 // ReviewRankV1 旧版本评分
 type ReviewRankV1 struct {
-	// 总体方面
-	Overall int `json:"overall" validate:"min=1,max=5"`
-
-	// 内容、风格方面
-	Content int `json:"content" validate:"min=1,max=5"`
-
-	// 工作量方面
-	Workload int `json:"workload" validate:"min=1,max=5"`
-
-	// 考核方面
-	Assessment int `json:"assessment" validate:"min=1,max=5"`
+	Overall    int `json:"overall" validate:"min=1,max=5"`    // 总体方面
+	Content    int `json:"content" validate:"min=1,max=5"`    // 内容、风格方面
+	Workload   int `json:"workload" validate:"min=1,max=5"`   // 工作量方面
+	Assessment int `json:"assessment" validate:"min=1,max=5"` // 考核方面
 }
 
 func (r *ReviewRankV1) FromModel(rank *model.ReviewRank) *ReviewRankV1 {
@@ -42,14 +35,9 @@ func (r *ReviewRankV1) ToModel() (rank *model.ReviewRank) {
 
 // AchievementV1Response 旧版本成就响应
 type AchievementV1Response struct {
-	// 成就名称
-	Name string `json:"name"`
-
-	// 成就域
-	Domain string `json:"domain"`
-
-	// 获取日期
-	ObtainDate time.Time `json:"obtain_date"`
+	Name       string    `json:"name"`        // 成就名称
+	Domain     string    `json:"domain"`      // 成就域
+	ObtainDate time.Time `json:"obtain_date"` // 获取日期
 }
 
 func (r *AchievementV1Response) FromModel(
@@ -75,41 +63,18 @@ type UserExtraV1 struct {
 
 // ReviewV1Response 旧版本评教响应
 type ReviewV1Response struct {
-	// 评教 ID
-	ID int `json:"id"`
-
-	// 创建时间
-	TimeCreated time.Time `json:"time_created" copier:"CreatedAt"`
-
-	// 更新时间
-	TimeUpdated time.Time `json:"time_updated" copier:"UpdatedAt"`
-
-	// 评教标题
-	Title string `json:"title"`
-
-	// 评教内容
-	Content string `json:"content"`
-
-	// 评教者 ID
-	ReviewerID int `json:"reviewer_id"`
-
-	// 评价
-	Rank *ReviewRankV1 `json:"rank"`
-
-	// 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
-	Vote int `json:"vote"`
-
-	// Remark = 点赞数 - 点踩数
-	Remark int `json:"remark"`
-
-	// 是否是自己的评教
-	IsMe bool `json:"is_me"`
-
-	// 修改历史，slices 必须非空
-	History []*ReviewHistoryV1Response `json:"history"`
-
-	// 额外信息
-	Extra UserExtraV1 `json:"extra"`
+	ID          int                        `json:"id"`
+	TimeCreated time.Time                  `json:"time_created" copier:"CreatedAt"` // 创建时间
+	TimeUpdated time.Time                  `json:"time_updated" copier:"UpdatedAt"` // 更新时间
+	Title       string                     `json:"title"`                           // 评教标题
+	Content     string                     `json:"content"`                         // 评教内容
+	ReviewerID  int                        `json:"reviewer_id"`                     // 评教者 ID
+	Rank        *ReviewRankV1              `json:"rank"`                            // 评价
+	Vote        int                        `json:"vote"`                            // 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+	Remark      int                        `json:"remark"`                          // Remark = 点赞数 - 点踩数
+	IsMe        bool                       `json:"is_me"`                           // 是否是自己的评教
+	History     []*ReviewHistoryV1Response `json:"history"`                         // 修改历史，slices 必须非空
+	Extra       UserExtraV1                `json:"extra"`                           // 额外信息
 }
 
 func (r *ReviewV1Response) FromModel(
@@ -148,38 +113,20 @@ func (r *ReviewV1Response) FromModel(
 }
 
 type ReviewHistoryV1 struct {
-	// 旧标题
-	Title string `json:"title"`
-
-	// 旧内容
-	Content string `json:"content"`
-
-	// 创建时间
-	TimeCreated time.Time `json:"time_created"`
-
-	// 更新时间
-	TimeUpdated time.Time `json:"time_updated"`
-
-	// 评教者
-	ReviewerID int `json:"reviewer_id"`
-
-	// 评价
-	Rank *ReviewRankV1 `json:"rank"`
-
-	// Remark = 点赞数 - 点踩数
-	Remark int `json:"remark"`
+	Title       string        `json:"title"`        // 旧标题
+	Content     string        `json:"content"`      // 旧内容
+	TimeCreated time.Time     `json:"time_created"` // 创建时间
+	TimeUpdated time.Time     `json:"time_updated"` // 更新时间
+	ReviewerID  int           `json:"reviewer_id"`  // 评教者
+	Rank        *ReviewRankV1 `json:"rank"`         // 评价
+	Remark      int           `json:"remark"`       // Remark = 点赞数 - 点踩数
 }
 
 // ReviewHistoryV1Response 旧版本评教修改历史响应
 type ReviewHistoryV1Response struct {
-	// 创建时间
-	Time time.Time `json:"time"`
-
-	// 修改者
-	AlterBy int `json:"alter_by"`
-
-	// 修改前的评教
-	Original *ReviewHistoryV1 `json:"original"`
+	Time     time.Time        `json:"time"`     // 创建时间
+	AlterBy  int              `json:"alter_by"` // 修改者
+	Original *ReviewHistoryV1 `json:"original"` // 修改前的评教
 }
 
 func (r *ReviewHistoryV1Response) FromModel(
@@ -227,44 +174,19 @@ type VoteForReviewV1Request struct {
 }
 
 type MyReviewV1Response struct {
-	// 评教 ID
-	ID int `json:"id"`
-
-	// 评教标题
-	Title string `json:"title"`
-
-	// 评教内容
-	Content string `json:"content"`
-
-	// 修改历史，slices 必须非空
-	History []*ReviewHistoryV1Response `json:"history"`
-
-	// 创建时间
-	TimeCreated time.Time `json:"time_created" copier:"CreatedAt"`
-
-	// 更新时间
-	TimeUpdated time.Time `json:"time_updated" copier:"UpdatedAt"`
-
-	// 评教者 ID
-	ReviewerID int `json:"reviewer_id"`
-
-	// 评价
-	Rank *ReviewRankV1 `json:"rank"`
-
-	// 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
-	Vote int `json:"vote"`
-
-	// Remark = 点赞数 - 点踩数
-	Remark int `json:"remark"`
-
-	// 额外信息
-	Extra UserExtraV1 `json:"extra"`
-
-	// 课程信息
-	Course *CourseV1Response `json:"course,omitempty"`
-
-	// 课程组信息
-	GroupID int `json:"group_id,omitempty"`
+	ID          int                        `json:"id"`
+	Title       string                     `json:"title"`                           // 评教标题
+	Content     string                     `json:"content"`                         // 评教内容
+	History     []*ReviewHistoryV1Response `json:"history"`                         // 修改历史，slices 必须非空
+	TimeCreated time.Time                  `json:"time_created" copier:"CreatedAt"` // 创建时间
+	TimeUpdated time.Time                  `json:"time_updated" copier:"UpdatedAt"` // 更新时间
+	ReviewerID  int                        `json:"reviewer_id"`                     // 评教者 ID
+	Rank        *ReviewRankV1              `json:"rank"`                            // 评价
+	Vote        int                        `json:"vote"`                            // 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+	Remark      int                        `json:"remark"`                          // Remark = 点赞数 - 点踩数
+	Extra       UserExtraV1                `json:"extra"`                           // 额外信息
+	Course      *CourseV1Response          `json:"course,omitempty"`                // 课程信息
+	GroupID     int                        `json:"group_id,omitempty"`              // 课程组 ID
 }
 
 func (r *MyReviewV1Response) FromModel(
@@ -303,3 +225,23 @@ func (r *MyReviewV1Response) FromModel(
 }
 
 type RandomReviewV1Response = MyReviewV1Response
+
+/* V3 */
+
+type ReviewRankV3 = ReviewRankV1
+
+type AchievementV3Response = AchievementV1Response
+
+type UserExtraV3 = UserExtraV1
+
+type ReviewV3Response struct {
+	ID         int           `json:"id"`
+	CreatedAt  time.Time     `json:"created_at"`  // 创建时间
+	UpdatedAt  time.Time     `json:"updated_at"`  // 更新时间
+	Title      string        `json:"title"`       // 评教标题
+	Content    string        `json:"content"`     // 评教内容
+	ReviewerID int           `json:"reviewer_id"` // 评教者 ID
+	Rank       *ReviewRankV3 `json:"rank"`        // 评价
+	MyVote     int           `json:"my_vote"`     // 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+	VoterCount int           `json:"voter_count"` // 点赞数 + 点踩数
+}

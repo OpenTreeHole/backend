@@ -6,45 +6,22 @@ import (
 	"github.com/opentreehole/backend/internal/model"
 )
 
+/* V1 */
+
 type CourseV1Response struct {
-	// 课程 ID
-	ID int `json:"id"`
-
-	// 课程名称
-	Name string `json:"name"`
-
-	// 课程编号
-	Code string `json:"code"`
-
-	// 选课序号。用于区分同一课程编号的不同平行班
-	CodeID string `json:"code_id"`
-
-	// 学分
-	Credit float64 `json:"credit"`
-
-	// 开课学院
-	Department string `json:"department"`
-
-	// 开课校区
-	CampusName string `json:"campus_name"`
-
-	// 老师：多个老师用逗号分隔
-	Teachers string `json:"teachers"`
-
-	// 最大选课人数
-	MaxStudent int `json:"max_student"`
-
-	// 周学时
-	WeekHour int `json:"week_hour"`
-
-	// 学年
-	Year int `json:"year"`
-
-	// 学期
-	Semester int `json:"semester"`
-
-	// 评教列表
-	ReviewList []*ReviewV1Response `json:"review_list,omitempty"`
+	ID         int                 `json:"id"`
+	Name       string              `json:"name"`                  // 名称
+	Code       string              `json:"code"`                  // 编号
+	CodeID     string              `json:"code_id"`               // 选课序号。用于区分同一课程编号的不同平行班
+	Credit     float64             `json:"credit"`                // 学分
+	Department string              `json:"department"`            // 开课学院
+	CampusName string              `json:"campus_name"`           // 开课校区
+	Teachers   string              `json:"teachers"`              // 老师：多个老师用逗号分隔
+	MaxStudent int                 `json:"max_student"`           // 最大选课人数
+	WeekHour   int                 `json:"week_hour"`             // 周学时
+	Year       int                 `json:"year"`                  // 学年
+	Semester   int                 `json:"semester"`              // 学期
+	ReviewList []*ReviewV1Response `json:"review_list,omitempty"` // 评教列表
 }
 
 func (r *CourseV1Response) FromModel(
@@ -99,4 +76,22 @@ func (r *CreateCourseV1Request) ToCourseGroupModel() *model.CourseGroup {
 		panic(err)
 	}
 	return &courseGroup
+}
+
+/* V3 */
+
+type CourseV3Response struct {
+	ID         int                 `json:"id"`
+	Name       string              `json:"name"`                  // 名称
+	Code       string              `json:"code"`                  // 编号
+	CodeID     string              `json:"code_id"`               // 选课序号。用于区分同一课程编号的不同平行班
+	Credit     float64             `json:"credit"`                // 学分
+	Department string              `json:"department"`            // 开课学院
+	CampusName string              `json:"campus_name"`           // 开课校区
+	Teachers   string              `json:"teachers"`              // 老师：多个老师用逗号分隔
+	MaxStudent int                 `json:"max_student"`           // 最大选课人数
+	WeekHour   int                 `json:"week_hour"`             // 周学时
+	Year       int                 `json:"year"`                  // 学年
+	Semester   int                 `json:"semester"`              // 学期
+	ReviewList []*ReviewV1Response `json:"review_list,omitempty"` // 评教列表
 }

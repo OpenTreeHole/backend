@@ -231,7 +231,8 @@ set upvote_count = (select count(*) from review_vote where review_vote.review_id
 	rank_overall = JSON_EXTRACT(review.rank, '$.overall'),
 	rank_content = JSON_EXTRACT(review.rank, '$.content'),
 	rank_assessment = JSON_EXTRACT(review.rank, '$.assessment'),
-	rank_workload = JSON_EXTRACT(review.rank, '$.workload')
+	rank_workload = JSON_EXTRACT(review.rank, '$.workload'),
+    modify_count = (select count(*) from review_history where review_history.review_id = review.id)
 where true`).Error
 		if err != nil {
 			return err
