@@ -1,6 +1,6 @@
-// @title Open Tree Hole Auth
+// @title OpenTreeHole Backend
 // @version 3.0.0
-// @description Next Generation of Auth microservice integrated with kong for registration and issuing tokens
+// @description Next Generation of OpenTreeHole Backend
 
 // @contact.name Maintainer Chen Ke
 // @contact.url https://danxi.fduhole.com/about
@@ -10,6 +10,7 @@
 // @license.url https://www.apache.org/licenses/LICENSE-2.0.html
 
 // @BasePath /api
+// @schemes http https
 
 package main
 

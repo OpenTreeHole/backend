@@ -520,12 +520,11 @@ info:
     email: dev@fduhole.com
     name: Maintainer Chen Ke
     url: https://danxi.fduhole.com/about
-  description: Next Generation of Auth microservice integrated with kong for registration
-    and issuing tokens
+  description: Next Generation of OpenTreeHole Backend
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  title: Open Tree Hole Auth
+  title: OpenTreeHole Backend
   version: 3.0.0
 paths:
   /courses:
@@ -1095,4 +1094,7 @@ paths:
       summary: get random review
       tags:
         - Review
+schemes:
+  - http
+  - https
 swagger: "2.0"

@@ -1,8 +1,12 @@
 {
+    "schemes": [
+        "http",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
-        "description": "Next Generation of Auth microservice integrated with kong for registration and issuing tokens",
-        "title": "Open Tree Hole Auth",
+        "description": "Next Generation of OpenTreeHole Backend",
+        "title": "OpenTreeHole Backend",
         "contact": {
             "name": "Maintainer Chen Ke",
             "url": "https://danxi.fduhole.com/about",
