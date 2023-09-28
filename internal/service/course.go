@@ -15,8 +15,23 @@ type CourseService interface {
 	Service
 
 	ListCoursesV1(ctx context.Context) (response []*schema.CourseGroupV1Response, err error)
-	GetCourseV1(ctx context.Context, user *model.User, id int) (response *schema.CourseV1Response, err error)
-	AddCourseV1(ctx context.Context, request *schema.CreateCourseV1Request) (response *schema.CourseV1Response, err error)
+
+	GetCourseV1(
+		ctx context.Context,
+		user *model.User,
+		id int,
+	) (
+		response *schema.CourseV1Response,
+		err error,
+	)
+
+	AddCourseV1(
+		ctx context.Context,
+		request *schema.CreateCourseV1Request,
+	) (
+		response *schema.CourseV1Response,
+		err error,
+	)
 }
 
 type courseService struct {
@@ -85,7 +100,13 @@ func (s *courseService) GetCourseV1(ctx context.Context, user *model.User, id in
 	return new(schema.CourseV1Response).FromModel(user, course, votesMap), nil
 }
 
-func (s *courseService) AddCourseV1(ctx context.Context, request *schema.CreateCourseV1Request) (response *schema.CourseV1Response, err error) {
+func (s *courseService) AddCourseV1(
+	ctx context.Context,
+	request *schema.CreateCourseV1Request,
+) (
+	response *schema.CourseV1Response,
+	err error,
+) {
 	group, err := s.courseGroupRepository.FindGroupByCode(ctx, request.Code, func(db *gorm.DB) *gorm.DB {
 		return db.Preload("Courses")
 	})
@@ -103,7 +124,7 @@ func (s *courseService) AddCourseV1(ctx context.Context, request *schema.CreateC
 	}
 
 	course := request.ToModel(group.ID)
-	err = s.courseRepository.CreateCourse(ctx, course)
+	err = s.courseRepository.CreateCourse(ctx, group, course)
 	if err != nil {
 		return nil, err
 	}
