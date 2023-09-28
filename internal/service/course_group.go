@@ -16,6 +16,14 @@ type CourseGroupService interface {
 	GetGroupByIDV1(ctx context.Context, user *model.User, id int) (response *schema.CourseGroupV1Response, err error)
 	GetCourseGroupHash(ctx context.Context) (response *schema.CourseGroupHashV1Response, err error)
 	RefreshCourseGroupHash(ctx context.Context) (err error)
+	SearchCourseGroupV3(
+		ctx context.Context,
+		user *model.User,
+		request *schema.CourseGroupSearchV3Request,
+	) (
+		response *schema.PagedResponse[schema.CourseGroupV3Response, any],
+		err error,
+	)
 }
 
 type courseGroupService struct {
@@ -105,4 +113,47 @@ func (c *courseGroupService) GetCourseGroupHash(ctx context.Context) (response *
 func (c *courseGroupService) RefreshCourseGroupHash(ctx context.Context) (err error) {
 	_, _, err = c.courseGroupRepository.FindGroupsWithCourses(ctx, true)
 	return
+}
+
+func (c *courseGroupService) SearchCourseGroupV3(
+	ctx context.Context,
+	user *model.User,
+	request *schema.CourseGroupSearchV3Request,
+) (
+	response *schema.PagedResponse[schema.CourseGroupV3Response, any],
+	err error,
+) {
+	var (
+		page     = request.Page
+		pageSize = request.PageSize
+		query    = request.Query
+	)
+	groups, err := c.courseGroupRepository.FindGroups(ctx, func(db *gorm.DB) *gorm.DB {
+		db = db.Where("name LIKE ?", "%"+query+"%")
+		if page > 0 {
+			if pageSize == 0 {
+				pageSize = 10
+			}
+			db = db.Limit(pageSize).Offset((page - 1) * pageSize)
+		} else {
+			if pageSize > 0 {
+				db = db.Limit(pageSize)
+			}
+		}
+		return db
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*schema.CourseGroupV3Response, 0, len(groups))
+	for _, group := range groups {
+		items = append(items, new(schema.CourseGroupV3Response).FromModel(user, group, nil))
+	}
+	response = &schema.PagedResponse[schema.CourseGroupV3Response, any]{
+		Items:    items,
+		Page:     page,
+		PageSize: pageSize,
+	}
+	return response, nil
 }

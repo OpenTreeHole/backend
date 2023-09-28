@@ -8,23 +8,12 @@ import (
 
 // CourseGroupV1Response 旧版本课程组响应
 type CourseGroupV1Response struct {
-	// 课程组 ID
-	ID int `json:"id"`
-
-	// 课程组名称
-	Name string `json:"name"`
-
-	// 课程组编号
-	Code string `json:"code"`
-
-	// 开课学院
-	Department string `json:"department"`
-
-	// 开课校区
-	CampusName string `json:"campus_name"`
-
-	// 课程组下的课程，slices 必须非空
-	CourseList []*CourseV1Response `json:"course_list,omitempty"`
+	ID         int                 `json:"id"`                    // 课程组 ID
+	Name       string              `json:"name"`                  // 课程组名称
+	Code       string              `json:"code"`                  // 课程组编号
+	Department string              `json:"department"`            // 开课学院
+	CampusName string              `json:"campus_name"`           // 开课校区
+	CourseList []*CourseV1Response `json:"course_list,omitempty"` // 课程组下的课程，slices 必须非空
 }
 
 func (r *CourseGroupV1Response) FromModel(
@@ -54,5 +43,44 @@ type CourseGroupHashV1Response struct {
 
 func (r *CourseGroupHashV1Response) FromModel(hash string) *CourseGroupHashV1Response {
 	r.Hash = hash
+	return r
+}
+
+/* V3 */
+
+type CourseGroupSearchV3Request struct {
+	Query    string `json:"query" form:"query" query:"query"`
+	Page     int    `json:"page" form:"page" query:"page"`
+	PageSize int    `json:"page_size" form:"page_size" query:"page_size"`
+}
+
+type CourseGroupV3Response struct {
+	ID         int                 `json:"id"`                    // 课程组 ID
+	Name       string              `json:"name"`                  // 课程组名称
+	Code       string              `json:"code"`                  // 课程组编号
+	Credits    []float64           `json:"credits"`               // 学分
+	Department string              `json:"department"`            // 开课学院
+	CampusName string              `json:"campus_name"`           // 开课校区
+	CourseList []*CourseV1Response `json:"course_list,omitempty"` // 课程组下的课程，slices 必须非空
+}
+
+func (r *CourseGroupV3Response) FromModel(
+	user *model.User,
+	group *model.CourseGroup,
+	votesMap map[int]*model.ReviewVote,
+) *CourseGroupV3Response {
+	err := copier.Copy(r, group)
+	if err != nil {
+		panic(err)
+	}
+
+	if group.Courses == nil {
+		return r
+	}
+	r.CourseList = make([]*CourseV1Response, 0, len(group.Courses))
+	for _, course := range group.Courses {
+		r.CourseList = append(r.CourseList, new(CourseV1Response).FromModel(user, course, votesMap))
+	}
+
 	return r
 }

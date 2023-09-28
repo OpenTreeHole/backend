@@ -40,13 +40,41 @@ definitions:
         description: 课程组名称
         type: string
     type: object
+  schema.CourseGroupV3Response:
+    properties:
+      campus_name:
+        description: 开课校区
+        type: string
+      code:
+        description: 课程组编号
+        type: string
+      course_list:
+        description: 课程组下的课程，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.CourseV1Response'
+        type: array
+      credits:
+        description: 学分
+        items:
+          type: number
+        type: array
+      department:
+        description: 开课学院
+        type: string
+      id:
+        description: 课程组 ID
+        type: integer
+      name:
+        description: 课程组名称
+        type: string
+    type: object
   schema.CourseV1Response:
     properties:
       campus_name:
         description: 开课校区
         type: string
       code:
-        description: 课程编号
+        description: 编号
         type: string
       code_id:
         description: 选课序号。用于区分同一课程编号的不同平行班
@@ -58,13 +86,12 @@ definitions:
         description: 开课学院
         type: string
       id:
-        description: 课程 ID
         type: integer
       max_student:
         description: 最大选课人数
         type: integer
       name:
-        description: 课程名称
+        description: 名称
         type: string
       review_list:
         description: 评教列表
@@ -258,7 +285,7 @@ definitions:
           - $ref: '#/definitions/schema.UserExtraV1'
         description: 额外信息
       group_id:
-        description: 课程组信息
+        description: 课程组 ID
         type: integer
       history:
         description: 修改历史，slices 必须非空
@@ -266,7 +293,6 @@ definitions:
           $ref: '#/definitions/schema.ReviewHistoryV1Response'
         type: array
       id:
-        description: 评教 ID
         type: integer
       rank:
         allOf:
@@ -291,6 +317,18 @@ definitions:
         description: 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
         type: integer
     type: object
+  schema.PagedResponse-schema_CourseGroupV3Response-any:
+    properties:
+      extra: { }
+      items:
+        items:
+          $ref: '#/definitions/schema.CourseGroupV3Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+    type: object
   schema.RandomReviewV1Response:
     properties:
       content:
@@ -305,7 +343,7 @@ definitions:
           - $ref: '#/definitions/schema.UserExtraV1'
         description: 额外信息
       group_id:
-        description: 课程组信息
+        description: 课程组 ID
         type: integer
       history:
         description: 修改历史，slices 必须非空
@@ -313,7 +351,6 @@ definitions:
           $ref: '#/definitions/schema.ReviewHistoryV1Response'
         type: array
       id:
-        description: 评教 ID
         type: integer
       rank:
         allOf:
@@ -442,7 +479,6 @@ definitions:
           $ref: '#/definitions/schema.ReviewHistoryV1Response'
         type: array
       id:
-        description: 评教 ID
         type: integer
       is_me:
         description: 是否是自己的评教
@@ -679,7 +715,7 @@ paths:
     get:
       consumes:
         - application/json
-      description: refresh course group hash
+      description: refresh course group hash, admin only
       produces:
         - application/json
       responses:
@@ -1094,6 +1130,43 @@ paths:
       summary: get random review
       tags:
         - Review
+  /v3/course_groups/search:
+    get:
+      consumes:
+        - application/json
+      description: search course group, no courses
+      parameters:
+        - in: query
+          name: page
+          type: integer
+        - in: query
+          name: page_size
+          type: integer
+        - in: query
+          name: query
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.PagedResponse-schema_CourseGroupV3Response-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: search course group
+      tags:
+        - CourseGroup
 schemes:
   - http
   - https

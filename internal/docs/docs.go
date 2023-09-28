@@ -149,7 +149,7 @@ const docTemplate = `{
         },
         "/courses/refresh": {
             "get": {
-                "description": "refresh course group hash",
+                "description": "refresh course group hash, admin only",
                 "consumes": [
                     "application/json"
                 ],
@@ -874,6 +874,64 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v3/course_groups/search": {
+            "get": {
+                "description": "search course group, no courses",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "search course group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "query",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.PagedResponse-schema_CourseGroupV3Response-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -934,6 +992,45 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.CourseGroupV3Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程组编号",
+                    "type": "string"
+                },
+                "course_list": {
+                    "description": "课程组下的课程，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseV1Response"
+                    }
+                },
+                "credits": {
+                    "description": "学分",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程组名称",
+                    "type": "string"
+                }
+            }
+        },
         "schema.CourseV1Response": {
             "type": "object",
             "properties": {
@@ -942,7 +1039,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "code": {
-                    "description": "课程编号",
+                    "description": "编号",
                     "type": "string"
                 },
                 "code_id": {
@@ -958,7 +1055,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "description": "课程 ID",
                     "type": "integer"
                 },
                 "max_student": {
@@ -966,7 +1062,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "name": {
-                    "description": "课程名称",
+                    "description": "名称",
                     "type": "string"
                 },
                 "review_list": {
@@ -1236,7 +1332,7 @@ const docTemplate = `{
                     ]
                 },
                 "group_id": {
-                    "description": "课程组信息",
+                    "description": "课程组 ID",
                     "type": "integer"
                 },
                 "history": {
@@ -1247,7 +1343,6 @@ const docTemplate = `{
                     }
                 },
                 "id": {
-                    "description": "评教 ID",
                     "type": "integer"
                 },
                 "rank": {
@@ -1284,6 +1379,24 @@ const docTemplate = `{
                 }
             }
         },
+        "schema.PagedResponse-schema_CourseGroupV3Response-any": {
+            "type": "object",
+            "properties": {
+                "extra": {},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseGroupV3Response"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                }
+            }
+        },
         "schema.RandomReviewV1Response": {
             "type": "object",
             "properties": {
@@ -1308,7 +1421,7 @@ const docTemplate = `{
                     ]
                 },
                 "group_id": {
-                    "description": "课程组信息",
+                    "description": "课程组 ID",
                     "type": "integer"
                 },
                 "history": {
@@ -1319,7 +1432,6 @@ const docTemplate = `{
                     }
                 },
                 "id": {
-                    "description": "评教 ID",
                     "type": "integer"
                 },
                 "rank": {
@@ -1500,7 +1612,6 @@ const docTemplate = `{
                     }
                 },
                 "id": {
-                    "description": "评教 ID",
                     "type": "integer"
                 },
                 "is_me": {

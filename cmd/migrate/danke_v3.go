@@ -238,8 +238,11 @@ where true`).Error
 			return err
 		}
 
-		// update course_group.course_count
-		err = tx.Exec(`update course_group set course_count = (select count(*) from course where course.course_group_id = course_group.id) where true`).Error
+		// update course_group.course_count, course_group.credits
+		err = tx.Exec(`update course_group 
+set course_count = (select count(*) from course where course.course_group_id = course_group.id)
+    credits = (select concat('[', group_concat(distinct credit), ']') from course group by course_group_id);
+where true`).Error
 
 		if m.HasColumn(&model.Review{}, "upvoters") {
 			err = m.DropColumn(&model.Review{}, "upvoters")
