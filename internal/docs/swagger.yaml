@@ -1136,14 +1136,21 @@ paths:
         - application/json
       description: search course group, no courses
       parameters:
-        - in: query
+        - example: 0
+          in: query
+          minimum: 0
           name: page
           type: integer
-        - in: query
+        - example: 10
+          in: query
+          maximum: 100
+          minimum: 0
           name: page_size
           type: integer
-        - in: query
+        - example: 计算机
+          in: query
           name: query
+          required: true
           type: string
       produces:
         - application/json

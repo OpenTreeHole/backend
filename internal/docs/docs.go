@@ -890,19 +890,26 @@ const docTemplate = `{
                 "summary": "search course group",
                 "parameters": [
                     {
+                        "minimum": 0,
                         "type": "integer",
+                        "example": 0,
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 0,
                         "type": "integer",
+                        "example": 10,
                         "name": "page_size",
                         "in": "query"
                     },
                     {
                         "type": "string",
+                        "example": "计算机",
                         "name": "query",
-                        "in": "query"
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

@@ -49,9 +49,9 @@ func (r *CourseGroupHashV1Response) FromModel(hash string) *CourseGroupHashV1Res
 /* V3 */
 
 type CourseGroupSearchV3Request struct {
-	Query    string `json:"query" form:"query" query:"query"`
-	Page     int    `json:"page" form:"page" query:"page"`
-	PageSize int    `json:"page_size" form:"page_size" query:"page_size"`
+	Query    string `json:"query" form:"query" query:"query" validate:"required" example:"计算机"`
+	Page     int    `json:"page" form:"page" query:"page" validate:"min=0" example:"0"`
+	PageSize int    `json:"page_size" form:"page_size" query:"page_size" validate:"min=0,max=100" example:"10"`
 }
 
 type CourseGroupV3Response struct {
