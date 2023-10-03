@@ -1010,6 +1010,10 @@ const docTemplate = `{
                     "description": "课程组编号",
                     "type": "string"
                 },
+                "course_count": {
+                    "description": "课程数量",
+                    "type": "integer"
+                },
                 "course_list": {
                     "description": "课程组下的课程，slices 必须非空",
                     "type": "array",
@@ -1035,6 +1039,10 @@ const docTemplate = `{
                 "name": {
                     "description": "课程组名称",
                     "type": "string"
+                },
+                "review_count": {
+                    "description": "评价数量",
+                    "type": "integer"
                 }
             }
         },
