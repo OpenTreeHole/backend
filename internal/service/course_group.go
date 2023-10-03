@@ -13,9 +13,28 @@ import (
 type CourseGroupService interface {
 	Service
 
-	GetGroupByIDV1(ctx context.Context, user *model.User, id int) (response *schema.CourseGroupV1Response, err error)
-	GetCourseGroupHash(ctx context.Context) (response *schema.CourseGroupHashV1Response, err error)
-	RefreshCourseGroupHash(ctx context.Context) (err error)
+	GetGroupByIDV1(
+		ctx context.Context,
+		user *model.User,
+		id int,
+	) (
+		response *schema.CourseGroupV1Response,
+		err error,
+	)
+
+	GetCourseGroupHash(
+		ctx context.Context,
+	) (
+		response *schema.CourseGroupHashV1Response,
+		err error,
+	)
+
+	RefreshCourseGroupHash(
+		ctx context.Context,
+	) (
+		err error,
+	)
+
 	SearchCourseGroupV3(
 		ctx context.Context,
 		user *model.User,

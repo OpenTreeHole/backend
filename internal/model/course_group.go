@@ -15,5 +15,6 @@ type CourseGroup struct {
 	Department  string    `json:"department" gorm:"not null"`             // 开课学院
 	CampusName  string    `json:"campus_name" gorm:"not null"`            // 开课校区
 	CourseCount int       `json:"course_count" gorm:"not null;default:0"` // 课程数量
+	ReviewCount int       `json:"review_count" gorm:"not null;default:0"` // 评价数量
 	Courses     []*Course `json:"courses"`
 }

@@ -55,13 +55,15 @@ type CourseGroupSearchV3Request struct {
 }
 
 type CourseGroupV3Response struct {
-	ID         int                 `json:"id"`                    // 课程组 ID
-	Name       string              `json:"name"`                  // 课程组名称
-	Code       string              `json:"code"`                  // 课程组编号
-	Credits    []float64           `json:"credits"`               // 学分
-	Department string              `json:"department"`            // 开课学院
-	CampusName string              `json:"campus_name"`           // 开课校区
-	CourseList []*CourseV1Response `json:"course_list,omitempty"` // 课程组下的课程，slices 必须非空
+	ID          int                 `json:"id"`                    // 课程组 ID
+	Name        string              `json:"name"`                  // 课程组名称
+	Code        string              `json:"code"`                  // 课程组编号
+	Credits     []float64           `json:"credits"`               // 学分
+	Department  string              `json:"department"`            // 开课学院
+	CampusName  string              `json:"campus_name"`           // 开课校区
+	CourseCount int                 `json:"course_count"`          // 课程数量
+	ReviewCount int                 `json:"review_count"`          // 评价数量
+	CourseList  []*CourseV1Response `json:"course_list,omitempty"` // 课程组下的课程，slices 必须非空
 }
 
 func (r *CourseGroupV3Response) FromModel(
