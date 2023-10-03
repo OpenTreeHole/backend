@@ -904,7 +904,7 @@ paths:
           in: path
           name: id
           required: true
-          type: string
+          type: integer
       produces:
         - application/json
       responses:
@@ -1146,7 +1146,7 @@ paths:
           in: path
           name: id
           required: true
-          type: string
+          type: integer
       produces:
         - application/json
       responses:

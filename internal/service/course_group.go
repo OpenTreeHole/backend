@@ -171,7 +171,7 @@ func (c *courseGroupService) SearchCourseGroupV3(
 	)
 	groups, err := c.courseGroupRepository.FindGroups(ctx, func(db *gorm.DB) *gorm.DB {
 		if model.CourseCodeRegexp.MatchString(query) {
-			db = db.Where("code = ?", "%"+query)
+			db = db.Where("code LIKE ?", query+"%")
 		} else {
 			db = db.Where("name LIKE ?", "%"+query+"%")
 		}

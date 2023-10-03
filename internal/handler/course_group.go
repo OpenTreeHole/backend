@@ -54,7 +54,7 @@ func (h *courseGroupHandler) RegisterRoute(router fiber.Router) {
 // @Produce json
 // @Deprecated
 // @Router /group/{id} [get]
-// @Param id path string true "course group id"
+// @Param id path int true "course group id"
 // @Success 200 {object} schema.CourseGroupV1Response
 // @Failure 400 {object} schema.HttpError
 // @Failure 404 {object} schema.HttpBaseError
@@ -178,7 +178,7 @@ func (h *courseGroupHandler) SearchCourseGroupV3(c *fiber.Ctx) (err error) {
 // @Accept json
 // @Produce json
 // @Router /v3/course_groups/{id} [get]
-// @Param id path string true "course group id"
+// @Param id path int true "course group id"
 // @Success 200 {object} schema.CourseGroupV3Response
 // @Failure 400 {object} schema.HttpError
 // @Failure 404 {object} schema.HttpBaseError

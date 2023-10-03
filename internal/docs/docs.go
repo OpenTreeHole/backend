@@ -527,7 +527,7 @@ const docTemplate = `{
                 "deprecated": true,
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "course group id",
                         "name": "id",
                         "in": "path",
@@ -955,7 +955,7 @@ const docTemplate = `{
                 "summary": "/v3/course_groups/{group_id}",
                 "parameters": [
                     {
-                        "type": "string",
+                        "type": "integer",
                         "description": "course group id",
                         "name": "id",
                         "in": "path",
