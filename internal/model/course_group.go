@@ -1,6 +1,7 @@
 package model
 
 import (
+	"regexp"
 	"time"
 )
 
@@ -10,7 +11,7 @@ type CourseGroup struct {
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Name        string    `json:"name" gorm:"not null"`                   // 课程组名称
-	Code        string    `json:"code" gorm:"not null"`                   // 课程组编号
+	Code        string    `json:"code" gorm:"not null;index:,length:6"`   // 课程组编号
 	Credits     []float64 `json:"credits" gorm:"serializer:json"`         // 学分
 	Department  string    `json:"department" gorm:"not null"`             // 开课学院
 	CampusName  string    `json:"campus_name" gorm:"not null"`            // 开课校区
@@ -18,3 +19,5 @@ type CourseGroup struct {
 	ReviewCount int       `json:"review_count" gorm:"not null;default:0"` // 评价数量
 	Courses     []*Course `json:"courses"`
 }
+
+var CourseCodeRegexp = regexp.MustCompile(`^([A-Z]{3,})([0-9]{2,})`)

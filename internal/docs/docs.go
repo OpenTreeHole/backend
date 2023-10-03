@@ -939,6 +939,56 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v3/course_groups/{id}": {
+            "get": {
+                "description": "get a course group, v3 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "/v3/course_groups/{group_id}",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV3Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {

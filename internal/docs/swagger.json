@@ -936,6 +936,56 @@
                     }
                 }
             }
+        },
+        "/v3/course_groups/{id}": {
+            "get": {
+                "description": "get a course group, v3 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "/v3/course_groups/{group_id}",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV3Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/schema.HttpBaseError"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1007,10 +1057,10 @@
                     "description": "课程组编号",
                     "type": "string"
                 },
-              "course_count": {
-                "description": "课程数量",
-                "type": "integer"
-              },
+                "course_count": {
+                    "description": "课程数量",
+                    "type": "integer"
+                },
                 "course_list": {
                     "description": "课程组下的课程，slices 必须非空",
                     "type": "array",
@@ -1037,9 +1087,9 @@
                     "description": "课程组名称",
                     "type": "string"
                 },
-              "review_count": {
-                "description": "评价数量",
-                "type": "integer"
+                "review_count": {
+                    "description": "评价数量",
+                    "type": "integer"
                 }
             }
         },

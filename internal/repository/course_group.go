@@ -36,7 +36,11 @@ func NewCourseGroupRepository(repository Repository) CourseGroupRepository {
 
 func (r *courseGroupRepository) FindGroups(ctx context.Context, condition func(db *gorm.DB) *gorm.DB) (groups []*model.CourseGroup, err error) {
 	groups = make([]*model.CourseGroup, 5)
-	err = condition(r.GetDB(ctx)).Find(&groups).Error
+	db := r.GetDB(ctx)
+	if condition != nil {
+		db = condition(db)
+	}
+	err = db.Find(&groups).Error
 	return
 }
 

@@ -1136,6 +1136,39 @@ paths:
       summary: get random review
       tags:
         - Review
+  /v3/course_groups/{id}:
+    get:
+      consumes:
+        - application/json
+      description: get a course group, v3 version
+      parameters:
+        - description: course group id
+          in: path
+          name: id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseGroupV3Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: /v3/course_groups/{group_id}
+      tags:
+        - CourseGroup
   /v3/course_groups/search:
     get:
       consumes:
