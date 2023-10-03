@@ -79,12 +79,42 @@ func (r *reviewRepository) GetReview(ctx context.Context, condition func(tx *gor
 
 func (r *reviewRepository) CreateReview(ctx context.Context, review *model.Review) (err error) {
 	return r.Transaction(ctx, func(ctx context.Context) error {
+		// create review
 		err = r.GetDB(ctx).Create(review).Error
 		if err != nil {
 			return err
 		}
-		return r.GetDB(ctx).Model(&model.Course{ID: review.CourseID}).
+
+		// update course review count
+		err = r.GetDB(ctx).Model(&model.Course{ID: review.CourseID}).
 			Update("review_count", gorm.Expr("review_count + 1")).Error
+		if err != nil {
+			return err
+		}
+
+		// update course_group review count
+		if review.Course != nil {
+			err = r.GetDB(ctx).Model(&model.CourseGroup{ID: review.Course.CourseGroupID}).
+				Update("review_count", gorm.Expr("review_count + 1")).Error
+			if err != nil {
+				return err
+			}
+		} else {
+			var reviewGroupID int
+			err = r.GetDB(ctx).Model(&model.Course{}).Select("course_group_id").
+				Where("id = ?", review.CourseID).Scan(&reviewGroupID).Error
+			if err != nil {
+				return err
+			}
+
+			err = r.GetDB(ctx).Model(&model.CourseGroup{ID: reviewGroupID}).
+				Update("review_count", gorm.Expr("review_count + 1")).Error
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 }
 

@@ -88,7 +88,7 @@ func (s *reviewService) CreateReview(
 	err error,
 ) {
 	// 查找 course
-	_, err = s.courseRepository.FindCourseByID(ctx, courseID)
+	course, err := s.courseRepository.FindCourseByID(ctx, courseID)
 	if err != nil {
 		return
 	}
@@ -106,6 +106,7 @@ func (s *reviewService) CreateReview(
 
 	// 创建 review
 	review := request.ToModel(user.ID, courseID)
+	review.Course = course
 	err = s.reviewRepository.CreateReview(ctx, review)
 	if err != nil {
 		return
