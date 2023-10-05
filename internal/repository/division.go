@@ -93,12 +93,18 @@ func (d *divisionRepository) ModifyDivision(ctx context.Context, id int, request
 
 	response = request
 
+	//err = d.GetCache(ctx).Set(ctx, "divisions", nil)
+	//if err != nil {
+	//	return nil, err
+	//}
+
 	return response, err
 }
 
 func (d *divisionRepository) DeleteDivision(ctx context.Context, id int) (err error) {
 
 	return d.GetDB(ctx).Delete(&model.Division{}, id).Error
+
 }
 
 func NewDivisionRepository(repository Repository) DivisionRepository {
