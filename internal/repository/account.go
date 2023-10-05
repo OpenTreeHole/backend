@@ -311,7 +311,7 @@ func (a *accountRepository) GetCurrentUser(ctx context.Context) (user *model.Use
 		return a.FindUserByID(ctx, user.ID)
 	}
 
-	return user, schema.Unauthorized("Unauthorized")
+	return user, nil
 }
 
 /* 工具函数，非导出函数 */

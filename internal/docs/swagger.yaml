@@ -12,6 +12,11 @@ definitions:
         description: 获取日期
         type: string
     type: object
+  schema.CourseGroupHashV1Response:
+    properties:
+      hash:
+        type: string
+    type: object
   schema.CourseGroupV1Response:
     properties:
       campus_name:
@@ -35,31 +40,64 @@ definitions:
         description: 课程组名称
         type: string
     type: object
+  schema.CourseGroupV3Response:
+    properties:
+      campus_name:
+        description: 开课校区
+        type: string
+      code:
+        description: 课程组编号
+        type: string
+      course_count:
+        description: 课程数量
+        type: integer
+      course_list:
+        description: 课程组下的课程，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.CourseV1Response'
+        type: array
+      credits:
+        description: 学分
+        items:
+          type: number
+        type: array
+      department:
+        description: 开课学院
+        type: string
+      id:
+        description: 课程组 ID
+        type: integer
+      name:
+        description: 课程组名称
+        type: string
+      review_count:
+        description: 评价数量
+        type: integer
+    type: object
   schema.CourseV1Response:
     properties:
       campus_name:
         description: 开课校区
         type: string
       code:
-        description: 课程编号
+        description: 编号
         type: string
       code_id:
         description: 选课序号。用于区分同一课程编号的不同平行班
         type: string
       credit:
         description: 学分
-        type: integer
+        type: number
       department:
         description: 开课学院
         type: string
       id:
-        description: 课程 ID
         type: integer
       max_student:
         description: 最大选课人数
         type: integer
       name:
-        description: 课程名称
+        description: 名称
         type: string
       review_list:
         description: 评教列表
@@ -78,6 +116,69 @@ definitions:
       year:
         description: 学年
         type: integer
+    type: object
+  schema.CreateCourseV1Request:
+    properties:
+      campus_name:
+        minLength: 1
+        type: string
+      code:
+        minLength: 4
+        type: string
+      code_id:
+        minLength: 4
+        type: string
+      credit:
+        minimum: 0.5
+        type: number
+      department:
+        minLength: 1
+        type: string
+      max_student:
+        type: integer
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      semester:
+        minimum: 1
+        type: integer
+      teachers:
+        minLength: 1
+        type: string
+      week_hour:
+        type: integer
+      year:
+        minimum: 2000
+        type: integer
+    required:
+      - campus_name
+      - code
+      - code_id
+      - credit
+      - department
+      - max_student
+      - name
+      - semester
+      - teachers
+      - week_hour
+      - year
+    type: object
+  schema.CreateReviewV1Request:
+    properties:
+      content:
+        maxLength: 10240
+        minLength: 1
+        type: string
+      rank:
+        $ref: '#/definitions/schema.ReviewRankV1'
+      title:
+        maxLength: 64
+        minLength: 1
+        type: string
+    required:
+      - content
+      - title
     type: object
   schema.DivisionCreateRequest:
     properties:
@@ -160,6 +261,126 @@ definitions:
         minLength: 8
         type: string
     type: object
+  schema.ModifyReviewV1Request:
+    properties:
+      content:
+        maxLength: 10240
+        minLength: 1
+        type: string
+      rank:
+        $ref: '#/definitions/schema.ReviewRankV1'
+      title:
+        maxLength: 64
+        minLength: 1
+        type: string
+    required:
+      - content
+      - title
+    type: object
+  schema.MyReviewV1Response:
+    properties:
+      content:
+        description: 评教内容
+        type: string
+      course:
+        allOf:
+          - $ref: '#/definitions/schema.CourseV1Response'
+        description: 课程信息
+      extra:
+        allOf:
+          - $ref: '#/definitions/schema.UserExtraV1'
+        description: 额外信息
+      group_id:
+        description: 课程组 ID
+        type: integer
+      history:
+        description: 修改历史，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.ReviewHistoryV1Response'
+        type: array
+      id:
+        type: integer
+      rank:
+        allOf:
+          - $ref: '#/definitions/schema.ReviewRankV1'
+        description: 评价
+      remark:
+        description: Remark = 点赞数 - 点踩数
+        type: integer
+      reviewer_id:
+        description: 评教者 ID
+        type: integer
+      time_created:
+        description: 创建时间
+        type: string
+      time_updated:
+        description: 更新时间
+        type: string
+      title:
+        description: 评教标题
+        type: string
+      vote:
+        description: 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+        type: integer
+    type: object
+  schema.PagedResponse-schema_CourseGroupV3Response-any:
+    properties:
+      extra: { }
+      items:
+        items:
+          $ref: '#/definitions/schema.CourseGroupV3Response'
+        type: array
+      page:
+        type: integer
+      page_size:
+        type: integer
+    type: object
+  schema.RandomReviewV1Response:
+    properties:
+      content:
+        description: 评教内容
+        type: string
+      course:
+        allOf:
+          - $ref: '#/definitions/schema.CourseV1Response'
+        description: 课程信息
+      extra:
+        allOf:
+          - $ref: '#/definitions/schema.UserExtraV1'
+        description: 额外信息
+      group_id:
+        description: 课程组 ID
+        type: integer
+      history:
+        description: 修改历史，slices 必须非空
+        items:
+          $ref: '#/definitions/schema.ReviewHistoryV1Response'
+        type: array
+      id:
+        type: integer
+      rank:
+        allOf:
+          - $ref: '#/definitions/schema.ReviewRankV1'
+        description: 评价
+      remark:
+        description: Remark = 点赞数 - 点踩数
+        type: integer
+      reviewer_id:
+        description: 评教者 ID
+        type: integer
+      time_created:
+        description: 创建时间
+        type: string
+      time_updated:
+        description: 更新时间
+        type: string
+      title:
+        description: 评教标题
+        type: string
+      vote:
+        description: 自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩
+        type: integer
+    type: object
   schema.RegisterRequest:
     properties:
       email:
@@ -195,7 +416,7 @@ definitions:
         type: string
       rank:
         allOf:
-        - $ref: '#/definitions/schema.ReviewRankV1'
+          - $ref: '#/definitions/schema.ReviewRankV1'
         description: 评价
       remark:
         description: Remark = 点赞数 - 点踩数
@@ -220,7 +441,7 @@ definitions:
         type: integer
       original:
         allOf:
-        - $ref: '#/definitions/schema.ReviewHistoryV1'
+          - $ref: '#/definitions/schema.ReviewHistoryV1'
         description: 修改前的评教
       time:
         description: 创建时间
@@ -230,15 +451,23 @@ definitions:
     properties:
       assessment:
         description: 考核方面
+        maximum: 5
+        minimum: 1
         type: integer
       content:
         description: 内容、风格方面
+        maximum: 5
+        minimum: 1
         type: integer
       overall:
         description: 总体方面
+        maximum: 5
+        minimum: 1
         type: integer
       workload:
         description: 工作量方面
+        maximum: 5
+        minimum: 1
         type: integer
     type: object
   schema.ReviewV1Response:
@@ -248,7 +477,7 @@ definitions:
         type: string
       extra:
         allOf:
-        - $ref: '#/definitions/schema.UserExtraV1'
+          - $ref: '#/definitions/schema.UserExtraV1'
         description: 额外信息
       history:
         description: 修改历史，slices 必须非空
@@ -256,14 +485,13 @@ definitions:
           $ref: '#/definitions/schema.ReviewHistoryV1Response'
         type: array
       id:
-        description: 评教 ID
         type: integer
       is_me:
         description: 是否是自己的评教
         type: boolean
       rank:
         allOf:
-        - $ref: '#/definitions/schema.ReviewRankV1'
+          - $ref: '#/definitions/schema.ReviewRankV1'
         description: 评价
       remark:
         description: Remark = 点赞数 - 点踩数
@@ -324,26 +552,203 @@ definitions:
       value:
         description: Value is the actual value that failed validation
     type: object
+  schema.VoteForReviewV1Request:
+    properties:
+      upvote:
+        type: boolean
+    type: object
 info:
   contact:
     email: dev@fduhole.com
     name: Maintainer Chen Ke
     url: https://danxi.fduhole.com/about
-  description: Next Generation of Auth microservice integrated with kong for registration
-    and issuing tokens
+  description: Next Generation of OpenTreeHole Backend
   license:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
-  title: Open Tree Hole Auth
+  title: OpenTreeHole Backend
   version: 3.0.0
 paths:
+  /courses:
+    get:
+      consumes:
+        - application/json
+      deprecated: true
+      description: list all course_groups and courses, no reviews, old version or
+        v1 version
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.CourseGroupV1Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: list courses
+      tags:
+        - Course
+    post:
+      consumes:
+        - application/json
+      description: create a course, only admin can create
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.CreateCourseV1Request'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: create a course
+      tags:
+        - Course
+  /courses/{course_id}/reviews:
+    post:
+      consumes:
+        - application/json
+      description: create a review
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.CreateReviewV1Request'
+        - description: course id
+          in: path
+          name: course_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: create a review
+      tags:
+        - Review
+  /courses/{id}:
+    get:
+      consumes:
+        - application/json
+      deprecated: true
+      description: get a course with reviews, old version or v1 version
+      parameters:
+        - description: course_id
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get a course
+      tags:
+        - Course
+  /courses/hash:
+    get:
+      consumes:
+        - application/json
+      description: get course group hash
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseGroupHashV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get course group hash
+      tags:
+        - CourseGroup
+  /courses/refresh:
+    get:
+      consumes:
+        - application/json
+      description: refresh course group hash, admin only
+      produces:
+        - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "418":
+          description: I'm a teapot
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: refresh course group hash
+      tags:
+        - CourseGroup
   /divisions:
     get:
       consumes:
-      - application/json
+        - application/json
       description: list all divisions
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -361,20 +766,20 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: list all divisions
       tags:
-      - Division
+        - Division
     post:
       consumes:
-      - application/json
+        - application/json
       description: create a division, only admin can create
       parameters:
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.DivisionCreateRequest'
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionCreateRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
@@ -390,26 +795,26 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: create a division
       tags:
-      - Division
+        - Division
   /divisions/{id}:
     delete:
       consumes:
-      - application/json
+        - application/json
       description: delete a division, only admin can delete
       parameters:
-      - description: division id
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.DivisionDeleteRequest'
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionDeleteRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "204":
           description: No Content
@@ -425,19 +830,19 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: delete a division
       tags:
-      - Division
+        - Division
     get:
       consumes:
-      - application/json
+        - application/json
       description: get a division
       parameters:
-      - description: division id
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -453,25 +858,25 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: get a division
       tags:
-      - Division
+        - Division
     put:
       consumes:
-      - application/json
+        - application/json
       description: modify a division, only admin can modify
       parameters:
-      - description: division id
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.DivisionModifyRequest'
+        - description: division id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.DivisionModifyRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -487,21 +892,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: modify a division
       tags:
-      - Division
+        - Division
   /group/{id}:
     get:
       consumes:
-      - application/json
+        - application/json
       deprecated: true
       description: get a course group, old version or v1 version
       parameters:
-      - description: course group id
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: course group id
+          in: path
+          name: id
+          required: true
+          type: integer
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -521,21 +926,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: /group/{group_id}
       tags:
-      - CourseGroup
+        - CourseGroup
   /login:
     post:
       consumes:
-      - application/json
+        - application/json
       description: login with email and password
       parameters:
-      - description: LoginRequest
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.LoginRequest'
+        - description: LoginRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.LoginRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "200":
           description: OK
@@ -551,22 +956,22 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: login
       tags:
-      - Account
+        - Account
   /register:
     post:
       consumes:
-      - application/json
+        - application/json
       description: register with email, password and optional verification code if
         enabled
       parameters:
-      - description: RegisterRequest
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.RegisterRequest'
+        - description: RegisterRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.RegisterRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
@@ -582,21 +987,21 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: register
       tags:
-      - Account
+        - Account
     put:
       consumes:
-      - application/json
+        - application/json
       description: reset password with email, password and optional verification code
         if enabled
       parameters:
-      - description: ResetPasswordRequest
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.ResetPasswordRequest'
+        - description: ResetPasswordRequest
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.ResetPasswordRequest'
       produces:
-      - application/json
+        - application/json
       responses:
         "201":
           description: Created
@@ -612,5 +1017,203 @@ paths:
             $ref: '#/definitions/schema.HttpBaseError'
       summary: reset password
       tags:
-      - Account
+        - Account
+  /reviews/{review_id}:
+    patch:
+      consumes:
+        - application/json
+      description: vote for a review
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.VoteForReviewV1Request'
+        - description: review id
+          in: path
+          name: review_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: vote for a review
+      tags:
+        - Review
+    put:
+      consumes:
+        - application/json
+      description: modify a review, admin or owner can modify
+      parameters:
+        - description: json
+          in: body
+          name: json
+          required: true
+          schema:
+            $ref: '#/definitions/schema.ModifyReviewV1Request'
+        - description: review id
+          in: path
+          name: review_id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: modify a review
+      tags:
+        - Review
+  /reviews/me:
+    get:
+      consumes:
+        - application/json
+      description: list my reviews, old version. load history and achievements, no
+        `is_me` field
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.MyReviewV1Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: list my reviews
+      tags:
+        - Review
+  /reviews/random:
+    get:
+      consumes:
+        - application/json
+      description: get random review
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.RandomReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: get random review
+      tags:
+        - Review
+  /v3/course_groups/{id}:
+    get:
+      consumes:
+        - application/json
+      description: get a course group, v3 version
+      parameters:
+        - description: course group id
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.CourseGroupV3Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: /v3/course_groups/{group_id}
+      tags:
+        - CourseGroup
+  /v3/course_groups/search:
+    get:
+      consumes:
+        - application/json
+      description: search course group, no courses
+      parameters:
+        - example: 0
+          in: query
+          minimum: 0
+          name: page
+          type: integer
+        - example: 10
+          in: query
+          maximum: 100
+          minimum: 0
+          name: page_size
+          type: integer
+        - example: 计算机
+          in: query
+          name: query
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.PagedResponse-schema_CourseGroupV3Response-any'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/schema.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/schema.HttpBaseError'
+      summary: search course group
+      tags:
+        - CourseGroup
+schemes:
+  - http
+  - https
 swagger: "2.0"

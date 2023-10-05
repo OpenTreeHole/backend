@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/caarlos0/env/v9"
 	"github.com/creasty/defaults"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/pflag"
@@ -13,9 +14,37 @@ import (
 	"github.com/opentreehole/backend/pkg/utils"
 )
 
+type EnvConfig struct {
+	Mode string `env:"MODE"`
+
+	LogLevel string `env:"LOG_LEVEL" `
+
+	Port int `env:"PORT" `
+
+	DBType string `env:"DB_TYPE"`
+
+	DBDSN string `env:"DB_DSN"`
+
+	CacheType string `env:"CACHE_TYPE" `
+
+	CacheUrl string `env:"CACHE_URL" `
+
+	SearchEngineType string `env:"SEARCH_ENGINE_TYPE" `
+
+	SearchEngineUrl string `env:"SEARCH_ENGINE_URL" `
+
+	ModulesAuth bool `env:"MODULES_AUTH" `
+
+	ModulesNotification bool `env:"MODULES_NOTIFICATION"`
+
+	ModulesTreehole bool `env:"MODULES_TREEHOLE"`
+
+	ModulesCurriculumBoard bool `env:"MODULES_CURRICULUM_BOARD"`
+}
+
 type Config struct {
 	// app mode: dev, production, test, bench, default is dev
-	Mode string `yaml:"mode" default:"dev" json:"mode"`
+	Mode string `yaml:"mode" default:"dev" json:"mode" validate:"oneof=dev production test bench"`
 
 	// LogLevel is the log level, default is debug
 	LogLevel string `yaml:"log_level" default:"debug" json:"log_level" validate:"oneof=debug info warn error dpanic panic fatal"`
@@ -217,12 +246,16 @@ func NewConfig() *AtomicAllConfig {
 		defaultIdentifierSaltFile,
 		"identifier salt file path",
 	)
+	pflag.Parse()
+
+	// get env config
+	envConfig := GetEnvConfig()
 
 	// read config from file
-	err = config.ReadFromFile(configFilename)
-	if err != nil {
-		panic(err)
-	}
+	config.ReadFromFile(configFilename)
+
+	// copy env config to config
+	CopyEnvConfigToConfig(envConfig, &config)
 
 	err = validator.New().Struct(&config)
 	if err != nil {
@@ -230,25 +263,24 @@ func NewConfig() *AtomicAllConfig {
 	}
 
 	// save config
-	err = config.WriteIntoFile(configFilename)
-	if err != nil {
-		panic(err)
-	}
+	config.WriteIntoFile(configFilename)
 
-	// parse identifier salt from file
-	identifierSaltBytes, err := os.ReadFile(identifierSaltFilename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			if config.Mode == "production" {
-				panic("identifier salt file not found")
-			} else {
-				fileConfig.DecryptedIdentifierSalt = []byte("123456")
-			}
-		}
-	} else {
-		fileConfig.DecryptedIdentifierSalt, err = base64.StdEncoding.DecodeString(utils.BytesToString(identifierSaltBytes))
+	if config.Modules.Auth {
+		// parse identifier salt from file
+		identifierSaltBytes, err := os.ReadFile(identifierSaltFilename)
 		if err != nil {
-			panic("decode identifier salt error")
+			if os.IsNotExist(err) {
+				if config.Mode == "production" {
+					panic("identifier salt file not found")
+				} else {
+					fileConfig.DecryptedIdentifierSalt = []byte("123456")
+				}
+			}
+		} else {
+			fileConfig.DecryptedIdentifierSalt, err = base64.StdEncoding.DecodeString(utils.BytesToString(identifierSaltBytes))
+			if err != nil {
+				panic("decode identifier salt error")
+			}
 		}
 	}
 
@@ -259,20 +291,32 @@ func NewConfig() *AtomicAllConfig {
 	return &allConfig
 }
 
+func GetEnvConfig() *EnvConfig {
+	var envConfig EnvConfig
+	err := env.Parse(&envConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	defer defaults.MustSet(&envConfig)
+
+	return &envConfig
+}
+
 // ReadFromFile read config from file
 // if file not exist, create it with default value; else read it
-func (config *Config) ReadFromFile(name string) (err error) {
+func (config *Config) ReadFromFile(name string) {
 	var file *os.File
 
 	// set default value finally
 	defer defaults.MustSet(config)
 
-	file, err = os.Open(name)
+	file, err := os.Open(name)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return
 		}
-		return
+		panic(err)
 	}
 
 	defer func(file *os.File) {
@@ -284,20 +328,16 @@ func (config *Config) ReadFromFile(name string) (err error) {
 
 	err = json.NewDecoder(file).Decode(config)
 	if err != nil {
-		return
+		panic(err)
 	}
-
-	return
 }
 
 // WriteIntoFile write config into file
 // if file not exist, create it; else truncate it
-func (config *Config) WriteIntoFile(name string) (err error) {
-	var file *os.File
-
-	file, err = os.OpenFile(name, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
+func (config *Config) WriteIntoFile(name string) {
+	file, err := os.OpenFile(name, os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0666)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	defer func(file *os.File) {
@@ -311,8 +351,61 @@ func (config *Config) WriteIntoFile(name string) (err error) {
 	encoder.SetIndent("", "    ")
 	err = encoder.Encode(config)
 	if err != nil {
-		return
+		panic(err)
 	}
 
-	return
+}
+
+func CopyEnvConfigToConfig(envConfig *EnvConfig, config *Config) {
+	if envConfig.Mode != "" {
+		config.Mode = envConfig.Mode
+	}
+
+	if envConfig.LogLevel != "" {
+		config.LogLevel = envConfig.LogLevel
+	}
+
+	if envConfig.Port != 0 {
+		config.Port = envConfig.Port
+	}
+
+	if envConfig.DBType != "" {
+		config.DB.Type = envConfig.DBType
+	}
+
+	if envConfig.DBDSN != "" {
+		config.DB.DSN = envConfig.DBDSN
+	}
+
+	if envConfig.CacheType != "" {
+		config.Cache.Type = envConfig.CacheType
+	}
+
+	if envConfig.CacheUrl != "" {
+		config.Cache.Url = envConfig.CacheUrl
+	}
+
+	if envConfig.SearchEngineType != "" {
+		config.SearchEngine.Type = envConfig.SearchEngineType
+	}
+
+	if envConfig.SearchEngineUrl != "" {
+		config.SearchEngine.Url = envConfig.SearchEngineUrl
+	}
+
+	if envConfig.ModulesAuth {
+		config.Modules.Auth = envConfig.ModulesAuth
+	}
+
+	if envConfig.ModulesNotification {
+		config.Modules.Notification = envConfig.ModulesNotification
+	}
+
+	if envConfig.ModulesTreehole {
+		config.Modules.Treehole = envConfig.ModulesTreehole
+	}
+
+	if envConfig.ModulesCurriculumBoard {
+		config.Modules.CurriculumBoard = envConfig.ModulesCurriculumBoard
+	}
 }

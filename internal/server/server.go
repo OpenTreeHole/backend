@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/handler"
@@ -19,6 +20,8 @@ import (
 type Server struct {
 	config       *config.AtomicAllConfig
 	logger       *log.Logger
+	db           *gorm.DB
+	app          *fiber.App
 	rootRegister []handler.RouteRegister
 	handlers     []handler.RouteRegister
 }
@@ -41,6 +44,7 @@ func NewServer(
 	// others
 	logger *log.Logger,
 	config *config.AtomicAllConfig,
+	db *gorm.DB,
 ) *Server {
 	var handlers []handler.RouteRegister
 
@@ -66,6 +70,7 @@ func NewServer(
 	return &Server{
 		logger: logger,
 		config: config,
+		db:     db,
 		rootRegister: []handler.RouteRegister{
 			docsHandler,
 		},
@@ -73,26 +78,45 @@ func NewServer(
 	}
 }
 
-func (s *Server) Run() {
+func (s *Server) GetFiberApp() *fiber.App {
+	if s.app != nil {
+		return s.app
+	}
+
 	var disableStartupMessage = true
 	if s.config.Load().Mode == "dev" {
 		disableStartupMessage = false
 	}
-	var app = fiber.New(fiber.Config{
+	s.app = fiber.New(fiber.Config{
 		DisableStartupMessage: disableStartupMessage,
 		ErrorHandler:          schema.ErrorHandler,
 	})
 	s.logger.Info(fmt.Sprintf("register: %v", s.rootRegister))
 
-	RegisterMiddlewares(s.config)(app)
+	RegisterMiddlewares(s.config)(s.app)
 	for _, h := range s.rootRegister {
-		h.RegisterRoute(app)
+		h.RegisterRoute(s.app)
 	}
 	s.logger.Info(fmt.Sprintf("handlers: %v", s.handlers))
 
 	for _, h := range s.handlers {
-		h.RegisterRoute(app.Group("/api"))
+		h.RegisterRoute(s.app.Group("/api"))
 	}
+	s.app.Get("/api", func(c *fiber.Ctx) error {
+		// TODO: add meta info
+		return c.JSON(fiber.Map{
+			"message": "Hello, World!",
+		})
+	})
+	return s.app
+}
+
+func (s *Server) GetDB() *gorm.DB {
+	return s.db
+}
+
+func (s *Server) Run() {
+	app := s.GetFiberApp()
 
 	// start server
 	go func() {

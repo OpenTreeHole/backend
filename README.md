@@ -37,6 +37,79 @@ nunu run
 
 API 文档详见启动项目之后的 http://localhost:8000/docs
 
+### 生产部署
+
+#### 使用 docker 部署
+
+```shell
+docker run -d \
+  --name opentreehole_backend \
+  -p 8000:8000 \
+  -e MODULES_CURRICULUM_BOARD=true \
+  -v opentreehole_data:/app/data \
+  -v opentreehole_config:/app/config \
+  opentreehole/backend:latest
+```
+
+#### 使用 docker-compose 部署
+
+```yaml
+version: '3'
+
+services:
+  backend:
+    image: opentreehole/backend:latest
+    restart: unless-stopped
+    environment:
+      - DB_TYPE=mysql
+      - DB_URL=opentreehole:${MYSQL_PASSWORD}@tcp(mysql:3306)/opentreehole?parseTime=true&loc=Asia%2FShanghai
+      - CACHE_TYPE=redis
+      - CACHE_URL=redis:6379
+      - MODULES_CURRICULUM_BOARD=true
+    volumes:
+      - data:/app/data
+      - config:/app/config
+
+  mysql:
+    image: mysql:8.0.34
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=opentreehole
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=opentreehole
+      - TZ=Asia/Shanghai
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - mysql_config:/etc/mysql/conf.d
+
+  redis:
+    container_name: fduhole_redis
+    image: redis:7.0.11-alpine
+    restart: always
+
+volumes:
+  data:
+  config:
+```
+
+环境变量：
+
+1. `TZ`: 生产环境默认 `Asia/Shanghai`
+2. `MODE`: 开发环境默认 `dev`, 生产环境默认 `production`, 可选 `test`, `bench`
+3. `LOG_LEVEL`: 开发环境默认 `debug`, 生产环境默认 `info`, 可选 `warn`, `error`, `panic`, `fatal`
+4. `PORT`: 默认 8000
+5. `DB_TYPE`: 默认 `sqlite`, 可选 `mysql`, `postgres`
+6. `DB_DSN`: 默认 `data/sqlite.db`
+7. `MODULES_{AUTH/NOTIFICATION/TREEHOLE/CURRICULUM_BOARD}`: 开启模块，默认为 `false`
+
+数据卷：
+
+1. `/app/data`: 数据库文件存放位置
+2. `/app/config`: 配置文件存放位置
+
+注：环境变量设置仅在程序启动时生效，后续可以修改 `config/config.json` 动态修改配置
+
 ### 开发指南
 
 1. 使用 wire 作为依赖注入框架。如果创建了新的依赖项，需要在 `cmd/wire/wire.go` 中注册依赖项的构造函数，之后运行 `nunu wire`
