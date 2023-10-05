@@ -38,8 +38,8 @@ func (d *divisionService) ListDivisions(ctx context.Context) (response []*schema
 	}
 
 	response = make([]*schema.DivisionResponse, len(divisionsModel))
-	for i, model := range divisionsModel {
-		response[i] = new(schema.DivisionResponse).FromModel(model, nil)
+	for i, divisionModel := range divisionsModel {
+		response[i] = new(schema.DivisionResponse).FromModel(divisionModel, nil)
 	}
 
 	return response, nil
@@ -63,6 +63,9 @@ func (d *divisionService) CreateDivision(ctx context.Context, request *schema.Di
 		Name:        request.Name,
 		Description: request.Description,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	response = new(schema.DivisionResponse).FromModel(divisionModel, nil)
 	return response, nil

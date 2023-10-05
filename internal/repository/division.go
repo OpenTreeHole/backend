@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/opentreehole/backend/internal/model"
 )
 
@@ -63,6 +65,20 @@ func (d *divisionRepository) CreateDivision(ctx context.Context, request *model.
 		return nil, err
 	}
 	response = request
+
+	var divisions []*model.Division
+	_, err = d.GetCache(ctx).Get(ctx, "divisions", &divisions)
+	if err != nil {
+		if errors.Is(err, fmt.Errorf("entry not found")) {
+			return response, err
+		}
+	}
+	divisions = append(divisions, response)
+
+	err = d.GetCache(ctx).Set(ctx, "divisions", divisions)
+	if err != nil {
+		return nil, err
+	}
 
 	return response, err
 }
