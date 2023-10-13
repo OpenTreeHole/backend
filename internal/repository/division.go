@@ -66,18 +66,9 @@ func (d *divisionRepository) CreateDivision(ctx context.Context, request *model.
 	}
 	response = request
 
-	var divisions []*model.Division
-	_, err = d.GetCache(ctx).Get(ctx, "divisions", &divisions)
-	if err != nil {
-		if errors.Is(err, fmt.Errorf("entry not found")) {
-			return response, err
-		}
-	}
-	divisions = append(divisions, response)
-
-	err = d.GetCache(ctx).Set(ctx, "divisions", divisions)
-	if err != nil {
-		return nil, err
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return response, err
 	}
 
 	return response, err
@@ -91,20 +82,29 @@ func (d *divisionRepository) ModifyDivision(ctx context.Context, id int, request
 		return nil, err
 	}
 
-	response = request
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return response, err
+	}
 
-	//err = d.GetCache(ctx).Set(ctx, "divisions", nil)
-	//if err != nil {
-	//	return nil, err
-	//}
+	response = request
 
 	return response, err
 }
 
 func (d *divisionRepository) DeleteDivision(ctx context.Context, id int) (err error) {
 
-	return d.GetDB(ctx).Delete(&model.Division{}, id).Error
+	err = d.GetDB(ctx).Delete(&model.Division{}, id).Error
+	if err != nil {
+		return err
+	}
 
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return err
+	}
+
+	return nil
 }
 
 func NewDivisionRepository(repository Repository) DivisionRepository {
