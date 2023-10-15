@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"strconv"
@@ -90,11 +91,14 @@ func (s *Server) GetFiberApp() *fiber.App {
 		DisableStartupMessage: disableStartupMessage,
 		ErrorHandler:          schema.ErrorHandler,
 	})
+	s.logger.Info(fmt.Sprintf("register: %v", s.rootRegister))
 
 	RegisterMiddlewares(s.config)(s.app)
 	for _, h := range s.rootRegister {
 		h.RegisterRoute(s.app)
 	}
+	s.logger.Info(fmt.Sprintf("handlers: %v", s.handlers))
+
 	for _, h := range s.handlers {
 		h.RegisterRoute(s.app.Group("/api"))
 	}

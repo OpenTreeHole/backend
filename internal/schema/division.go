@@ -53,3 +53,13 @@ func (d *DivisionResponse) FromModel(m *model.Division, pinned []struct{}) *Divi
 	d.Pinned = pinned
 	return d
 }
+
+func (d *DivisionCreateRequest) ToModel() (m *model.Division) {
+
+	m = &model.Division{
+		Name:        d.Name,
+		Description: d.Description,
+	}
+
+	return m
+}

@@ -2,7 +2,7 @@ module github.com/opentreehole/backend
 
 go 1.21
 
-toolchain go1.21.0
+//toolchain go1.21.0
 
 require (
 	github.com/allegro/bigcache/v3 v3.1.0
@@ -83,6 +83,7 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
+	golang.org/dl v0.0.0-20231002235324-248fa84a4fc2 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect

@@ -26,7 +26,7 @@ type Repository interface {
 	GetDB(ctx context.Context) *gorm.DB
 	GetCache(ctx context.Context) *cache.Cache
 	GetConfig(ctx context.Context) *config.AllConfig
-
+	GetLogger(ctx context.Context) *log.Logger
 	// GetFiberCtx 获取 fiber.Ctx
 	// 必须在 ctx 中设置 "FiberCtx" 为 fiber.Ctx，否则会 panic
 	GetFiberCtx(ctx context.Context) *fiber.Ctx
@@ -37,6 +37,11 @@ type repository struct {
 	cache  *cache.Cache
 	logger *log.Logger
 	conf   *config.AtomicAllConfig
+}
+
+func (r *repository) GetLogger(ctx context.Context) *log.Logger {
+	//TODO implement me
+	return r.logger
 }
 
 func NewRepository(db *gorm.DB, cache *cache.Cache, logger *log.Logger, conf *config.AtomicAllConfig) Repository {

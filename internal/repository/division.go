@@ -2,7 +2,8 @@ package repository
 
 import (
 	"context"
-
+	"errors"
+	"fmt"
 	"github.com/opentreehole/backend/internal/model"
 )
 
@@ -28,28 +29,82 @@ type divisionRepository struct {
 }
 
 func (d *divisionRepository) ListDivisions(ctx context.Context) (response []*model.Division, err error) {
-	//TODO implement me
-	panic("implement me")
+
+	_, err = d.GetCache(ctx).Get(ctx, "divisions", &response)
+	if err == nil {
+		return response, nil
+	}
+
+	err = d.GetDB(ctx).Find(&response).Error
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.GetCache(ctx).Set(ctx, "divisions", response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, err
 }
 
 func (d *divisionRepository) GetDivisionByID(ctx context.Context, id int) (response *model.Division, err error) {
-	//TODO implement me
-	panic("implement me")
+
+	err = d.GetDB(ctx).First(&response, id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return response, err
 }
 
 func (d *divisionRepository) CreateDivision(ctx context.Context, request *model.Division) (response *model.Division, err error) {
-	//TODO implement me
-	panic("implement me")
+
+	err = d.GetDB(ctx).FirstOrCreate(&request, model.Division{Name: request.Name}).Error
+	if err != nil {
+		return nil, err
+	}
+	response = request
+
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return response, err
+	}
+
+	return response, err
 }
 
 func (d *divisionRepository) ModifyDivision(ctx context.Context, id int, request *model.Division) (response *model.Division, err error) {
-	//TODO implement me
-	panic("implement me")
+
+	request.ID = id
+	err = d.GetDB(ctx).Model(&request).Updates(request).Error
+	if err != nil {
+		return nil, err
+	}
+
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return response, err
+	}
+
+	response = request
+
+	return response, err
 }
 
 func (d *divisionRepository) DeleteDivision(ctx context.Context, id int) (err error) {
-	//TODO implement me
-	panic("implement me")
+
+	err = d.GetDB(ctx).Delete(&model.Division{}, id).Error
+	if err != nil {
+		return err
+	}
+
+	err = d.GetCache(ctx).Delete(ctx, "divisions")
+	if err != nil && errors.Is(err, fmt.Errorf("entry not found")) {
+		return err
+	}
+
+	return nil
 }
 
 func NewDivisionRepository(repository Repository) DivisionRepository {

@@ -8,11 +8,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/rs/zerolog/log"
-
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/schema"
 	"github.com/opentreehole/backend/pkg/utils"
+	"github.com/rs/zerolog/log"
 )
 
 func GetUserID(c *fiber.Ctx) (int, error) {
