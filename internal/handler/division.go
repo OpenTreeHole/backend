@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/backend/internal/repository"
 	"github.com/opentreehole/backend/internal/schema"
@@ -95,13 +94,11 @@ func (h *divisionHandler) CreateDivision(c *fiber.Ctx) (err error) {
 
 	c.Context().SetUserValue("FiberCtx", c)
 	user, err := h.account.GetCurrentUser(c.Context())
-	h.logger.Info(fmt.Sprintf("user: %+v", user))
+
 	if err != nil {
-		h.logger.Info(fmt.Sprintf("err: %v", err))
 		return err
 	}
 	if !user.IsAdmin {
-		h.logger.Info(fmt.Sprintf("user: %+v", user))
 		return c.JSON(schema.Forbidden())
 	}
 
@@ -145,8 +142,6 @@ func (h *divisionHandler) ModifyDivision(c *fiber.Ctx) (err error) {
 	if !user.IsAdmin {
 		return c.JSON(schema.Forbidden())
 	}
-
-	h.logger.Info(fmt.Sprintf("user_id: %d", user.ID))
 
 	response, err := h.service.ModifyDivision(c.Context(), id, &body)
 	if err != nil {
