@@ -8,10 +8,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/rs/zerolog/log"
+
 	"github.com/opentreehole/backend/internal/config"
 	"github.com/opentreehole/backend/internal/schema"
 	"github.com/opentreehole/backend/pkg/utils"
-	"github.com/rs/zerolog/log"
 )
 
 func GetUserID(c *fiber.Ctx) (int, error) {
@@ -77,7 +78,8 @@ func MiddlewareCustomLogger(c *fiber.Ctx) error {
 		Str("method", c.Method()).
 		Str("origin_url", c.OriginalURL()).
 		Str("remote_ip", c.Get("X-Real-IP")).
-		Int64("latency", latency)
+		Int64("latency", latency).
+		Str("user_agent", c.Get("User-Agent"))
 	if ok {
 		output = output.Int("user_id", userID)
 	}
