@@ -181,6 +181,7 @@ func (c *courseGroupService) SearchCourseGroupV3(
 			}
 			db = db.Limit(pageSize).Offset((page - 1) * pageSize)
 		} else {
+			page = 1
 			if pageSize > 0 {
 				db = db.Limit(pageSize)
 			}

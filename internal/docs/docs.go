@@ -892,7 +892,7 @@ const docTemplate = `{
                     {
                         "minimum": 0,
                         "type": "integer",
-                        "example": 0,
+                        "example": 1,
                         "name": "page",
                         "in": "query"
                     },

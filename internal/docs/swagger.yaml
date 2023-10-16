@@ -1175,7 +1175,7 @@ paths:
         - application/json
       description: search course group, no courses
       parameters:
-        - example: 0
+        - example: 1
           in: query
           minimum: 0
           name: page
