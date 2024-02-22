@@ -13,7 +13,7 @@ require (
 	github.com/eko/gocache/store/redis/v4 v4.2.1
 	github.com/go-playground/validator/v10 v10.16.0
 	github.com/goccy/go-json v0.10.2
-	github.com/gofiber/fiber/v2 v2.51.0
+	github.com/gofiber/fiber/v2 v2.52.1
 	github.com/gofiber/swagger v0.1.14
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/wire v0.5.0
