@@ -1,0 +1,6 @@
+.idea/
+*.exe
+*.db
+*.sqlite
+*.sqlite3
+*.http
