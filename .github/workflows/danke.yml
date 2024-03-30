@@ -1,0 +1,11 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  docker-build-danke:
+    uses: ./.github/workflows/main.yml
+    with:
+      service_name: danke
+    secrets: inherit

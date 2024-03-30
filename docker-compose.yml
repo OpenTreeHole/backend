@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: danke_backend
+#    image: opentreehole/backend:latest
+    build:
+      args:
+        - SERVICE_NAME=danke
+    environment:
+      - DB_TYPE=mysql
+      - DB_URL=cb:cb@tcp(db:3306)/danke?parseTime=true
+      - CACHE_TYPE=redis
+      - CACHE_URL=redis:6379
+    volumes:
+      - data:/app/data
+    ports:
+      - "10580:8000"
+    #command: migrate danke_v3
+
+  db:
+    container_name: danke_db
+    image: mysql:8.0
+#    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: danke
+      MYSQL_USER: cb
+      MYSQL_PASSWORD: cb
+
+volumes:
+  data:
+    name: danke_data
+  db_data:
+    name: danke_db_data

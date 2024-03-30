@@ -45,7 +45,7 @@ func GetCourseGroupV1(c *fiber.Ctx) (err error) {
 	}
 
 	// 获取课程组的所有课程的所有评论，同时加载评论的历史记录和用户成就
-	err = courseGroup.Courses.LoadReviewList(DB, true, true)
+	err = courseGroup.Courses.LoadReviewList(DB, FindReviewOption{PreloadHistory: true, PreloadAchievement: true})
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func RefreshCourseGroupHashV1(c *fiber.Ctx) (err error) {
 // @Produce json
 // @Router /v3/course_groups/search [get]
 // @Param request query schema.CourseGroupSearchV3Request true "search query"
-// @Success 200 {object} common.PagedResponse[schema.CourseGroupV3Response, any]
+// @Success 200 {object} PagedResponse[schema.CourseGroupV3Response, any]
 // @Failure 400 {object} common.HttpError
 // @Failure 404 {object} common.HttpBaseError
 // @Failure 500 {object} common.HttpBaseError
@@ -214,7 +214,7 @@ func GetCourseGroupV3(c *fiber.Ctx) (err error) {
 	}
 
 	// 获取课程组的所有课程的所有评论，同时加载评论的历史记录和用户成就
-	err = courseGroup.Courses.LoadReviewList(DB, true, true)
+	err = courseGroup.Courses.LoadReviewList(DB, FindReviewOption{PreloadHistory: true, PreloadAchievement: true})
 	if err != nil {
 		return err
 	}

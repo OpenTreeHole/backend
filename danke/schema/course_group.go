@@ -2,6 +2,7 @@ package schema
 
 import (
 	"github.com/jinzhu/copier"
+	"github.com/opentreehole/backend/common"
 
 	"github.com/opentreehole/backend/danke/model"
 )
@@ -17,7 +18,7 @@ type CourseGroupV1Response struct {
 }
 
 func (r *CourseGroupV1Response) FromModel(
-	user *model.User,
+	user *common.User,
 	group *model.CourseGroup,
 ) *CourseGroupV1Response {
 	err := copier.Copy(r, group)
@@ -66,7 +67,7 @@ type CourseGroupV3Response struct {
 }
 
 func (r *CourseGroupV3Response) FromModel(
-	user *model.User,
+	user *common.User,
 	group *model.CourseGroup,
 ) *CourseGroupV3Response {
 	err := copier.Copy(r, group)

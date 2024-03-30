@@ -34,6 +34,35 @@ type Review struct {
 	UserAchievements []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
 }
 
+type FindReviewOption struct {
+	PreloadHistory     bool
+	PreloadAchievement bool
+}
+
+func (o FindReviewOption) setQuery(querySet *gorm.DB) *gorm.DB {
+	if o.PreloadHistory {
+		querySet.Preload("History")
+	}
+	if o.PreloadAchievement {
+		querySet.Preload("UserAchievements.Achievement")
+	}
+	return querySet
+}
+
+func FindReviewByID(tx *gorm.DB, reviewID int, options ...FindReviewOption) (review *Review, err error) {
+	var option FindReviewOption
+	if len(options) > 0 {
+		option = options[0]
+	}
+
+	querySet := option.setQuery(tx)
+	err = querySet.First(&review, reviewID).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, common.NotFound("评论不存在")
+	}
+	return
+}
+
 func (r *Review) LoadVoteListByUserID(userID int) (err error) {
 	return ReviewList{r}.LoadVoteListByUserID(userID)
 }

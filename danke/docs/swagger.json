@@ -1,0 +1,1271 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "蛋壳 API，一个半匿名评教系统",
+        "title": "蛋壳 API",
+        "contact": {
+            "name": "Maintainer Ke Chen",
+            "email": "dev@fduhole.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "3.0.0"
+    },
+    "basePath": "/api",
+    "paths": {
+        "/courses": {
+            "get": {
+                "description": "list all course_groups and courses, no reviews, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "list courses",
+                "deprecated": true,
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.CourseGroupV1Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "add a course, admin only",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "add a course",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateCourseV1Request"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/hash": {
+            "get": {
+                "description": "get course group hash",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "get course group hash",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupHashV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/refresh": {
+            "get": {
+                "description": "refresh course group hash, admin only",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "refresh course group hash",
+                "responses": {
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    },
+                    "418": {
+                        "description": "I'm a teapot"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{course_id}/reviews": {
+            "post": {
+                "description": "create a review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "create a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.CreateReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "course id",
+                        "name": "course_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/courses/{id}": {
+            "get": {
+                "description": "get a course with reviews, v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Course"
+                ],
+                "summary": "get a course",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "course_id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/group/{id}": {
+            "get": {
+                "description": "get a course group, old version or v1 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "/group/{group_id}",
+                "deprecated": true,
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/me": {
+            "get": {
+                "description": "list my reviews, old version. load history and achievements, no `is_me` field",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "list my reviews",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.MyReviewV1Response"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/random": {
+            "get": {
+                "description": "get random review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "get random review",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.RandomReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/{review_id}": {
+            "put": {
+                "description": "modify a review, admin or owner can modify",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "modify a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifyReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "vote for a review",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "vote for a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.VoteForReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v3/course_groups/search": {
+            "get": {
+                "description": "search course group, no courses",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "search course group",
+                "parameters": [
+                    {
+                        "minimum": 0,
+                        "type": "integer",
+                        "example": 1,
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 0,
+                        "type": "integer",
+                        "example": 10,
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "计算机",
+                        "name": "query",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/common.PagedResponse-schema_CourseGroupV3Response-any"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v3/course_groups/{id}": {
+            "get": {
+                "description": "get a course group, v3 version",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "CourseGroup"
+                ],
+                "summary": "get a course group",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "course group id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.CourseGroupV3Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "common.ErrorDetailElement": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "param": {
+                    "type": "string"
+                },
+                "struct_field": {
+                    "type": "string"
+                },
+                "tag": {
+                    "type": "string"
+                },
+                "value": {}
+            }
+        },
+        "common.HttpBaseError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.HttpError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "detail": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/common.ErrorDetailElement"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "common.PagedResponse-schema_CourseGroupV3Response-any": {
+            "type": "object",
+            "properties": {
+                "extra": {},
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseGroupV3Response"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.AchievementV1Response": {
+            "type": "object",
+            "properties": {
+                "domain": {
+                    "description": "成就域",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "成就名称",
+                    "type": "string"
+                },
+                "obtain_date": {
+                    "description": "获取日期",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.CourseGroupHashV1Response": {
+            "type": "object",
+            "properties": {
+                "hash": {
+                    "type": "string"
+                }
+            }
+        },
+        "schema.CourseGroupV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程组编号",
+                    "type": "string"
+                },
+                "course_list": {
+                    "description": "课程组下的课程，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseV1Response"
+                    }
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程组名称",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.CourseGroupV3Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "课程组编号",
+                    "type": "string"
+                },
+                "course_count": {
+                    "description": "课程数量",
+                    "type": "integer"
+                },
+                "course_list": {
+                    "description": "课程组下的课程，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.CourseV1Response"
+                    }
+                },
+                "credits": {
+                    "description": "学分",
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "课程组名称",
+                    "type": "string"
+                },
+                "review_count": {
+                    "description": "评价数量",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.CourseV1Response": {
+            "type": "object",
+            "properties": {
+                "campus_name": {
+                    "description": "开课校区",
+                    "type": "string"
+                },
+                "code": {
+                    "description": "编号",
+                    "type": "string"
+                },
+                "code_id": {
+                    "description": "选课序号。用于区分同一课程编号的不同平行班",
+                    "type": "string"
+                },
+                "credit": {
+                    "description": "学分",
+                    "type": "number"
+                },
+                "department": {
+                    "description": "开课学院",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "max_student": {
+                    "description": "最大选课人数",
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "名称",
+                    "type": "string"
+                },
+                "review_list": {
+                    "description": "评教列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewV1Response"
+                    }
+                },
+                "semester": {
+                    "description": "学期",
+                    "type": "integer"
+                },
+                "teachers": {
+                    "description": "老师：多个老师用逗号分隔",
+                    "type": "string"
+                },
+                "week_hour": {
+                    "description": "周学时",
+                    "type": "integer"
+                },
+                "year": {
+                    "description": "学年",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.CreateCourseV1Request": {
+            "type": "object",
+            "required": [
+                "campus_name",
+                "code",
+                "code_id",
+                "credit",
+                "department",
+                "max_student",
+                "name",
+                "semester",
+                "teachers",
+                "week_hour",
+                "year"
+            ],
+            "properties": {
+                "campus_name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "code": {
+                    "type": "string",
+                    "minLength": 4
+                },
+                "code_id": {
+                    "type": "string",
+                    "minLength": 4
+                },
+                "credit": {
+                    "type": "number",
+                    "minimum": 0.5
+                },
+                "department": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "max_student": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "semester": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "teachers": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "week_hour": {
+                    "type": "integer"
+                },
+                "year": {
+                    "type": "integer",
+                    "minimum": 2000
+                }
+            }
+        },
+        "schema.CreateReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                }
+            }
+        },
+        "schema.ModifyReviewV1Request": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 10240,
+                    "minLength": 1
+                },
+                "rank": {
+                    "$ref": "#/definitions/schema.ReviewRankV1"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                }
+            }
+        },
+        "schema.MyReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "course": {
+                    "description": "课程信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    ]
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.RandomReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "course": {
+                    "description": "课程信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.CourseV1Response"
+                        }
+                    ]
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "课程组 ID",
+                    "type": "integer"
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.ReviewHistoryV1": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "旧内容",
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "旧标题",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewHistoryV1Response": {
+            "type": "object",
+            "properties": {
+                "alter_by": {
+                    "description": "修改者",
+                    "type": "integer"
+                },
+                "original": {
+                    "description": "修改前的评教",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewHistoryV1"
+                        }
+                    ]
+                },
+                "time": {
+                    "description": "创建时间",
+                    "type": "string"
+                }
+            }
+        },
+        "schema.ReviewRankV1": {
+            "type": "object",
+            "properties": {
+                "assessment": {
+                    "description": "考核方面",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "content": {
+                    "description": "内容、风格方面",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "overall": {
+                    "description": "总体方面",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                },
+                "workload": {
+                    "description": "工作量方面",
+                    "type": "integer",
+                    "maximum": 5,
+                    "minimum": 1
+                }
+            }
+        },
+        "schema.ReviewV1Response": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "评教内容",
+                    "type": "string"
+                },
+                "extra": {
+                    "description": "额外信息",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.UserExtraV1"
+                        }
+                    ]
+                },
+                "history": {
+                    "description": "修改历史，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.ReviewHistoryV1Response"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_me": {
+                    "description": "是否是自己的评教",
+                    "type": "boolean"
+                },
+                "rank": {
+                    "description": "评价",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/schema.ReviewRankV1"
+                        }
+                    ]
+                },
+                "remark": {
+                    "description": "Remark = 点赞数 - 点踩数",
+                    "type": "integer"
+                },
+                "reviewer_id": {
+                    "description": "评教者 ID",
+                    "type": "integer"
+                },
+                "time_created": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "time_updated": {
+                    "description": "更新时间",
+                    "type": "string"
+                },
+                "title": {
+                    "description": "评教标题",
+                    "type": "string"
+                },
+                "vote": {
+                    "description": "自己是否点赞或点踩，0 未操作，1 点赞，-1 点踩",
+                    "type": "integer"
+                }
+            }
+        },
+        "schema.UserExtraV1": {
+            "type": "object",
+            "properties": {
+                "achievements": {
+                    "description": "用户成就，slices 必须非空",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/schema.AchievementV1Response"
+                    }
+                }
+            }
+        },
+        "schema.VoteForReviewV1Request": {
+            "type": "object",
+            "properties": {
+                "upvote": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}

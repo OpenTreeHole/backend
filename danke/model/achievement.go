@@ -15,7 +15,8 @@ type Achievement struct {
 
 // UserAchievement 用户成就关联表
 type UserAchievement struct {
-	UserID        int       `json:"user_id" gorm:"primaryKey"`        // 用户 ID
-	AchievementID int       `json:"achievement_id" gorm:"primaryKey"` // 成就 ID
-	ObtainDate    time.Time `json:"obtain_date"`                      // 获得日期
+	UserID        int          `json:"user_id" gorm:"primaryKey"`        // 用户 ID
+	AchievementID int          `json:"achievement_id" gorm:"primaryKey"` // 成就 ID
+	ObtainDate    time.Time    `json:"obtain_date"`                      // 获得日期
+	Achievement   *Achievement `json:"achievement" gorm:"foreignKey:AchievementID"`
 }

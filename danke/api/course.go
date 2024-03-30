@@ -54,12 +54,12 @@ func ListCoursesV1(c *fiber.Ctx) (err error) {
 func GetCourseV1(c *fiber.Ctx) (err error) {
 	user, err := GetCurrentUser(c)
 	if err != nil {
-		return err
+		return
 	}
 
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return err
+		return
 	}
 
 	// 获取课程，课程的评论，评论的历史记录和用户成就
@@ -69,7 +69,7 @@ func GetCourseV1(c *fiber.Ctx) (err error) {
 		Preload("Reviews.UserAchievements.Achievement").
 		First(&course, id).Error
 	if err != nil {
-		return err
+		return
 	}
 
 	// 获取课程的评论的自己的投票

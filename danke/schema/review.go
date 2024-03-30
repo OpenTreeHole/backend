@@ -253,7 +253,7 @@ type ReviewV3Response struct {
 }
 
 func (r *ReviewV3Response) FromModel(
-	user *model.User,
+	user *common.User,
 	review *model.Review,
 	votesMap map[int]*model.ReviewVote,
 ) *ReviewV3Response {

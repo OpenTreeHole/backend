@@ -78,13 +78,9 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 	}
 
 	// 查找评论
-	var review Review
-	err = DB.First(&review, id).Error
+	review, err := FindReviewByID(DB, id)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return
-		}
-		return NotFound("评论不存在")
+		return
 	}
 
 	// 检查权限
@@ -98,7 +94,16 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 		return
 	}
 
-	return c.JSON(new(ReviewV1Response).FromModel(user, &review))
+	// 查找评论
+	review, err = FindReviewByID(DB, id, FindReviewOption{
+		PreloadHistory:     true,
+		PreloadAchievement: true,
+	})
+	if err != nil {
+		return
+	}
+
+	return c.JSON(new(ReviewV1Response).FromModel(user, review))
 }
 
 // VoteForReviewV1 godoc
@@ -131,13 +136,9 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 	}
 
 	// 查找评论
-	var review Review
-	err = DB.First(&review, reviewID).Error
+	review, err := FindReviewByID(DB, reviewID)
 	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return
-		}
-		return NotFound("评论不存在")
+		return err
 	}
 
 	err = DB.Transaction(func(tx *gorm.DB) (err error) {
@@ -176,8 +177,14 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 		// 更新评论投票数
 		err = tx.Model(&review).
 			UpdateColumns(map[string]any{
-				"upvote_count":   tx.Model(&ReviewVote{}).Where("review_id = ? AND data = 1", reviewID).Select("count(*)"),
-				"downvote_count": tx.Model(&ReviewVote{}).Where("review_id = ? AND data = -1", reviewID).Select("count(*)"),
+				"upvote_count": tx.
+					Model(&ReviewVote{}).
+					Where("review_id = ? AND data = 1", reviewID).
+					Select("count(*)"),
+				"downvote_count": tx.
+					Model(&ReviewVote{}).
+					Where("review_id = ? AND data = -1", reviewID).
+					Select("count(*)"),
 			}).Error
 		return
 	})
@@ -186,12 +193,15 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 	}
 
 	// 查找评论
-	err = DB.First(&review, reviewID).Error
+	review, err = FindReviewByID(DB, reviewID, FindReviewOption{
+		PreloadHistory:     true,
+		PreloadAchievement: true,
+	})
 	if err != nil {
-		return
+		return err
 	}
 
-	return c.JSON(new(ReviewV1Response).FromModel(user, &review))
+	return c.JSON(new(ReviewV1Response).FromModel(user, review))
 }
 
 // ListMyReviewsV1 godoc

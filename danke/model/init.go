@@ -1,11 +1,11 @@
 package model
 
 import (
+	"github.com/glebarez/sqlite"
 	"github.com/opentreehole/backend/common"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -33,7 +33,7 @@ func Init() {
 		panic(err)
 	}
 
-	if viper.GetString(common.EnvMode) == "dev" {
+	if viper.GetString(common.EnvLogLevel) == "debug" {
 		DB = DB.Debug()
 	}
 

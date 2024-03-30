@@ -73,22 +73,22 @@ func (c *Course) Create() (err error) {
 
 type CourseList []*Course
 
-func (l CourseList) LoadReviewList(tx *gorm.DB, history bool, achievements bool) (err error) {
+func (l CourseList) LoadReviewList(tx *gorm.DB, options ...FindReviewOption) (err error) {
+	var option FindReviewOption
+	if len(options) > 0 {
+		option = options[0]
+	}
+
+	querySet := option.setQuery(tx)
+
 	courseIDs := make([]int, len(l))
 	for i, course := range l {
 		courseIDs[i] = course.ID
 	}
 
 	// 获取课程组的所有课程的所有评论，同时加载评论的历史记录和用户成就
-	var querySet = tx
-	if history {
-		querySet = querySet.Preload("History")
-	}
-	if achievements {
-		querySet = querySet.Preload("UserAchievements.Achievement")
-	}
 	var reviews ReviewList
-	err = querySet.Find(&reviews).Error
+	err = querySet.Where("course_id IN ?", courseIDs).Find(&reviews).Error
 	if err != nil {
 		return err
 	}

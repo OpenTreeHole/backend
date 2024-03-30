@@ -11,12 +11,21 @@ import (
 // common config
 const (
 	EnvMode      = "MODE"
-	EnvPort      = "PORT"
+	EnvLogLevel  = "LOG_LEVEL"
 	EnvDBType    = "DB_TYPE"
 	EnvDBUrl     = "DB_URL"
 	EnvCacheType = "CACHE_TYPE"
 	EnvCacheUrl  = "CACHE_URL"
 )
+
+var defaultConfig = map[string]string{
+	EnvMode:      "dev",
+	EnvLogLevel:  "debug",
+	EnvDBType:    "sqlite",
+	EnvDBUrl:     "file::memory:?cache=shared",
+	EnvCacheType: "memory",
+	EnvCacheUrl:  "",
+}
 
 var GormConfig = &gorm.Config{
 	NamingStrategy: schema.NamingStrategy{
@@ -36,4 +45,7 @@ var GormConfig = &gorm.Config{
 
 func init() {
 	viper.AutomaticEnv()
+	for k, v := range defaultConfig {
+		viper.SetDefault(k, v)
+	}
 }
