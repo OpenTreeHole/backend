@@ -33,3 +33,5 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.service_name }}_backend:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ inputs.service_name }}_backend:master
+          build-args: |
+            SERVICE_NAME=${{ inputs.service_name }}
