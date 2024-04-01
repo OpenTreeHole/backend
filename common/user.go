@@ -4,17 +4,18 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"log/slog"
 	"strings"
 	"time"
 )
 
 type UserClaims struct {
-	ID        int        `json:"id,omitempty"`
-	UserID    int        `json:"user_id,omitempty"`
-	UID       int        `json:"uid,omitempty"`
-	IsAdmin   bool       `json:"is_admin"`
-	ExpiresAt *time.Time `json:"exp,omitempty"`
+	ID        int              `json:"id,omitempty"`
+	UserID    int              `json:"user_id,omitempty"`
+	UID       int              `json:"uid,omitempty"`
+	IsAdmin   bool             `json:"is_admin"`
+	ExpiresAt *jwt.NumericDate `json:"exp,omitempty"`
 }
 
 type User struct {
@@ -55,7 +56,7 @@ func ParseJWTToken(token string, user any) error {
 	// jwt encoding uses url safe base64 encoding, so RawURLEncoding should be used instead of RawStdEncoding
 	payloadBytes, err := base64.RawURLEncoding.DecodeString(payloadString) // the middle one is payload
 	if err != nil {
-		slog.Error("jwt parse error", "err", err, "payload_string", payloadString)
+		slog.Error("jwt parse error", "err", err, "payload_string", payloadString, "payload_bytes", string(payloadBytes))
 		return ErrInvalidJWTToken
 	}
 
