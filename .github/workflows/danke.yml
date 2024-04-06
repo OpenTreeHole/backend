@@ -2,6 +2,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'danke/**'
+      - 'common/**'
+      - '.github/workflows/danke.yml'
+      - '.github/workflows/common.yml'
+      - 'Dockerfile'
+      - 'go.mod'
 
 jobs:
   docker-build-danke:
