@@ -130,7 +130,7 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 		return
 	}
 
-	reviewID, err := c.ParamsInt("review_id")
+	reviewID, err := c.ParamsInt("id")
 	if err != nil {
 		return
 	}
