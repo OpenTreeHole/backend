@@ -667,6 +667,36 @@ paths:
       tags:
       - CourseGroup
   /reviews/{review_id}:
+    delete:
+      consumes:
+      - application/json
+      description: delete a review, admin or owner can delete
+      parameters:
+      - description: review id
+        in: path
+        name: review_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.HttpError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/common.HttpError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpError'
+      summary: delete a review
+      tags:
+      - Review
     patch:
       consumes:
       - application/json

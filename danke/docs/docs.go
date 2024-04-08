@@ -458,6 +458,51 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "description": "delete a review, admin or owner can delete",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "delete a review",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "description": "vote for a review",
                 "consumes": [
