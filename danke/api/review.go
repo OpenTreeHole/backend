@@ -144,7 +144,7 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 	err = DB.Transaction(func(tx *gorm.DB) (err error) {
 		// 获取用户投票
 		var vote ReviewVote
-		err = tx.Where("review_id = ? AND voter_id = ?", reviewID, user.ID).First(&vote).Error
+		err = tx.Where("review_id = ? AND user_id = ?", reviewID, user.ID).First(&vote).Error
 		if err != nil {
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return
