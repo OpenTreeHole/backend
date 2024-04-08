@@ -9,6 +9,83 @@ import (
 	"gorm.io/gorm"
 )
 
+// GetReviewV1 godoc
+// @Summary get a review
+// @Description get a review
+// @Tags Review
+// @Accept json
+// @Produce json
+// @Router /reviews/{id} [get]
+// @Param id path int true "review id"
+// @Success 200 {object} schema.ReviewV1Response
+// @Failure 400 {object} common.HttpError
+func GetReviewV1(c *fiber.Ctx) (err error) {
+	user, err := GetCurrentUser(c)
+	if err != nil {
+		return
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return
+	}
+
+	review, err := FindReviewByID(DB, id, FindReviewOption{
+		PreloadHistory:     true,
+		PreloadAchievement: true,
+		PreloadVote:        true,
+		UserID:             user.ID,
+	})
+	if err != nil {
+		return
+	}
+
+	return c.JSON(new(ReviewV1Response).FromModel(user, review))
+}
+
+// ListReviewsV1 godoc
+// @Summary list reviews
+// @Description list reviews
+// @Tags Review
+// @Accept json
+// @Produce json
+// @Router /courses/{id}/reviews [get]
+// @Param id path int true "course id"
+// @Success 200 {array} schema.ReviewV1Response
+// @Failure 400 {object} common.HttpError
+func ListReviewsV1(c *fiber.Ctx) (err error) {
+	user, err := GetCurrentUser(c)
+	if err != nil {
+		return
+	}
+
+	courseID, err := c.ParamsInt("id")
+	if err != nil {
+		return
+	}
+
+	// 查找评论
+	var reviews ReviewList
+	err = DB.Find(&reviews, "course_id = ?", courseID).Error
+	if err != nil {
+		return
+	}
+
+	// 加载评论投票
+	err = reviews.LoadVoteListByUserID(user.ID)
+	if err != nil {
+		return
+	}
+
+	// 创建 response
+	response := make([]*ReviewV1Response, 0, len(reviews))
+	for _, review := range reviews {
+		response = append(response, new(ReviewV1Response).FromModel(user, review))
+	}
+
+	return c.JSON(response)
+}
+
 // CreateReviewV1 godoc
 // @Summary create a review
 // @Description create a review

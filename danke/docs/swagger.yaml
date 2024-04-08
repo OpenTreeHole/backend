@@ -580,6 +580,33 @@ paths:
       summary: get a course
       tags:
       - Course
+  /courses/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: list reviews
+      parameters:
+      - description: course id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.ReviewV1Response'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.HttpError'
+      summary: list reviews
+      tags:
+      - Review
   /courses/hash:
     get:
       consumes:
@@ -666,6 +693,31 @@ paths:
       summary: /group/{group_id}
       tags:
       - CourseGroup
+  /reviews/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get a review
+      parameters:
+      - description: review id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.ReviewV1Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/common.HttpError'
+      summary: get a review
+      tags:
+      - Review
   /reviews/{review_id}:
     delete:
       consumes:
