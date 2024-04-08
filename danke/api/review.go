@@ -98,6 +98,8 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 	review, err = FindReviewByID(DB, id, FindReviewOption{
 		PreloadHistory:     true,
 		PreloadAchievement: true,
+		PreloadVote:        true,
+		UserID:             user.ID,
 	})
 	if err != nil {
 		return
@@ -196,6 +198,8 @@ func VoteForReviewV1(c *fiber.Ctx) (err error) {
 	review, err = FindReviewByID(DB, reviewID, FindReviewOption{
 		PreloadHistory:     true,
 		PreloadAchievement: true,
+		PreloadVote:        true,
+		UserID:             user.ID,
 	})
 	if err != nil {
 		return err

@@ -96,11 +96,14 @@ func (r *ReviewV1Response) FromModel(
 	r.Rank = new(ReviewRankV1).FromModel(review.Rank)
 	r.Remark = review.UpvoteCount - review.DownvoteCount
 
-	for _, vote := range review.Vote {
-		if vote.UserID == user.ID {
-			r.Vote = vote.Data
+	if user != nil {
+		for _, vote := range review.Vote {
+			if vote.UserID == user.ID {
+				r.Vote = vote.Data
+			}
 		}
 	}
+
 	r.History = make([]*ReviewHistoryV1Response, 0, len(review.History))
 	for _, history := range review.History {
 		r.History = append(r.History, new(ReviewHistoryV1Response).FromModel(review, history, r.Rank))

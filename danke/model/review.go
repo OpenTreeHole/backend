@@ -30,21 +30,30 @@ type Review struct {
 	DownvoteCount    int                `json:"downvote_count" gorm:"not null;default:0"`
 	ModifyCount      int                `json:"modify_count" gorm:"not null;default:0"`
 	History          ReviewHistoryList  `json:"-"`
-	Vote             ReviewVoteList     `json:"-"`
+	Vote             ReviewVoteList     `json:"-" gorm:"foreignKey:ReviewID;references:ID"`
 	UserAchievements []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
 }
 
 type FindReviewOption struct {
 	PreloadHistory     bool
 	PreloadAchievement bool
+	PreloadVote        bool
+	UserID             int
 }
 
 func (o FindReviewOption) setQuery(querySet *gorm.DB) *gorm.DB {
 	if o.PreloadHistory {
-		querySet.Preload("History")
+		querySet = querySet.Preload("History")
 	}
 	if o.PreloadAchievement {
-		querySet.Preload("UserAchievements.Achievement")
+		querySet = querySet.Preload("UserAchievements.Achievement")
+	}
+	if o.PreloadVote {
+		if o.UserID != 0 {
+			querySet = querySet.Preload("Vote", "user_id = ?", o.UserID)
+		} else {
+			querySet = querySet.Preload("Vote")
+		}
 	}
 	return querySet
 }
