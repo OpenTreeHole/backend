@@ -108,6 +108,49 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 	return c.JSON(new(ReviewV1Response).FromModel(user, review))
 }
 
+// DeleteReviewV1 godoc
+// @Summary delete a review
+// @Description delete a review, admin or owner can delete
+// @Tags Review
+// @Accept json
+// @Produce json
+// @Param review_id path int true "review id"
+// @Router /reviews/{review_id} [delete]
+// @Success 204
+// @Failure 400 {object} common.HttpError
+// @Failure 403 {object} common.HttpError
+// @Failure 404 {object} common.HttpError
+func DeleteReviewV1(c *fiber.Ctx) (err error) {
+	user, err := GetCurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return
+	}
+
+	// 查找评论
+	review, err := FindReviewByID(DB, id)
+	if err != nil {
+		return
+	}
+
+	// 检查权限
+	if !user.IsAdmin && review.ReviewerID != user.ID {
+		return Forbidden("没有权限")
+	}
+
+	// 删除评论
+	err = DB.Delete(review).Error
+	if err != nil {
+		return
+	}
+
+	return c.Status(204).JSON(nil)
+}
+
 // VoteForReviewV1 godoc
 // @Summary vote for a review
 // @Description vote for a review
