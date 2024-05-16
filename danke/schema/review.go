@@ -87,6 +87,14 @@ func (r *ReviewV1Response) FromModel(
 		panic(err)
 	}
 
+	if review.Sensitive() {
+		if review.IsActuallySensitive != nil && *review.IsActuallySensitive {
+			r.Content = "该内容因违反社区规范被删除"
+		} else {
+			r.Content = "该内容正在审核中"
+		}
+	}
+
 	if user != nil {
 		r.IsMe = user.ID == review.ReviewerID
 	} else {

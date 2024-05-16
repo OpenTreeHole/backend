@@ -4,9 +4,11 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	. "github.com/opentreehole/backend/common"
+	"github.com/opentreehole/backend/common/sensitive"
 	. "github.com/opentreehole/backend/danke/model"
 	. "github.com/opentreehole/backend/danke/schema"
 	"gorm.io/gorm"
+	"time"
 )
 
 // GetReviewV1 godoc
@@ -117,10 +119,18 @@ func CreateReviewV1(c *fiber.Ctx) (err error) {
 
 	// 创建评论
 	review := req.ToModel(user.ID, courseID)
-	err = review.Create(DB)
+
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  req.Title + "\n" + req.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTitle,
+	})
 	if err != nil {
-		return
+		return err
 	}
+	review.IsSensitive = !sensitiveResp.Pass
+	review.IsActuallySensitive = nil
+	review.SensitiveDetail = sensitiveResp.Detail
 
 	return c.JSON(new(ReviewV1Response).FromModel(user, review))
 }
@@ -165,8 +175,25 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 		return Forbidden("没有权限")
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  req.Title + "\n" + req.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTitle,
+	})
+	if err != nil {
+		return err
+	}
+
+	var newReview = Review{
+		IsSensitive:         !sensitiveResp.Pass,
+		IsActuallySensitive: nil,
+		SensitiveDetail:     sensitiveResp.Detail,
+		Content:             req.Content,
+		Title:               req.Title,
+	}
+
 	// 修改评论
-	err = review.Update(DB, req.Title, req.Content, req.Rank.ToModel())
+	err = review.Update(DB, newReview, req.Rank.ToModel())
 	if err != nil {
 		return
 	}

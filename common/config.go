@@ -10,21 +10,33 @@ import (
 
 // common config
 const (
-	EnvMode      = "MODE"
-	EnvLogLevel  = "LOG_LEVEL"
-	EnvDBType    = "DB_TYPE"
-	EnvDBUrl     = "DB_URL"
-	EnvCacheType = "CACHE_TYPE"
-	EnvCacheUrl  = "CACHE_URL"
+	EnvMode                 = "MODE"
+	EnvLogLevel             = "LOG_LEVEL"
+	EnvDBType               = "DB_TYPE"
+	EnvDBUrl                = "DB_URL"
+	EnvCacheType            = "CACHE_TYPE"
+	EnvCacheUrl             = "CACHE_URL"
+	EnvYiDunBusinessIdText  = "YI_DUN_BUSINESS_ID_TEXT"
+	EnvYiDunBusinessIdImage = "YI_DUN_BUSINESS_ID_IMAGE"
+	EnvYiDunSecretId        = "YI_DUN_SECRET_ID"
+	EnvYiDunSecretKey       = "YI_DUN_SECRET_KEY"
+	EnvValidImageUrl        = "VALID_IMAGE_URL"
+	EnvUrlHostnameWhitelist = "URL_HOSTNAME_WHITELIST"
 )
 
 var defaultConfig = map[string]string{
-	EnvMode:      "dev",
-	EnvLogLevel:  "debug",
-	EnvDBType:    "sqlite",
-	EnvDBUrl:     "file::memory:?cache=shared",
-	EnvCacheType: "memory",
-	EnvCacheUrl:  "",
+	EnvMode:                 "dev",
+	EnvLogLevel:             "debug",
+	EnvDBType:               "sqlite",
+	EnvDBUrl:                "file::memory:?cache=shared",
+	EnvCacheType:            "memory",
+	EnvCacheUrl:             "",
+	EnvYiDunBusinessIdText:  "",
+	EnvYiDunBusinessIdImage: "",
+	EnvYiDunSecretId:        "",
+	EnvYiDunSecretKey:       "",
+	EnvValidImageUrl:        "",
+	EnvUrlHostnameWhitelist: "",
 }
 
 var GormConfig = &gorm.Config{
