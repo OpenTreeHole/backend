@@ -67,7 +67,7 @@ func main() {
 
 func registerMiddlewares(app *fiber.App) {
 	app.Use(recover.New(recover.Config{EnableStackTrace: true}))
-	// app.Use(common.MiddlewareGetUserID)
+	app.Use(common.MiddlewareGetUserID)
 	if viper.GetString(common.EnvMode) != "bench" {
 		app.Use(common.MiddlewareCustomLogger)
 	}
