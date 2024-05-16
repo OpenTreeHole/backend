@@ -32,6 +32,7 @@ type Review struct {
 	History          ReviewHistoryList  `json:"-"`
 	Vote             ReviewVoteList     `json:"-" gorm:"foreignKey:ReviewID;references:ID"`
 	UserAchievements []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
+	DeletedAt        gorm.DeletedAt     `json:"deleted_at" gorm:"index"`
 }
 
 type FindReviewOption struct {

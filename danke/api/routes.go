@@ -35,11 +35,14 @@ func registerRoutes(r fiber.Router) {
 	r.Get("/courses/refresh", RefreshCourseGroupHashV1)
 
 	// Review
+	r.Get("/reviews/:id<int>", GetReviewV1)
+	r.Get("/courses/:id<int>/reviews", ListReviewsV1)
 	r.Post("/courses/:id<int>/reviews", CreateReviewV1)
 	r.Put("/reviews/:id<int>", ModifyReviewV1)
 	r.Patch("/reviews/:id<int>", VoteForReviewV1)
 	r.Get("/reviews/me", ListMyReviewsV1)
 	r.Get("/reviews/random", GetRandomReviewV1)
+	r.Delete("/reviews/:id<int>", DeleteReviewV1)
 
 	// v3
 	// CourseGroup
