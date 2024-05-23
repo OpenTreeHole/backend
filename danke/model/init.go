@@ -42,8 +42,15 @@ func Init() {
 		&Course{},
 		&Review{},
 		&Achievement{},
+		&UrlHostnameWhitelist{},
 	)
 	if err != nil {
 		panic(err)
 	}
+	var hostnames []string
+	err = DB.Model(&UrlHostnameWhitelist{}).Pluck("hostname", &hostnames).Error
+	if err != nil {
+		panic(err)
+	}
+	viper.Set(common.EnvUrlHostnameWhitelist, hostnames)
 }
