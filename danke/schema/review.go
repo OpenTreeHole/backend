@@ -296,3 +296,39 @@ func (r *ReviewV3Response) FromModel(
 	return r
 
 }
+
+type SensitiveReviewRequest struct {
+	Size   int               `json:"size" query:"size" default:"10" validate:"max=10"`
+	Offset common.CustomTime `json:"offset" query:"offset" swaggertype:"string"`
+	Open   bool              `json:"open" query:"open"`
+	All    bool              `json:"all" query:"all"`
+}
+
+type SensitiveReviewResponse struct {
+	ID                  int               `json:"id"`
+	CreatedAt           time.Time         `json:"time_created"`
+	UpdatedAt           time.Time         `json:"time_updated"`
+	Content             string            `json:"content"`
+	IsActuallySensitive *bool             `json:"is_actually_sensitive"`
+	SensitiveDetail     string            `json:"sensitive_detail,omitempty"`
+	ModifyCount         int               `json:"modify_count"`
+	Title               string            `json:"title"`
+	Course              *CourseV1Response `json:"course"`
+}
+
+func (s *SensitiveReviewResponse) FromModel(review *model.Review) *SensitiveReviewResponse {
+	s.ID = review.ID
+	s.CreatedAt = review.CreatedAt
+	s.UpdatedAt = review.UpdatedAt
+	s.Content = review.Content
+	s.ModifyCount = review.ModifyCount
+	s.Title = review.Title
+	s.Course = new(CourseV1Response).FromModel(nil, review.Course)
+	s.IsActuallySensitive = review.IsActuallySensitive
+	s.SensitiveDetail = review.SensitiveDetail
+	return s
+}
+
+type ModifySensitiveReviewRequest struct {
+	IsActuallySensitive bool `json:"is_actually_sensitive"`
+}
