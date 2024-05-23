@@ -53,4 +53,7 @@ func registerRoutes(r fiber.Router) {
 	//router.Get("/static/cedict_ts.u8", func(c *fiber.Ctx) error {
 	//	return c.Send(data.CreditTs)
 	//})
+
+	r.Get("/v3/reviews/_sensitive", ListSensitiveReviews)
+	r.Put("/v3/reviews/:id<int>/_sensitive", ModifyReviewSensitive)
 }

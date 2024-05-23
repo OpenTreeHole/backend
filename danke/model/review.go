@@ -17,22 +17,25 @@ type ReviewRank struct {
 
 // Review 评教
 type Review struct {
-	ID               int                `json:"id"`
-	CreatedAt        time.Time          `json:"created_at" gorm:"not null"`
-	UpdatedAt        time.Time          `json:"updated_at" gorm:"not null"`
-	CourseID         int                `json:"course_id" gorm:"not null;index"`
-	Course           *Course            `json:"course"`
-	Title            string             `json:"title" gorm:"not null"`
-	Content          string             `json:"content" gorm:"not null"`
-	ReviewerID       int                `json:"reviewer_id" gorm:"not null;index"`
-	Rank             *ReviewRank        `json:"rank" gorm:"embedded;embeddedPrefix:rank_"`
-	UpvoteCount      int                `json:"upvote_count" gorm:"not null;default:0"`
-	DownvoteCount    int                `json:"downvote_count" gorm:"not null;default:0"`
-	ModifyCount      int                `json:"modify_count" gorm:"not null;default:0"`
-	History          ReviewHistoryList  `json:"-"`
-	Vote             ReviewVoteList     `json:"-" gorm:"foreignKey:ReviewID;references:ID"`
-	UserAchievements []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
-	DeletedAt        gorm.DeletedAt     `json:"deleted_at" gorm:"index"`
+	ID                  int                `json:"id"`
+	CreatedAt           time.Time          `json:"created_at" gorm:"not null"`
+	UpdatedAt           time.Time          `json:"updated_at" gorm:"not null"`
+	CourseID            int                `json:"course_id" gorm:"not null;index"`
+	Course              *Course            `json:"course"`
+	Title               string             `json:"title" gorm:"not null"`
+	Content             string             `json:"content" gorm:"not null"`
+	ReviewerID          int                `json:"reviewer_id" gorm:"not null;index"`
+	Rank                *ReviewRank        `json:"rank" gorm:"embedded;embeddedPrefix:rank_"`
+	UpvoteCount         int                `json:"upvote_count" gorm:"not null;default:0"`
+	DownvoteCount       int                `json:"downvote_count" gorm:"not null;default:0"`
+	ModifyCount         int                `json:"modify_count" gorm:"not null;default:0"`
+	History             ReviewHistoryList  `json:"-"`
+	Vote                ReviewVoteList     `json:"-" gorm:"foreignKey:ReviewID;references:ID"`
+	UserAchievements    []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
+	DeletedAt           gorm.DeletedAt     `json:"deleted_at" gorm:"index"`
+	IsSensitive         bool               `json:"is_sensitive"`
+	IsActuallySensitive *bool              `json:"is_actually_sensitive"`
+	SensitiveDetail     string             `json:"sensitive_detail,omitempty"`
 }
 
 type FindReviewOption struct {
@@ -57,6 +60,16 @@ func (o FindReviewOption) setQuery(querySet *gorm.DB) *gorm.DB {
 		}
 	}
 	return querySet
+}
+
+func (r *Review) Sensitive() bool {
+	if r == nil {
+		return false
+	}
+	if r.IsActuallySensitive != nil {
+		return *r.IsActuallySensitive
+	}
+	return r.IsSensitive
 }
 
 func FindReviewByID(tx *gorm.DB, reviewID int, options ...FindReviewOption) (review *Review, err error) {
@@ -140,32 +153,35 @@ func (r *Review) Create(tx *gorm.DB) (err error) {
 
 }
 
-func (r *Review) Update(tx *gorm.DB, title string, content string, rank *ReviewRank) (err error) {
+func (r *Review) Update(tx *gorm.DB, newReview Review) (err error) {
 	// 记录修改历史
 	var history ReviewHistory
 	history.FromReview(r)
 
 	// 更新评教
 	modified := false
-	if title != "" {
-		r.Title = title
+	if newReview.Title != "" {
+		r.Title = newReview.Title
 		modified = true
 	}
-	if content != "" {
-		r.Content = content
+	if newReview.Content != "" {
+		r.Content = newReview.Content
 		modified = true
 	}
-	if rank != nil {
-		r.Rank = rank
+	if newReview.Rank != nil {
+		r.Rank = newReview.Rank
 		modified = true
 	}
 	if !modified {
 		return common.BadRequest("没有修改内容")
 	}
+	r.IsSensitive = newReview.IsSensitive
+	r.IsActuallySensitive = newReview.IsActuallySensitive
+	r.SensitiveDetail = newReview.SensitiveDetail
 
 	r.ModifyCount++
 	err = tx.Transaction(func(tx *gorm.DB) (err error) {
-		err = tx.Select("Title", "Content", "Rank", "ModifyCount").
+		err = tx.Select("Title", "Content", "Rank", "ModifyCount", "IsSensitive", "IsActuallySensitive", "SensitiveDetail").
 			Updates(r).Error
 		if err != nil {
 			return
@@ -204,13 +220,16 @@ func (l ReviewList) LoadVoteListByUserID(userID int) (err error) {
 
 // ReviewHistory 评教修改历史
 type ReviewHistory struct {
-	ID        int       `json:"id"`
-	CreatedAt time.Time `json:"created_at"` // 创建时间，原本是 time_created
-	UpdatedAt time.Time `json:"updated_at"` // 更新时间，原本是 time_updated
-	ReviewID  int       `json:"review_id" gorm:"not null;index"`
-	AlterBy   int       `json:"alter_by" gorm:"not null"` // 修改人 ID
-	Title     string    `json:"title" gorm:"not null"`    // 修改前的标题
-	Content   string    `json:"content" gorm:"not null"`  // 修改前的内容
+	ID                  int       `json:"id"`
+	CreatedAt           time.Time `json:"created_at"` // 创建时间，原本是 time_created
+	UpdatedAt           time.Time `json:"updated_at"` // 更新时间，原本是 time_updated
+	ReviewID            int       `json:"review_id" gorm:"not null;index"`
+	AlterBy             int       `json:"alter_by" gorm:"not null"` // 修改人 ID
+	Title               string    `json:"title" gorm:"not null"`    // 修改前的标题
+	Content             string    `json:"content" gorm:"not null"`  // 修改前的内容
+	IsSensitive         bool      `json:"is_sensitive"`
+	IsActuallySensitive *bool     `json:"is_actual_sensitive"`
+	SensitiveDetail     string    `json:"sensitive_detail,omitempty"`
 }
 
 func (h *ReviewHistory) FromReview(review *Review) {
@@ -218,6 +237,9 @@ func (h *ReviewHistory) FromReview(review *Review) {
 	h.AlterBy = review.ReviewerID
 	h.Title = review.Title
 	h.Content = review.Content
+	h.IsSensitive = review.IsSensitive
+	h.IsActuallySensitive = review.IsActuallySensitive
+	h.SensitiveDetail = review.SensitiveDetail
 }
 
 type ReviewHistoryList []*ReviewHistory

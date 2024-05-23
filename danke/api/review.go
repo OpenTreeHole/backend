@@ -4,9 +4,13 @@ import (
 	"errors"
 	"github.com/gofiber/fiber/v2"
 	. "github.com/opentreehole/backend/common"
+	"github.com/opentreehole/backend/common/sensitive"
 	. "github.com/opentreehole/backend/danke/model"
 	. "github.com/opentreehole/backend/danke/schema"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+	"gorm.io/plugin/dbresolver"
+	"time"
 )
 
 // GetReviewV1 godoc
@@ -117,6 +121,19 @@ func CreateReviewV1(c *fiber.Ctx) (err error) {
 
 	// 创建评论
 	review := req.ToModel(user.ID, courseID)
+
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  req.Title + "\n" + req.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTitle,
+	})
+	if err != nil {
+		return
+	}
+	review.IsSensitive = !sensitiveResp.Pass
+	review.IsActuallySensitive = nil
+	review.SensitiveDetail = sensitiveResp.Detail
+
 	err = review.Create(DB)
 	if err != nil {
 		return
@@ -165,8 +182,26 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 		return Forbidden("没有权限")
 	}
 
+	sensitiveResp, err := sensitive.CheckSensitive(sensitive.ParamsForCheck{
+		Content:  req.Title + "\n" + req.Content,
+		Id:       time.Now().UnixNano(),
+		TypeName: sensitive.TypeTitle,
+	})
+	if err != nil {
+		return err
+	}
+
+	var newReview = Review{
+		IsSensitive:         !sensitiveResp.Pass,
+		IsActuallySensitive: nil,
+		SensitiveDetail:     sensitiveResp.Detail,
+		Content:             req.Content,
+		Title:               req.Title,
+		Rank:                req.Rank.ToModel(),
+	}
+
 	// 修改评论
-	err = review.Update(DB, req.Title, req.Content, req.Rank.ToModel())
+	err = review.Update(DB, newReview)
 	if err != nil {
 		return
 	}
@@ -401,4 +436,157 @@ func GetRandomReviewV1(c *fiber.Ctx) (err error) {
 	}
 
 	return c.JSON(new(RandomReviewV1Response).FromModel(&review))
+}
+
+// ListSensitiveReviews
+//
+// @Summary List sensitive reviews, admin only
+// @Tags Review
+// @Produce application/json
+// @Router /reviews/_sensitive [get]
+// @Param object query SensitiveReviewRequest false "query"
+// @Success 200 {array} SensitiveReviewResponse
+// @Failure 404 {object} MessageModel
+func ListSensitiveReviews(c *fiber.Ctx) (err error) {
+	// validate query
+	var query SensitiveReviewRequest
+	err = ValidateQuery(c, &query)
+	if err != nil {
+		return err
+	}
+
+	// set default time
+	if query.Offset.Time.IsZero() {
+		query.Offset.Time = time.Now()
+	}
+
+	// get user
+	user, err := GetCurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission, admin only
+	if !user.IsAdmin {
+		return Forbidden()
+	}
+
+	// get reviews
+	var reviews ReviewList
+	querySet := DB
+	if query.All == true {
+		querySet = querySet.Where("is_sensitive = true")
+	} else {
+		if query.Open == true {
+			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NULL")
+		} else {
+			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NOT NULL")
+		}
+	}
+
+	result := querySet.
+		Where("updated_at < ?", query.Offset.Time).
+		Order("updated_at desc").
+		Limit(query.Size).
+		Find(&reviews)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	var responses = make([]SensitiveReviewResponse, len(reviews))
+	for i := range responses {
+		responses[i].FromModel(reviews[i])
+	}
+
+	return c.JSON(responses)
+}
+
+// ModifyReviewSensitive
+//
+// @Summary Modify A Review's actual_sensitive, admin only
+// @Tags Review
+// @Produce application/json
+// @Router /reviews/{id}/_sensitive [put]
+// @Param id path int true "id"
+// @Param json body ModifySensitiveReviewRequest true "json"
+// @Success 200 {object} Review
+// @Failure 404 {object} MessageModel
+func ModifyReviewSensitive(c *fiber.Ctx) (err error) {
+	// validate body
+	var body ModifySensitiveReviewRequest
+	err = ValidateBody(c, &body)
+	if err != nil {
+		return err
+	}
+
+	// parse review_id
+	reviewID, err := c.ParamsInt("id")
+	if err != nil {
+		return err
+	}
+
+	// get user
+	user, err := GetCurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	// permission check
+	if !user.IsAdmin {
+		return Forbidden()
+	}
+
+	var review Review
+	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&review, reviewID).Error
+		if err != nil {
+			return err
+		}
+
+		// modify actual_sensitive
+		review.IsActuallySensitive = &body.IsActuallySensitive
+		//MyLog("Review", "Modify", reviewID, user.ID, RoleAdmin, "actual_sensitive to: ", fmt.Sprintf("%v", body.IsActuallySensitive))
+		//CreateAdminLog(tx, AdminLogTypeChangeSensitive, user.ID, body)
+
+		if !body.IsActuallySensitive {
+			// save actual_sensitive only
+			return tx.Model(&review).Select("IsActuallySensitive").UpdateColumns(&review).Error
+		}
+
+		//reason := "违反社区规范"
+		//err = review.Backup(tx, user.ID, reason)
+		//if err != nil {
+		//	return err
+		//}
+
+		return tx.Delete(&review).Error
+	})
+	if err != nil {
+		return err
+	}
+
+	//// clear cache
+	//err = DeleteCache(fmt.Sprintf("hole_%v", review.HoleID))
+	//if err != nil {
+	//	return err
+	//}
+
+	//if review.IsActuallySensitive != nil && *review.IsActuallySensitive == false {
+	//	go ReviewIndex(ReviewModel{
+	//		ID:        review.ID,
+	//		UpdatedAt: review.UpdatedAt,
+	//		Content:   review.Content,
+	//	})
+	//} else {
+	//	go ReviewDelete(review.ID)
+	//
+	//	MyLog("Review", "Delete", reviewID, user.ID, RoleAdmin, "reason: ", "sensitive")
+	//
+	//	err = review.SendModify(DB)
+	//	if err != nil {
+	//		log.Err(err).Str("model", "Notification").Msg("SendModify failed")
+	//	}
+	//}
+
+	return c.JSON(review)
 }
