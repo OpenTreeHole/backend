@@ -126,11 +126,16 @@ func CreateReviewV1(c *fiber.Ctx) (err error) {
 		TypeName: sensitive.TypeTitle,
 	})
 	if err != nil {
-		return err
+		return
 	}
 	review.IsSensitive = !sensitiveResp.Pass
 	review.IsActuallySensitive = nil
 	review.SensitiveDetail = sensitiveResp.Detail
+
+	err = review.Create(DB)
+	if err != nil {
+		return
+	}
 
 	return c.JSON(new(ReviewV1Response).FromModel(user, review))
 }
@@ -190,10 +195,11 @@ func ModifyReviewV1(c *fiber.Ctx) (err error) {
 		SensitiveDetail:     sensitiveResp.Detail,
 		Content:             req.Content,
 		Title:               req.Title,
+		Rank:                req.Rank.ToModel(),
 	}
 
 	// 修改评论
-	err = review.Update(DB, newReview, req.Rank.ToModel())
+	err = review.Update(DB, newReview)
 	if err != nil {
 		return
 	}

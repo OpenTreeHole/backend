@@ -1,4 +1,4 @@
-package models
+package model
 
 type UrlHostnameWhitelist struct {
 	ID       int    `json:"id" gorm:"primaryKey"`

@@ -33,8 +33,8 @@ type Review struct {
 	Vote                ReviewVoteList     `json:"-" gorm:"foreignKey:ReviewID;references:ID"`
 	UserAchievements    []*UserAchievement `json:"-" gorm:"foreignKey:UserID;references:ReviewerID"`
 	DeletedAt           gorm.DeletedAt     `json:"deleted_at" gorm:"index"`
-	IsSensitive         bool               `json:"is_sensitive" gorm:"index:idx_floor_actually_sensitive_updated_at,priority:1"`
-	IsActuallySensitive *bool              `json:"is_actually_sensitive" gorm:"index:idx_floor_actually_sensitive_updated_at,priority:2"`
+	IsSensitive         bool               `json:"is_sensitive"`
+	IsActuallySensitive *bool              `json:"is_actually_sensitive"`
 	SensitiveDetail     string             `json:"sensitive_detail,omitempty"`
 }
 
@@ -153,7 +153,7 @@ func (r *Review) Create(tx *gorm.DB) (err error) {
 
 }
 
-func (r *Review) Update(tx *gorm.DB, newReview Review, rank *ReviewRank) (err error) {
+func (r *Review) Update(tx *gorm.DB, newReview Review) (err error) {
 	// 记录修改历史
 	var history ReviewHistory
 	history.FromReview(r)
@@ -168,8 +168,8 @@ func (r *Review) Update(tx *gorm.DB, newReview Review, rank *ReviewRank) (err er
 		r.Content = newReview.Content
 		modified = true
 	}
-	if rank != nil {
-		r.Rank = rank
+	if newReview.Rank != nil {
+		r.Rank = newReview.Rank
 		modified = true
 	}
 	if !modified {
@@ -227,8 +227,8 @@ type ReviewHistory struct {
 	AlterBy             int       `json:"alter_by" gorm:"not null"` // 修改人 ID
 	Title               string    `json:"title" gorm:"not null"`    // 修改前的标题
 	Content             string    `json:"content" gorm:"not null"`  // 修改前的内容
-	IsSensitive         bool      `json:"is_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:1"`
-	IsActuallySensitive *bool     `json:"is_actual_sensitive" gorm:"index:idx_floor_actual_sensitive_updated_at,priority:2"`
+	IsSensitive         bool      `json:"is_sensitive"`
+	IsActuallySensitive *bool     `json:"is_actual_sensitive"`
 	SensitiveDetail     string    `json:"sensitive_detail,omitempty"`
 }
 
