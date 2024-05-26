@@ -90,8 +90,10 @@ func (r *ReviewV1Response) FromModel(
 	if review.Sensitive() {
 		if review.IsActuallySensitive != nil && *review.IsActuallySensitive {
 			r.Content = "该内容因违反社区规范被删除"
+			r.Title = "该内容因违反社区规范被删除"
 		} else {
 			r.Content = "该内容正在审核中"
+			r.Title = "该内容正在审核中"
 		}
 	}
 
