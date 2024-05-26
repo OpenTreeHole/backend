@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
+	"github.com/opentreehole/backend/danke/data"
 )
 
 func RegisterRoutes(app *fiber.App) {
@@ -50,9 +51,9 @@ func registerRoutes(r fiber.Router) {
 	r.Get("/v3/course_groups/:id<int>", GetCourseGroupV3)
 
 	// static
-	//router.Get("/static/cedict_ts.u8", func(c *fiber.Ctx) error {
-	//	return c.Send(data.CreditTs)
-	//})
+	r.Get("/static/cedict_ts.u8", func(c *fiber.Ctx) error {
+		return c.Send(data.CreditTs)
+	})
 
 	r.Get("/v3/reviews/_sensitive", ListSensitiveReviews)
 	r.Put("/v3/reviews/:id<int>/_sensitive", ModifyReviewSensitive)
