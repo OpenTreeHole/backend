@@ -444,9 +444,9 @@ func GetRandomReviewV1(c *fiber.Ctx) (err error) {
 // @Tags Review
 // @Produce application/json
 // @Router /reviews/_sensitive [get]
-// @Param object query SensitiveReviewRequest false "query"
-// @Success 200 {array} SensitiveReviewResponse
-// @Failure 404 {object} MessageModel
+// @Param object query schema.SensitiveReviewRequest false "query"
+// @Success 200 {array} schema.SensitiveReviewResponse
+// @Failure 404 {object} common.HttpBaseError
 func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 	// validate query
 	var query SensitiveReviewRequest
@@ -508,9 +508,9 @@ func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 // @Produce application/json
 // @Router /reviews/{id}/_sensitive [put]
 // @Param id path int true "id"
-// @Param json body ModifySensitiveReviewRequest true "json"
-// @Success 200 {object} Review
-// @Failure 404 {object} MessageModel
+// @Param json body schema.ModifySensitiveReviewRequest true "json"
+// @Success 200 {object} model.Review
+// @Failure 404 {object} common.HttpBaseError
 func ModifyReviewSensitive(c *fiber.Ctx) (err error) {
 	// validate body
 	var body ModifySensitiveReviewRequest
