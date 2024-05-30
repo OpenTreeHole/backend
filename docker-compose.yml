@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3'
 
 services:
   backend:
@@ -10,13 +10,10 @@ services:
     environment:
       - DB_TYPE=mysql
       - DB_URL=cb:cb@tcp(db:3306)/danke?parseTime=true
-      - CACHE_TYPE=redis
-      - CACHE_URL=redis:6379
     volumes:
       - data:/app/data
     ports:
       - "10580:8000"
-    #command: migrate danke_v3
 
   db:
     container_name: danke_db
@@ -27,6 +24,8 @@ services:
       MYSQL_DATABASE: danke
       MYSQL_USER: cb
       MYSQL_PASSWORD: cb
+    volumes:
+      - db_data:/var/lib/mysql
 
 volumes:
   data:
