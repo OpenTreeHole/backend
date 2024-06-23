@@ -106,7 +106,11 @@ func AddCourseV1(c *fiber.Ctx) (err error) {
 
 	// 查找课程
 	var course *Course
-	err = DB.First(&course, "code_id = ?", request.CodeID).Error
+	err = DB.
+		Where("code_id = ?", request.CodeID).
+		Where("year = ?", request.Year).
+		Where("semester = ?", request.Semester).
+		First(&course).Error
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
