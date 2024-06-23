@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/opentreehole/backend/common"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"slices"
 	"strconv"
 	"strings"
@@ -34,7 +35,7 @@ type Course struct {
 
 func (c *Course) Create() (err error) {
 	err = DB.Transaction(func(tx *gorm.DB) (err error) {
-		err = tx.Create(c).Error
+		err = tx.Omit(clause.Associations).Create(c).Error
 		if err != nil {
 			return err
 		}

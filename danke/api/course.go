@@ -104,9 +104,20 @@ func AddCourseV1(c *fiber.Ctx) (err error) {
 		return err
 	}
 
+	// 查找课程
+	var course *Course
+	err = DB.First(&course, "code_id = ?", request.CodeID).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+	} else {
+		return BadRequest("该课程已存在")
+	}
+
 	// 根据 Code 查找课程组
 	var courseGroup *CourseGroup
-	err = DB.Preload("Courses").Find(&courseGroup, "code = ?", request.Code).Error
+	err = DB.Preload("Courses").First(&courseGroup, "code = ?", request.Code).Error
 	if err != nil {
 		// 如果没有找到课程组，创建一个新的课程组
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -120,8 +131,8 @@ func AddCourseV1(c *fiber.Ctx) (err error) {
 		}
 	}
 
-	course := request.ToModel(courseGroup.ID)
 	course.CourseGroup = courseGroup
+	course.CourseGroupID = courseGroup.ID
 	err = course.Create()
 	if err != nil {
 		return err

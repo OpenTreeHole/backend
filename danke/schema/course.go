@@ -51,7 +51,7 @@ type CreateCourseV1Request struct {
 	CodeID     string  `json:"code_id" validate:"required,min=4"`
 	Credit     float64 `json:"credit" validate:"required,min=0.5"`
 	Department string  `json:"department" validate:"required,min=1"`
-	CampusName string  `json:"campus_name" validate:"required,min=1"`
+	CampusName string  `json:"campus_name"`
 	Teachers   string  `json:"teachers" validate:"required,min=1"`
 	MaxStudent int     `json:"max_student" validate:"min=0"`
 	WeekHour   int     `json:"week_hour" validate:"min=0"`
