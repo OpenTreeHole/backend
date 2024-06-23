@@ -53,8 +53,8 @@ type CreateCourseV1Request struct {
 	Department string  `json:"department" validate:"required,min=1"`
 	CampusName string  `json:"campus_name" validate:"required,min=1"`
 	Teachers   string  `json:"teachers" validate:"required,min=1"`
-	MaxStudent int     `json:"max_student" validate:"required"`
-	WeekHour   int     `json:"week_hour" validate:"required"`
+	MaxStudent int     `json:"max_student" validate:"min=0"`
+	WeekHour   int     `json:"week_hour" validate:"min=0"`
 	Year       int     `json:"year" validate:"required,min=2000"`
 	Semester   int     `json:"semester" validate:"required,min=1"`
 }
