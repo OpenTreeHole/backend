@@ -7,6 +7,7 @@ on:
       - 'common/**'
       - '.github/workflows/danke.yml'
       - '.github/workflows/common.yml'
+      - '.github/workflows/main.yml'
       - 'Dockerfile'
       - 'go.mod'
 
