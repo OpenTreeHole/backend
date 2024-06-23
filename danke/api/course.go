@@ -131,8 +131,8 @@ func AddCourseV1(c *fiber.Ctx) (err error) {
 		}
 	}
 
+	course = request.ToModel(courseGroup.ID)
 	course.CourseGroup = courseGroup
-	course.CourseGroupID = courseGroup.ID
 	err = course.Create()
 	if err != nil {
 		return err
