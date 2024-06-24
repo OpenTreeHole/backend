@@ -159,36 +159,40 @@ func (r *Review) Update(tx *gorm.DB, newReview Review) (err error) {
 	history.FromReview(r)
 
 	// 更新评教
+	modifyData := make(map[string]any)
 	modified := false
 	if newReview.Title != "" {
-		r.Title = newReview.Title
+		modifyData["title"] = newReview.Title
 		modified = true
 	}
 	if newReview.Content != "" {
-		r.Content = newReview.Content
+		modifyData["content"] = newReview.Content
 		modified = true
 	}
 	if newReview.Rank != nil {
-		r.Rank = newReview.Rank
+		modifyData["rank_overall"] = newReview.Rank.Overall
+		modifyData["rank_content"] = newReview.Rank.Content
+		modifyData["rank_workload"] = newReview.Rank.Workload
+		modifyData["rank_assessment"] = newReview.Rank.Assessment
 		modified = true
 	}
 	if !modified {
 		return common.BadRequest("没有修改内容")
 	}
-	r.IsSensitive = newReview.IsSensitive
-	r.IsActuallySensitive = newReview.IsActuallySensitive
-	r.SensitiveDetail = newReview.SensitiveDetail
+	modifyData["is_sensitive"] = newReview.IsSensitive
+	modifyData["is_actually_sensitive"] = newReview.IsActuallySensitive
+	modifyData["sensitive_detail"] = newReview.SensitiveDetail
+	modifyData["modify_count"] = r.ModifyCount + 1
 
-	r.ModifyCount++
 	err = tx.Transaction(func(tx *gorm.DB) (err error) {
-		err = tx.Model(&Review{ID: r.ID}).
-			Select("Title", "Content", "Rank", "ModifyCount", "IsSensitive", "IsActuallySensitive", "SensitiveDetail").
-			Updates(r).Error
+		// stupid gorm does not support update embedded struct using Model, Select and Updates
+		// if using both 'Rank' and 'Content' in Select, it will only update rank_content
+		err = tx.Model(r).Updates(modifyData).Error
 		if err != nil {
 			return
 		}
-		err = tx.Create(&history).Error
-		return
+
+		return tx.Create(&history).Error
 	})
 	return
 }
