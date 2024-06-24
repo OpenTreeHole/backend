@@ -41,6 +41,7 @@ func Init() {
 		&CourseGroup{},
 		&Course{},
 		&Review{},
+		&ReviewHistory{},
 		&Achievement{},
 		&UrlHostnameWhitelist{},
 	)
