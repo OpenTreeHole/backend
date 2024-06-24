@@ -181,7 +181,8 @@ func (r *Review) Update(tx *gorm.DB, newReview Review) (err error) {
 
 	r.ModifyCount++
 	err = tx.Transaction(func(tx *gorm.DB) (err error) {
-		err = tx.Select("Title", "Content", "Rank", "ModifyCount", "IsSensitive", "IsActuallySensitive", "SensitiveDetail").
+		err = tx.Model(&Review{ID: r.ID}).
+			Select("Title", "Content", "Rank", "ModifyCount", "IsSensitive", "IsActuallySensitive", "SensitiveDetail").
 			Updates(r).Error
 		if err != nil {
 			return
