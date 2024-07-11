@@ -151,6 +151,7 @@ func CreateReviewV1(c *fiber.Ctx) (err error) {
 // @Param json body schema.ModifyReviewV1Request true "json"
 // @Param review_id path int true "review id"
 // @Router /reviews/{review_id} [put]
+// @Router /reviews/{review_id}/_modify [patch]
 // @Success 200 {object} schema.ReviewV1Response
 // @Failure 400 {object} common.HttpError
 // @Failure 404 {object} common.HttpBaseError
@@ -507,9 +508,10 @@ func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 // @Tags Review
 // @Produce application/json
 // @Router /reviews/{id}/_sensitive [put]
+// @Router /reviews/{id}/_sensitive [patch]
 // @Param id path int true "id"
 // @Param json body schema.ModifySensitiveReviewRequest true "json"
-// @Success 200 {object} model.Review
+// @Success 200 {object} schema.SensitiveReviewResponse
 // @Failure 404 {object} common.HttpBaseError
 func ModifyReviewSensitive(c *fiber.Ctx) (err error) {
 	// validate body
@@ -588,5 +590,5 @@ func ModifyReviewSensitive(c *fiber.Ctx) (err error) {
 	//	}
 	//}
 
-	return c.JSON(review)
+	return c.JSON(new(SensitiveReviewResponse).FromModel(&review))
 }

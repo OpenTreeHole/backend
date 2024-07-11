@@ -568,7 +568,48 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.Review"
+                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "Modify A Review's actual_sensitive, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifySensitiveReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
                         }
                     },
                     "404": {
@@ -697,6 +738,59 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/schema.VoteForReviewV1Request"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "review id",
+                        "name": "review_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.ReviewV1Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/reviews/{review_id}/_modify": {
+            "patch": {
+                "description": "modify a review, admin or owner can modify",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "modify a review",
+                "parameters": [
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifyReviewV1Request"
                         }
                     },
                     {
@@ -913,211 +1007,6 @@ const docTemplate = `{
                 }
             }
         },
-        "gorm.DeletedAt": {
-            "type": "object",
-            "properties": {
-                "time": {
-                    "type": "string"
-                },
-                "valid": {
-                    "description": "Valid is true if Time is not NULL",
-                    "type": "boolean"
-                }
-            }
-        },
-        "model.Course": {
-            "type": "object",
-            "properties": {
-                "campus_name": {
-                    "description": "开课校区",
-                    "type": "string"
-                },
-                "code": {
-                    "description": "课程编号",
-                    "type": "string"
-                },
-                "code_id": {
-                    "description": "选课序号。用于区分同一课程编号的不同平行班",
-                    "type": "string"
-                },
-                "course_group": {
-                    "$ref": "#/definitions/model.CourseGroup"
-                },
-                "course_group_id": {
-                    "description": "课程组类型",
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "credit": {
-                    "description": "学分",
-                    "type": "number"
-                },
-                "department": {
-                    "description": "开课学院",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "max_student": {
-                    "description": "最大选课人数",
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "课程名称",
-                    "type": "string"
-                },
-                "review_count": {
-                    "description": "评教数量",
-                    "type": "integer"
-                },
-                "semester": {
-                    "description": "学期",
-                    "type": "integer"
-                },
-                "teachers": {
-                    "description": "老师：多个老师用逗号分隔",
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "week_hour": {
-                    "description": "周学时",
-                    "type": "integer"
-                },
-                "year": {
-                    "description": "学年",
-                    "type": "integer"
-                }
-            }
-        },
-        "model.CourseGroup": {
-            "type": "object",
-            "properties": {
-                "campus_name": {
-                    "description": "开课校区",
-                    "type": "string"
-                },
-                "code": {
-                    "description": "课程组编号",
-                    "type": "string"
-                },
-                "course_count": {
-                    "description": "课程数量",
-                    "type": "integer"
-                },
-                "courses": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Course"
-                    }
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "credits": {
-                    "description": "学分",
-                    "type": "array",
-                    "items": {
-                        "type": "number"
-                    }
-                },
-                "department": {
-                    "description": "开课学院",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "description": "课程组名称",
-                    "type": "string"
-                },
-                "review_count": {
-                    "description": "评价数量",
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.Review": {
-            "type": "object",
-            "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "course": {
-                    "$ref": "#/definitions/model.Course"
-                },
-                "course_id": {
-                    "type": "integer"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "deleted_at": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "downvote_count": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "is_actually_sensitive": {
-                    "type": "boolean"
-                },
-                "is_sensitive": {
-                    "type": "boolean"
-                },
-                "modify_count": {
-                    "type": "integer"
-                },
-                "rank": {
-                    "$ref": "#/definitions/model.ReviewRank"
-                },
-                "reviewer_id": {
-                    "type": "integer"
-                },
-                "sensitive_detail": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                },
-                "upvote_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.ReviewRank": {
-            "type": "object",
-            "properties": {
-                "assessment": {
-                    "description": "考核方面",
-                    "type": "integer"
-                },
-                "content": {
-                    "description": "内容、风格方面",
-                    "type": "integer"
-                },
-                "overall": {
-                    "type": "integer"
-                },
-                "workload": {
-                    "description": "工作量方面",
-                    "type": "integer"
-                }
-            }
-        },
         "schema.AchievementV1Response": {
             "type": "object",
             "properties": {
@@ -1284,22 +1173,17 @@ const docTemplate = `{
         "schema.CreateCourseV1Request": {
             "type": "object",
             "required": [
-                "campus_name",
                 "code",
                 "code_id",
-                "credit",
                 "department",
-                "max_student",
                 "name",
                 "semester",
                 "teachers",
-                "week_hour",
                 "year"
             ],
             "properties": {
                 "campus_name": {
-                    "type": "string",
-                    "minLength": 1
+                    "type": "string"
                 },
                 "code": {
                     "type": "string",
@@ -1311,14 +1195,15 @@ const docTemplate = `{
                 },
                 "credit": {
                     "type": "number",
-                    "minimum": 0.5
+                    "minimum": 0
                 },
                 "department": {
                     "type": "string",
                     "minLength": 1
                 },
                 "max_student": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "name": {
                     "type": "string",
@@ -1334,7 +1219,8 @@ const docTemplate = `{
                     "minLength": 1
                 },
                 "week_hour": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "year": {
                     "type": "integer",

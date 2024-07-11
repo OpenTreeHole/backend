@@ -40,6 +40,7 @@ func registerRoutes(r fiber.Router) {
 	r.Get("/courses/:id<int>/reviews", ListReviewsV1)
 	r.Post("/courses/:id<int>/reviews", CreateReviewV1)
 	r.Put("/reviews/:id<int>", ModifyReviewV1)
+	r.Patch("/reviews/:id<int>/_modify", ModifyReviewV1)
 	r.Patch("/reviews/:id<int>", VoteForReviewV1)
 	r.Get("/reviews/me", ListMyReviewsV1)
 	r.Get("/reviews/random", GetRandomReviewV1)
@@ -57,4 +58,5 @@ func registerRoutes(r fiber.Router) {
 
 	r.Get("/v3/reviews/_sensitive", ListSensitiveReviews)
 	r.Put("/v3/reviews/:id<int>/_sensitive", ModifyReviewSensitive)
+	r.Patch("/v3/reviews/:id<int>/_sensitive", ModifyReviewSensitive)
 }
