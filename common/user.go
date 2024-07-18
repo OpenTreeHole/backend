@@ -93,6 +93,7 @@ func GetCurrentUser(c *fiber.Ctx) (user *User, err error) {
 			user.ID = userClaims.UID
 		}
 	}
+	user.IsAdmin = userClaims.IsAdmin
 
 	if userClaims.ExpiresAt != nil && userClaims.ExpiresAt.Before(time.Now()) {
 		return nil, Unauthorized("token expired")
