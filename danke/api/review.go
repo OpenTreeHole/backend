@@ -444,7 +444,7 @@ func GetRandomReviewV1(c *fiber.Ctx) (err error) {
 // @Summary List sensitive reviews, admin only
 // @Tags Review
 // @Produce application/json
-// @Router /reviews/_sensitive [get]
+// @Router /v3/reviews/_sensitive [get]
 // @Param object query schema.SensitiveReviewRequest false "query"
 // @Success 200 {array} schema.SensitiveReviewResponse
 // @Failure 404 {object} common.HttpBaseError
@@ -507,8 +507,8 @@ func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 // @Summary Modify A Review's actual_sensitive, admin only
 // @Tags Review
 // @Produce application/json
-// @Router /reviews/{id}/_sensitive [put]
-// @Router /reviews/{id}/_sensitive [patch]
+// @Router /v3/reviews/{id}/_sensitive [put]
+// @Router /v3/reviews/{id}/_sensitive [patch]
 // @Param id path int true "id"
 // @Param json body schema.ModifySensitiveReviewRequest true "json"
 // @Success 200 {object} schema.SensitiveReviewResponse

@@ -374,58 +374,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/reviews/_sensitive": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Review"
-                ],
-                "summary": "List sensitive reviews, admin only",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "name": "all",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "name": "open",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 10,
-                        "type": "integer",
-                        "default": 10,
-                        "name": "size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/schema.SensitiveReviewResponse"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.HttpBaseError"
-                        }
-                    }
-                }
-            }
-        },
         "/reviews/me": {
             "get": {
                 "description": "list my reviews, old version. load history and achievements, no ` + "`" + `is_me` + "`" + ` field",
@@ -532,90 +480,6 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/common.HttpError"
-                        }
-                    }
-                }
-            }
-        },
-        "/reviews/{id}/_sensitive": {
-            "put": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Review"
-                ],
-                "summary": "Modify A Review's actual_sensitive, admin only",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.ModifySensitiveReviewRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.HttpBaseError"
-                        }
-                    }
-                }
-            },
-            "patch": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Review"
-                ],
-                "summary": "Modify A Review's actual_sensitive, admin only",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "id",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "json",
-                        "name": "json",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/schema.ModifySensitiveReviewRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/common.HttpBaseError"
                         }
                     }
                 }
@@ -931,6 +795,142 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v3/reviews/_sensitive": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "List sensitive reviews, admin only",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "name": "all",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "open",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 10,
+                        "type": "integer",
+                        "default": 10,
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/schema.SensitiveReviewResponse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v3/reviews/{id}/_sensitive": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "Modify A Review's actual_sensitive, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifySensitiveReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/common.HttpBaseError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Review"
+                ],
+                "summary": "Modify A Review's actual_sensitive, admin only",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "json",
+                        "name": "json",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/schema.ModifySensitiveReviewRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/schema.SensitiveReviewResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/common.HttpBaseError"
                         }

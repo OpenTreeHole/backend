@@ -716,39 +716,6 @@ paths:
       summary: /group/{group_id}
       tags:
       - CourseGroup
-  /reviews/_sensitive:
-    get:
-      parameters:
-      - in: query
-        name: all
-        type: boolean
-      - in: query
-        name: offset
-        type: string
-      - in: query
-        name: open
-        type: boolean
-      - default: 10
-        in: query
-        maximum: 10
-        name: size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/schema.SensitiveReviewResponse'
-            type: array
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.HttpBaseError'
-      summary: List sensitive reviews, admin only
-      tags:
-      - Review
   /reviews/{id}:
     get:
       consumes:
@@ -772,61 +739,6 @@ paths:
           schema:
             $ref: '#/definitions/common.HttpError'
       summary: get a review
-      tags:
-      - Review
-  /reviews/{id}/_sensitive:
-    patch:
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.ModifySensitiveReviewRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/schema.SensitiveReviewResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.HttpBaseError'
-      summary: Modify A Review's actual_sensitive, admin only
-      tags:
-      - Review
-    put:
-      parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: json
-        in: body
-        name: json
-        required: true
-        schema:
-          $ref: '#/definitions/schema.ModifySensitiveReviewRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/schema.SensitiveReviewResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/common.HttpBaseError'
-      summary: Modify A Review's actual_sensitive, admin only
       tags:
       - Review
   /reviews/{review_id}:
@@ -1089,4 +1001,92 @@ paths:
       summary: search course group
       tags:
       - CourseGroup
+  /v3/reviews/_sensitive:
+    get:
+      parameters:
+      - in: query
+        name: all
+        type: boolean
+      - in: query
+        name: offset
+        type: string
+      - in: query
+        name: open
+        type: boolean
+      - default: 10
+        in: query
+        maximum: 10
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/schema.SensitiveReviewResponse'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpBaseError'
+      summary: List sensitive reviews, admin only
+      tags:
+      - Review
+  /v3/reviews/{id}/_sensitive:
+    patch:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.ModifySensitiveReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SensitiveReviewResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpBaseError'
+      summary: Modify A Review's actual_sensitive, admin only
+      tags:
+      - Review
+    put:
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: json
+        in: body
+        name: json
+        required: true
+        schema:
+          $ref: '#/definitions/schema.ModifySensitiveReviewRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/schema.SensitiveReviewResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/common.HttpBaseError'
+      summary: Modify A Review's actual_sensitive, admin only
+      tags:
+      - Review
 swagger: "2.0"
