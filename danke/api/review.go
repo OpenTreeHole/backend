@@ -489,6 +489,7 @@ func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 		Where("updated_at < ?", query.Offset.Time).
 		Order("updated_at desc").
 		Limit(query.Size).
+		Preload("Course").
 		Find(&reviews)
 	if result.Error != nil {
 		return result.Error
