@@ -479,9 +479,9 @@ func ListSensitiveReviews(c *fiber.Ctx) (err error) {
 		querySet = querySet.Where("is_sensitive = true")
 	} else {
 		if query.Open == true {
-			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NULL")
+			querySet = querySet.Where("is_sensitive = true and is_actually_sensitive IS NULL")
 		} else {
-			querySet = querySet.Where("is_sensitive = true and is_actual_sensitive IS NOT NULL")
+			querySet = querySet.Where("is_sensitive = true and is_actually_sensitive IS NOT NULL")
 		}
 	}
 
