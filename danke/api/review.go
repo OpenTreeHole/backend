@@ -541,7 +541,9 @@ func ModifyReviewSensitive(c *fiber.Ctx) (err error) {
 
 	var review Review
 	err = DB.Clauses(dbresolver.Write).Transaction(func(tx *gorm.DB) error {
-		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&review, reviewID).Error
+		err = tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Preload("Course").
+			First(&review, reviewID).Error
 		if err != nil {
 			return err
 		}
