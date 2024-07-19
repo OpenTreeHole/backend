@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"log/slog"
 	"strconv"
@@ -80,6 +81,17 @@ func MiddlewareCustomLogger(c *fiber.Ctx) error {
 	if chainErr != nil {
 		attrs = append(attrs, slog.String("err", chainErr.Error()))
 		logLevel = slog.LevelError
+	}
+	if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "PATCH" || c.Method() == "DELETE" {
+		var body = make(map[string]any)
+		err := json.Unmarshal(c.Body(), &body)
+		if err != nil {
+			attrs = append(attrs, slog.String("body", string(c.Body())))
+		} else {
+			delete(body, "password")
+			var data, _ = json.Marshal(body)
+			attrs = append(attrs, slog.String("body", string(data)))
+		}
 	}
 	Logger.LogAttrs(context.Background(), logLevel, "http log", attrs...)
 	return nil
