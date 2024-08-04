@@ -634,7 +634,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/reviews/{review_id}/_modify": {
+        "/reviews/{review_id}/_webvpn": {
             "patch": {
                 "description": "modify a review, admin or owner can modify",
                 "consumes": [
@@ -895,7 +895,9 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/v3/reviews/{id}/_sensitive/_webvpn": {
             "patch": {
                 "produces": [
                     "application/json"

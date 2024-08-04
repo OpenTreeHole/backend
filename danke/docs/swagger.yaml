@@ -840,7 +840,7 @@ paths:
       summary: modify a review
       tags:
       - Review
-  /reviews/{review_id}/_modify:
+  /reviews/{review_id}/_webvpn:
     patch:
       consumes:
       - application/json
@@ -1035,7 +1035,7 @@ paths:
       tags:
       - Review
   /v3/reviews/{id}/_sensitive:
-    patch:
+    put:
       parameters:
       - description: id
         in: path
@@ -1062,7 +1062,8 @@ paths:
       summary: Modify A Review's actual_sensitive, admin only
       tags:
       - Review
-    put:
+  /v3/reviews/{id}/_sensitive/_webvpn:
+    patch:
       parameters:
       - description: id
         in: path
