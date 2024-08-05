@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/opentreehole/backend/common"
+	"github.com/opentreehole/backend/common/sensitive"
 	"github.com/opentreehole/backend/danke/api"
 	_ "github.com/opentreehole/backend/danke/config"
 	_ "github.com/opentreehole/backend/danke/docs"
@@ -30,10 +31,17 @@ import (
 //	@host
 //	@BasePath	/api
 
-func main() {
+func Init() context.CancelFunc {
 	common.InitCache()
 	model.Init()
+	sensitive.InitSensitiveLabelMap()
+	ctx, cancel := context.WithCancel(context.Background())
+	go sensitive.UpdateSensitiveLabelMap(ctx)
+	return cancel
+}
 
+func main() {
+	cancel := Init()
 	var disableStartupMessage = false
 	if viper.GetString(common.EnvMode) == "prod" {
 		disableStartupMessage = true
@@ -63,6 +71,7 @@ func main() {
 	if err != nil {
 		slog.LogAttrs(context.Background(), slog.LevelError, "shutdown failed", slog.String("err", err.Error()))
 	}
+	cancel()
 }
 
 func registerMiddlewares(app *fiber.App) {
