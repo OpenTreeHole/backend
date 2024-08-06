@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	. "github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/danke/model"
@@ -148,7 +149,9 @@ func SearchCourseGroupV3(c *fiber.Ctx) (err error) {
 	if CourseCodeRegexp.MatchString(query) {
 		querySet = querySet.Where("code LIKE ?", query+"%")
 	} else {
-		querySet = querySet.Where("name LIKE ?", "%"+query+"%")
+		// 查询教师名，先在课程表获取含有该教师名的课程所对应课程组编号列表，然后按所得编码查询主表
+		subQuery := querySet.Select("code").Where("teachers LIKE ?", "%"+query+"%").Table("course")
+		querySet = querySet.Where("name LIKE ? OR code IN (?)", "%"+query+"%", subQuery)
 	}
 	if page > 0 {
 		if pageSize == 0 {
