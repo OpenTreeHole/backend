@@ -2,6 +2,8 @@ package api
 
 import (
 	"errors"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	. "github.com/opentreehole/backend/common"
 	"github.com/opentreehole/backend/common/sensitive"
@@ -10,7 +12,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"gorm.io/plugin/dbresolver"
-	"time"
 )
 
 // GetReviewV1 godoc
@@ -70,7 +71,7 @@ func ListReviewsV1(c *fiber.Ctx) (err error) {
 
 	// 查找评论
 	var reviews ReviewList
-	err = DB.Find(&reviews, "course_id = ?", courseID).Error
+	err = DB.Where("course_id = ? AND deleted_at IS NULL", courseID).Find(&reviews).Error
 	if err != nil {
 		return
 	}
