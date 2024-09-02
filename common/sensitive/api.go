@@ -31,9 +31,9 @@ type ParamsForCheck struct {
 }
 
 type ResponseForCheck struct {
-	Pass   bool
-	Labels []int
-	Detail string
+	Pass   bool   `json:"content"`
+	Labels []int  `json:"labels,omitempty"`
+	Detail string `json:"detail,omitempty"`
 }
 
 func CheckSensitive(params ParamsForCheck) (resp *ResponseForCheck, err error) {
