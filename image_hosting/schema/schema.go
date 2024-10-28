@@ -1,6 +1,6 @@
 package schema
 
-//type LskyUploadResponse struct {
+// type LskyUploadResponse struct {
 //	Status  bool   `json:"status"`
 //	Message string `json:"message"`
 //	Data    struct {
@@ -22,7 +22,7 @@ package schema
 //			ThumbnailUrl     string `json:"thumbnail_url"`
 //		} `json:"links"`
 //	} `json:"data"`
-//}
+// }
 
 type CheveretoImageInfo struct {
 	Name      string `json:"name"`

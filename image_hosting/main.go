@@ -1,15 +1,15 @@
 package main
 
 import (
+	"encoding/json"
+	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/backend/common"
+	"github.com/opentreehole/backend/image_hosting/api"
+	"github.com/opentreehole/backend/image_hosting/model"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"treehole_image_proxy/api"
-
-	"github.com/goccy/go-json"
-	"github.com/gofiber/fiber/v2"
-	"github.com/opentreehole/go-common"
 )
 
 func main() {
@@ -25,10 +25,12 @@ func main() {
 	// 	StackTraceHandler: common.StackTraceHandler,
 	// }))
 	// app.Use(common.MiddlewareGetUserID)
-	//app.Use(common.MiddlewareCustomLogger)
+	// app.Use(common.MiddlewareCustomLogger)
+	model.Init()
 	router := app.Group("/api")
 	router.Post("/json", api.UploadImage)
-	router.Get("/i/:year/:month/:day/:identifier", api.GetImage)
+	// router.Get("/i/:year/:month/:day/:identifier", api.GetImage)
+	router.Get("/getImage.png", api.GetImage)
 
 	go func() {
 		err := app.Listen(":8000")

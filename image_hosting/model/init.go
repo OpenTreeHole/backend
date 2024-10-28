@@ -7,11 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
-var Db *gorm.DB
+var DB *gorm.DB
 
 func Init() {
+	var err error
 	source := mysql.Open(config.Config.DbURL)
-	DB, err := gorm.Open(source, common.GormConfig)
+	DB, err = gorm.Open(source, common.GormConfig)
 
 	if err != nil {
 		panic(err)
@@ -22,4 +23,5 @@ func Init() {
 	if err != nil {
 		panic(err)
 	}
+
 }
