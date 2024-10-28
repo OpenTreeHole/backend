@@ -2,7 +2,7 @@ FROM golang:1.22-alpine as builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY go.mod.backup go.sum ./
 RUN apk add --no-cache --virtual .build-deps \
         ca-certificates \
         gcc \

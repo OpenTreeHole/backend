@@ -1,10 +1,4 @@
-package main
-
-import (
-	"golang.org/x/sys/windows"
-	"gorm.io/gorm"
-	"time"
-)
+package schema
 
 //type LskyUploadResponse struct {
 //	Status  bool   `json:"status"`
@@ -44,14 +38,6 @@ type CheveretoImageInfo struct {
 		Url string `json:"url"`
 	} `json:"thumb"`
 	DisplayUrl string `json:"display_url"`
-}
-
-type ImageTable struct {
-	gorm.Model
-	BaseName      string
-	SavingTime    time.Time
-	ImageType     string
-	ImageFileData windows.BLOB
 }
 
 type CheveretoUploadResponse struct {

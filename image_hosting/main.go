@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"treehole_image_proxy/api"
 
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -26,8 +27,8 @@ func main() {
 	// app.Use(common.MiddlewareGetUserID)
 	//app.Use(common.MiddlewareCustomLogger)
 	router := app.Group("/api")
-	router.Post("/json", UploadImage)
-	router.Get("/i/:year/:month/:day/:identifier", GetImage)
+	router.Post("/json", api.UploadImage)
+	router.Get("/i/:year/:month/:day/:identifier", api.GetImage)
 
 	go func() {
 		err := app.Listen(":8000")
