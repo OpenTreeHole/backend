@@ -29,8 +29,7 @@ func main() {
 	Init()
 	router := app.Group("/api")
 	router.Post("/uploadImage", UploadImage)
-	// router.Get("/i/:year/:month/:day/:identifier", api.GetImage)
-	router.Get("/getImage.png", GetImage)
+	router.Get("/i/:year/:month/:day/:identifier", GetImage)
 
 	go func() {
 		err := app.Listen(":8000")
