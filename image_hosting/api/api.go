@@ -2,15 +2,21 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/opentreehole/backend/image_hosting/model"
-	"github.com/opentreehole/backend/image_hosting/schema"
+	. "github.com/opentreehole/backend/image_hosting/model"
+	. "github.com/opentreehole/backend/image_hosting/schema"
 	"io"
+	"log"
+	"time"
 )
 
 func UploadImage(c *fiber.Ctx) error {
-	var response schema.CheveretoUploadResponse
+	log.Println("uploading image")
+	var response CheveretoUploadResponse
+
+	// 传jpg没问题，但传png有问题（有可能和下文代码有关）
 	file, err := c.FormFile("source")
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
@@ -30,15 +36,47 @@ func UploadImage(c *fiber.Ctx) error {
 
 	fileContent, err := file.Open()
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 
+	// 需要存进数据库的变量
 	content, err := io.ReadAll(fileContent)
 
 	if err != nil {
+		log.Println(err)
 		return err
 	}
 	println(content)
+	uploadedImage := &ImageTable{
+		BaseName:      "example_image",
+		SavingTime:    time.Now(),
+		ImageType:     "jpeg",
+		ImageFileData: content,
+	}
+	err = DB.Create(&uploadedImage).Error
+	println("upload image")
+	if err != nil {
+		panic(err)
+		return err
+	}
+
+	//
+	// 	courseGroup = request.ToCourseGroupModel()
+	// 	err = DB.Create(&courseGroup).Error
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// }
+	//
+	// course = request.ToModel(courseGroup.ID)
+	// course.CourseGroup = courseGroup
+	// err = course.Create()
+	// if err != nil {
+	// return err
+	// }
+	//
+	// return c.JSON(new(CourseV1Response).FromModel(user, course))
 
 	return c.JSON(&response)
 
@@ -54,10 +92,7 @@ func GetImage(c *fiber.Ctx) error {
 	// imageType := strings.Split(c.Params("identifier"), ".")[1]
 
 	// 有了以上，可以用它们组合起来来在数据库中查找图片数据
-	// 函数最后return image的BLOB信息，前端会自动解析为一张图片的
-	var image model.ImageTable
-	model.DB.First(&image, 2)
+	var image ImageTable
+	DB.First(&image, 1)
 	return c.Send(image.ImageFileData)
-	// println(c)
-
 }

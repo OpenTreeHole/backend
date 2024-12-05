@@ -3,9 +3,9 @@ package main
 import (
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
-	"github.com/opentreehole/backend/common"
-	"github.com/opentreehole/backend/image_hosting/api"
-	"github.com/opentreehole/backend/image_hosting/model"
+	. "github.com/opentreehole/backend/common"
+	. "github.com/opentreehole/backend/image_hosting/api"
+	. "github.com/opentreehole/backend/image_hosting/model"
 	"log"
 	"os"
 	"os/signal"
@@ -14,7 +14,7 @@ import (
 
 func main() {
 	app := fiber.New(fiber.Config{
-		ErrorHandler:          common.ErrorHandler,
+		ErrorHandler:          ErrorHandler,
 		JSONEncoder:           json.Marshal,
 		JSONDecoder:           json.Unmarshal,
 		DisableStartupMessage: true,
@@ -26,11 +26,11 @@ func main() {
 	// }))
 	// app.Use(common.MiddlewareGetUserID)
 	// app.Use(common.MiddlewareCustomLogger)
-	model.Init()
+	Init()
 	router := app.Group("/api")
-	router.Post("/json", api.UploadImage)
+	router.Post("/uploadImage", UploadImage)
 	// router.Get("/i/:year/:month/:day/:identifier", api.GetImage)
-	router.Get("/getImage.png", api.GetImage)
+	router.Get("/getImage.png", GetImage)
 
 	go func() {
 		err := app.Listen(":8000")
