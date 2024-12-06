@@ -8,7 +8,6 @@ import (
 	. "github.com/opentreehole/backend/image_hosting/utils"
 	"io"
 	"log"
-
 	"path/filepath"
 	"strings"
 	"time"
@@ -18,13 +17,13 @@ func UploadImage(c *fiber.Ctx) error {
 	log.Println("uploading image")
 	// response to frontend
 	var response CheveretoUploadResponse
-	// the file uploaded by user
+	// the file uploaded by user  in the request body with the form-data key "source"
 	file, err := c.FormFile("source")
 	if err != nil {
 		log.Println(err)
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"code":    400,
-			"message": "Bad Request: Unable to retrieve file or no file has been sent.",
+			"message": "Bad Request: Unable to retrieve your image or no file has been sent.",
 		})
 	}
 
@@ -120,7 +119,7 @@ func GetImage(c *fiber.Ctx) error {
 		log.Println(err)
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
 			"code":    404,
-			"message": "Image not found",
+			"message": "Image not found or database error",
 		})
 	}
 	log.Println("get image successfully")
