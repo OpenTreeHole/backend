@@ -8,18 +8,18 @@ import (
 )
 
 var DB *gorm.DB
+var Hostname string
 
 func Init() {
 	var err error
 	source := mysql.Open(Config.DbURL)
 	DB, err = gorm.Open(source, GormConfig)
+	Hostname = "localhost:8000"
 
 	if err != nil {
 		panic(err)
 	}
-	err = DB.AutoMigrate(
-		&ImageTable{})
-
+	err = DB.AutoMigrate(&ImageTable{})
 	if err != nil {
 		panic(err)
 	}

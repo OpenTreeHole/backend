@@ -1,43 +1,22 @@
 package utils
 
-//
-//func LskyRefreshToken() (string, error) {
-//	Token.Lock()
-//	defer Token.Unlock()
-//
-//	agent := LskyBaseAgent(fiber.AcquireAgent(), fiber.MethodPost, "/tokens")
-//	defer fiber.ReleaseAgent(agent)
-//
-//	agent.JSON(fiber.Map{"email": Config.ProxyEmail, "password": Config.ProxyPassword})
-//
-//	if err := agent.Parse(); err != nil {
-//		return "", err
-//	}
-//
-//	code, body, errs := agent.Bytes()
-//	if len(errs) != 0 {
-//		return "", errs[0]
-//	}
-//	if code != 200 {
-//		message := fmt.Sprintf(`{"code": %v}`, code)
-//		return "", fiber.NewError(fiber.StatusInternalServerError, message)
-//	}
-//
-//	var lskyToken LskyToken
-//	err := json.Unmarshal(body, &lskyToken)
-//	if err != nil {
-//		return "", err
-//	}
-//	Token.data = lskyToken.Data.Token
-//	return lskyToken.Data.Token, nil
-//}
-//
-//func LskyBaseAgent(agent *fiber.Agent, method string, path string) *fiber.Agent {
-//	agent.Set("Accept", fiber.MIMEApplicationJSON).
-//		UserAgent("fiber").
-//		Timeout(time.Second * 10).Reuse()
-//	req := agent.Request()
-//	req.Header.SetMethod(method)
-//	req.SetRequestURI(Config.ProxyUrl + path)
-//	return agent
-//}
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"time"
+)
+
+func GenerateIdentifier() string {
+	now := time.Now().UnixMicro()
+
+	// Generate a random 6-byte (12-character) string
+	randomBytes := make([]byte, 6)
+	if _, err := rand.Read(randomBytes); err != nil {
+		panic(err)
+	}
+	randomSuffix := hex.EncodeToString(randomBytes)
+
+	// Combine the timestamp and random suffix
+	return fmt.Sprintf("%x%s", now, randomSuffix)
+}

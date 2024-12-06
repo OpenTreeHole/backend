@@ -29,6 +29,9 @@ func main() {
 	Init()
 	router := app.Group("/api")
 	router.Post("/uploadImage", UploadImage)
+
+	// get images based on the identifier(exclude the extension)
+	// format: http://localhost:8000/api/i/2024/12/06/6288772352016bf28f1a571d0.jpg
 	router.Get("/i/:year/:month/:day/:identifier", GetImage)
 
 	go func() {
@@ -40,11 +43,10 @@ func main() {
 
 	interrupt := make(chan os.Signal, 1)
 
-	// wait for CTRL-C interrupt
+	// listen for interrupt signal (Ctrl+C)
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-interrupt
 
-	// close app
 	err := app.Shutdown()
 	if err != nil {
 		log.Println(err)
