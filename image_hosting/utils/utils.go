@@ -20,3 +20,13 @@ func GenerateIdentifier() (string, error) {
 	// Combine the timestamp and random suffix
 	return fmt.Sprintf("%x%s", now, randomSuffix), nil
 }
+
+func IsAllowedExtension(ext string) bool {
+	allowedExtensions := []string{"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+	for _, allowedExt := range allowedExtensions {
+		if ext == allowedExt {
+			return true
+		}
+	}
+	return false
+}

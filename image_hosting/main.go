@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 	. "github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/image_hosting/api"
+	. "github.com/opentreehole/backend/image_hosting/config"
 	. "github.com/opentreehole/backend/image_hosting/model"
 	"log"
 	"os"
@@ -20,12 +22,16 @@ func main() {
 		DisableStartupMessage: true,
 		BodyLimit:             128 * 1024 * 1024,
 	})
-	// app.Use(recover.New(recover.Config{
-	// 	EnableStackTrace:  true,
-	// 	StackTraceHandler: common.StackTraceHandler,
-	// }))
+	// will catch every panic
+	app.Use(recover.New(recover.Config{
+		EnableStackTrace: true,
+		// StackTraceHandler: StackTraceHandler,
+	}))
+
 	// app.Use(common.MiddlewareGetUserID)
-	// app.Use(common.MiddlewareCustomLogger)
+
+	// will catch every HTTP request
+	// app.Use(MiddlewareCustomLogger)
 	Init()
 	router := app.Group("/api")
 	router.Post("/uploadImage", UploadImage)
@@ -35,10 +41,12 @@ func main() {
 	router.Get("/i/:year/:month/:day/:identifier", GetImage)
 
 	go func() {
-		err := app.Listen(":8000")
+		log.Println("Server is running on " + Config.HostName)
+		err := app.Listen(Config.HostName)
 		if err != nil {
 			log.Println(err)
 		}
+
 	}()
 
 	interrupt := make(chan os.Signal, 1)
@@ -46,7 +54,7 @@ func main() {
 	// listen for interrupt signal (Ctrl+C)
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-interrupt
-
+	log.Println("Shutting down the server...")
 	err := app.Shutdown()
 	if err != nil {
 		log.Println(err)
