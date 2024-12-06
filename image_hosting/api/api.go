@@ -14,10 +14,10 @@ import (
 
 // 把各种error都处理一下（including other file）
 // 运行时的log
-// 缩图，url放进thumb的url字段
 // main.go里的中间件
-// 写注释
-// 修改不清楚的变量名
+
+// 保证接口的安全性
+// get接口要兼容之前图片的读法
 
 func UploadImage(c *fiber.Ctx) error {
 	// response to frontend
@@ -28,6 +28,15 @@ func UploadImage(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"code":    400,
 			"message": "Bad Request: Unable to retrieve file or no file has been sent.",
+		})
+	}
+
+	fileSize := file.Size
+	maxSize := 10 * 1024 * 1024 // file should <= 10MB
+	if int(fileSize) > maxSize {
+		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{
+			"code":    413,
+			"message": "File size exceeds the maximum limit of 10MB",
 		})
 	}
 
@@ -48,7 +57,13 @@ func UploadImage(c *fiber.Ctx) error {
 	}
 
 	fileExtension := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
-	imageIdentifier := GenerateIdentifier()
+	imageIdentifier, err := GenerateIdentifier()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"code":    500,
+			"message": "Cannot generate image identifier",
+		})
+	}
 
 	imageUrl := Hostname + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
@@ -59,7 +74,10 @@ func UploadImage(c *fiber.Ctx) error {
 	err = DB.Create(&uploadedImage).Error
 
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"code":    500,
+			"message": "Database cannot store the image",
+		})
 	}
 
 	// if nothing went wrong
@@ -71,6 +89,7 @@ func UploadImage(c *fiber.Ctx) error {
 		Filename:   imageIdentifier + "." + fileExtension,
 		Url:        imageUrl,
 		DisplayUrl: imageUrl,
+		Mime:       "image/" + fileExtension,
 	}
 	log.Printf("image upload: %v\n", imageUrl)
 	return c.JSON(&response)
