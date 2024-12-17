@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/image_hosting/config"
 	. "github.com/opentreehole/backend/image_hosting/model"
 	. "github.com/opentreehole/backend/image_hosting/schema"
@@ -21,56 +22,38 @@ func UploadImage(c *fiber.Ctx) error {
 	file, err := c.FormFile("source")
 	if err != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"code":    400,
-			"message": "Bad Request: Unable to retrieve your image or no file has been sent.",
-		})
+		return common.BadRequest("No file uploaded")
 	}
 
 	fileSize := file.Size
 	maxSize := 10 * 1024 * 1024 // file should <= 10MB
 	if int(fileSize) > maxSize {
-		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{
-			"code":    413,
-			"message": "File size exceeds the maximum limit of 10MB",
-		})
+		return common.BadRequest("File size is too large")
 	}
 
 	fileExtension := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
 
 	if !IsAllowedExtension(fileExtension) {
 		log.Println("Error: File type not allowed.")
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"code":    400,
-			"message": "Bad Request: File type not allowed.",
-		})
+		return common.BadRequest("File type not allowed.")
 	}
 
 	fileContent, err := file.Open()
 	if err != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"code":    400,
-			"message": "Bad Request: Unable to open file.",
-		})
+		return common.BadRequest("The uploaded file has some problems")
 	}
 
 	imageData, err := io.ReadAll(fileContent)
 	if err != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"code":    400,
-			"message": "The uploaded file has some problems",
-		})
+		return common.BadRequest("The uploaded file has some problems")
 	}
 
 	imageIdentifier, err := GenerateIdentifier()
 	if err != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"code":    500,
-			"message": "Cannot generate image identifier",
-		})
+		return common.InternalServerError("Cannot generate image identifier")
 	}
 
 	imageUrl := Config.HostName + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
@@ -83,10 +66,7 @@ func UploadImage(c *fiber.Ctx) error {
 
 	if err != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"code":    500,
-			"message": "Database cannot store the image",
-		})
+		return common.InternalServerError("Database cannot store the image")
 	}
 
 	// if nothing went wrong
@@ -117,10 +97,7 @@ func GetImage(c *fiber.Ctx) error {
 	err := DB.First(&image, "base_name = ?", imageIdentifier)
 	if err.Error != nil {
 		log.Println(err)
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"code":    404,
-			"message": "Image not found or database error",
-		})
+		return common.BadRequest("Cannot find the image")
 	}
 	log.Println("get image successfully")
 	// browser will automatically transform the BLOB data to an image (no matter what extension)
