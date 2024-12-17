@@ -25,7 +25,6 @@ func main() {
 	// will catch every panic
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
-		// StackTraceHandler: StackTraceHandler,
 	}))
 
 	// app.Use(common.MiddlewareGetUserID)
@@ -35,10 +34,7 @@ func main() {
 	Init()
 	router := app.Group("/api")
 	router.Post("/uploadImage", UploadImage)
-
-	// get images based on the identifier(exclude the extension)
-	// format: http://localhost:8000/api/i/2024/12/06/6288772352016bf28f1a571d0.jpg
-	router.Get("/i/:year/:month/:day/:identifier", GetImage)
+	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
 		log.Println("Server is running on " + Config.HostName)
