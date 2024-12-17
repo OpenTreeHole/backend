@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -8,7 +9,7 @@ import (
 	. "github.com/opentreehole/backend/image_hosting/api"
 	. "github.com/opentreehole/backend/image_hosting/config"
 	. "github.com/opentreehole/backend/image_hosting/model"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -37,10 +38,10 @@ func main() {
 	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
-		log.Println("Server is running on " + Config.HostName)
+		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running on ", slog.String("hostname", Config.HostName))
 		err := app.Listen(Config.HostName)
 		if err != nil {
-			log.Println(err)
+			slog.LogAttrs(context.Background(), slog.LevelError, "Wrong hostname", slog.String("err", err.Error()))
 		}
 
 	}()
@@ -50,9 +51,9 @@ func main() {
 	// listen for interrupt signal (Ctrl+C)
 	signal.Notify(interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-interrupt
-	log.Println("Shutting down the server...")
+	slog.LogAttrs(context.Background(), slog.LevelInfo, "Shutting down the server.")
 	err := app.Shutdown()
 	if err != nil {
-		log.Println(err)
+		slog.LogAttrs(context.Background(), slog.LevelError, "shutdown failed", slog.String("err", err.Error()))
 	}
 }
