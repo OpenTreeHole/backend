@@ -2,7 +2,7 @@ package model
 
 import (
 	. "github.com/opentreehole/backend/common"
-	. "github.com/opentreehole/backend/image_hosting/config"
+	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -11,7 +11,8 @@ var DB *gorm.DB
 
 func Init() {
 	var err error
-	source := mysql.Open(DbUrl)
+	dbUrl := viper.GetString(EnvDBUrl)
+	source := mysql.Open(dbUrl)
 	DB, err = gorm.Open(source, GormConfig)
 	if err != nil {
 		panic(err)

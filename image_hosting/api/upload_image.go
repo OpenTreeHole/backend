@@ -8,6 +8,7 @@ import (
 	. "github.com/opentreehole/backend/image_hosting/model"
 	. "github.com/opentreehole/backend/image_hosting/schema"
 	. "github.com/opentreehole/backend/image_hosting/utils"
+	"github.com/spf13/viper"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -59,7 +60,7 @@ func UploadImage(c *fiber.Ctx) error {
 		return common.InternalServerError("Cannot generate image identifier")
 	}
 	originalFileName := file.Filename
-	imageUrl := HostName + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
+	imageUrl := viper.GetString(EnvHostName) + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
 		ImageIdentifier: imageIdentifier,
 		BaseName:        originalFileName,

@@ -9,6 +9,7 @@ import (
 	. "github.com/opentreehole/backend/image_hosting/api"
 	. "github.com/opentreehole/backend/image_hosting/config"
 	. "github.com/opentreehole/backend/image_hosting/model"
+	"github.com/spf13/viper"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -38,8 +39,8 @@ func main() {
 	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
-		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running", slog.String("hostname", HostName))
-		err := app.Listen(HostName)
+		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running on "+viper.GetString(EnvHostName))
+		err := app.Listen(viper.GetString(EnvHostName))
 		if err != nil {
 			slog.LogAttrs(context.Background(), slog.LevelError, "Wrong hostname", slog.String("err", err.Error()))
 		}
