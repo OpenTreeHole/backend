@@ -85,10 +85,10 @@ func UploadImage(c *fiber.Ctx) error {
 
 	imageUrl := viper.GetString(EnvHostName) + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
-		ImageIdentifier: imageIdentifier,
-		BaseName:        originalFileName,
-		ImageType:       fileExtension,
-		ImageFileData:   imageData,
+		ImageIdentifier:  imageIdentifier,
+		OriginalFileName: originalFileName,
+		ImageType:        fileExtension,
+		ImageFileData:    imageData,
 	}
 	err = DB.Create(&uploadedImage).Error
 
