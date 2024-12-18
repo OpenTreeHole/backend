@@ -6,7 +6,8 @@ import (
 
 type ImageTable struct {
 	gorm.Model
-	BaseName      string `json:"base_name"`
-	ImageType     string `json:"image_type"`
-	ImageFileData []byte `json:"image_file_data"`
+	ImageIdentifier string `json:"image_identifier"`
+	BaseName        string `json:"base_name" gorm:"index"`
+	ImageType       string `json:"image_type" gorm:"index:idx_image_type"`
+	ImageFileData   []byte `json:"image_file_data"`
 }

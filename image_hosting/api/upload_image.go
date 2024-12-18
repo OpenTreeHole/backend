@@ -58,12 +58,13 @@ func UploadImage(c *fiber.Ctx) error {
 		slog.LogAttrs(context.Background(), slog.LevelError, "Cannot generate image identifier", slog.String("err", err.Error()))
 		return common.InternalServerError("Cannot generate image identifier")
 	}
-
+	originalFileName := file.Filename
 	imageUrl := HostName + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
-		BaseName:      imageIdentifier,
-		ImageType:     fileExtension,
-		ImageFileData: imageData,
+		ImageIdentifier: imageIdentifier,
+		BaseName:        originalFileName,
+		ImageType:       fileExtension,
+		ImageFileData:   imageData,
 	}
 	err = DB.Create(&uploadedImage).Error
 

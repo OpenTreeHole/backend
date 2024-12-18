@@ -18,9 +18,9 @@ func GetImage(c *fiber.Ctx) error {
 	slog.LogAttrs(context.Background(), slog.LevelInfo, "getting image")
 	var image ImageTable
 	imageIdentifier := strings.Split(c.Params("identifier"), ".")[0]
-	err := DB.First(&image, "base_name = ?", imageIdentifier)
+	err := DB.First(&image, "image_identifier = ?", imageIdentifier)
 	if err.Error != nil {
-		slog.LogAttrs(context.Background(), slog.LevelError, "No file uploaded", slog.String("err", err.Error.Error()))
+		slog.LogAttrs(context.Background(), slog.LevelError, "Cannot find the image", slog.String("err", err.Error.Error()))
 		return common.BadRequest("Cannot find the image")
 	}
 	slog.LogAttrs(context.Background(), slog.LevelInfo, "get image successfully", slog.String("image identifier", imageIdentifier))
