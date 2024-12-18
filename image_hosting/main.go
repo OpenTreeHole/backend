@@ -7,9 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	. "github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/image_hosting/api"
-	. "github.com/opentreehole/backend/image_hosting/config"
 	. "github.com/opentreehole/backend/image_hosting/model"
-	"github.com/spf13/viper"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -39,8 +37,8 @@ func main() {
 	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
-		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running on "+viper.GetString(EnvHostName))
-		err := app.Listen(viper.GetString(EnvHostName))
+		slog.LogAttrs(context.Background(), slog.LevelInfo, "Service started.")
+		err := app.Listen("0.0.0.0:8000")
 		if err != nil {
 			slog.LogAttrs(context.Background(), slog.LevelError, "Wrong hostname", slog.String("err", err.Error()))
 		}
