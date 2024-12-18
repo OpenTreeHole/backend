@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"github.com/gofiber/fiber/v2"
 	"github.com/opentreehole/backend/common"
@@ -59,7 +60,29 @@ func UploadImage(c *fiber.Ctx) error {
 		slog.LogAttrs(context.Background(), slog.LevelError, "Cannot generate image identifier", slog.String("err", err.Error()))
 		return common.InternalServerError("Cannot generate image identifier")
 	}
+
+	var image ImageTable
 	originalFileName := file.Filename
+	result := DB.First(&image, "base_name = ?", originalFileName)
+	if result.Error == nil {
+		if bytes.Equal(image.ImageFileData, imageData) && strings.EqualFold(image.ImageType, fileExtension) {
+			slog.LogAttrs(context.Background(), slog.LevelInfo, "The file has been uploaded before")
+			imageIdentifier = image.ImageIdentifier
+			imageUrl := viper.GetString(EnvHostName) + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
+			response.StatusCode = 200
+			response.StatusTxt = "The image has been uploaded before"
+			response.Image = CheveretoImageInfo{
+				Name:       imageIdentifier,
+				Extension:  image.ImageType,
+				Filename:   imageIdentifier + "." + fileExtension,
+				Url:        imageUrl,
+				DisplayUrl: imageUrl,
+				Mime:       "image/" + fileExtension,
+			}
+			return c.JSON(&response)
+		}
+	}
+
 	imageUrl := viper.GetString(EnvHostName) + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
 		ImageIdentifier: imageIdentifier,
