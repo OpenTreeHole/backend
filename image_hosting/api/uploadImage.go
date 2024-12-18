@@ -59,7 +59,7 @@ func UploadImage(c *fiber.Ctx) error {
 		return common.InternalServerError("Cannot generate image identifier")
 	}
 
-	imageUrl := Config.HostName + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
+	imageUrl := HostName + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 	uploadedImage := &ImageTable{
 		BaseName:      imageIdentifier,
 		ImageType:     fileExtension,

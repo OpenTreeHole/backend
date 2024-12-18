@@ -38,8 +38,8 @@ func main() {
 	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
-		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running on ", slog.String("hostname", Config.HostName))
-		err := app.Listen(Config.HostName)
+		slog.LogAttrs(context.Background(), slog.LevelInfo, "Server is running", slog.String("hostname", HostName))
+		err := app.Listen(HostName)
 		if err != nil {
 			slog.LogAttrs(context.Background(), slog.LevelError, "Wrong hostname", slog.String("err", err.Error()))
 		}

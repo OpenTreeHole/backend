@@ -1,15 +1,25 @@
 package config
 
-import "github.com/caarlos0/env/v9"
+import (
+	"context"
+	"github.com/opentreehole/backend/common"
+	"github.com/spf13/viper"
+	"log/slog"
+)
 
-var Config struct {
-	DbURL    string `env:"DB_URL"`
-	HostName string `env:"HOST_NAME" envDefault:"localhost:8000"`
-}
+var (
+	DbUrl    string
+	HostName string
+)
 
 func init() {
-	err := env.Parse(&Config)
-	if err != nil {
-		panic(err)
+	DbUrl = viper.GetString(common.EnvDBUrl)
+	if DbUrl == "" {
+		slog.LogAttrs(context.Background(), slog.LevelError, "", slog.String("err", "DB_URL is empty"))
+	}
+	HostName = viper.GetString("HOST_NAME")
+	if HostName == "" {
+		// default value
+		HostName = "localhost:8000"
 	}
 }

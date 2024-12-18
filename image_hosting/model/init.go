@@ -11,8 +11,7 @@ var DB *gorm.DB
 
 func Init() {
 	var err error
-	source := mysql.Open(Config.DbURL)
-
+	source := mysql.Open(DbUrl)
 	DB, err = gorm.Open(source, GormConfig)
 	if err != nil {
 		panic(err)
