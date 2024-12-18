@@ -19,17 +19,17 @@ type Course struct {
 	Code          string `json:"code" gorm:"not null"`    // 课程编号
 	CodeID        string `json:"code_id" gorm:"not null"` // 选课序号。用于区分同一课程编号的不同平行班
 	Teachers      string `json:"teachers" gorm:"not null"`
-	CourseGroupID int    `json:"course_group_id" gorm:"not null;index"` // 课程组类型
+	CourseGroupID int    `json:"course_group_id" gorm:"not null;index"` // 课程组编号
 }
 
 type Teacher struct {
 	ID   int
-	Name string `gorm:"not null"` // 课程组类型
+	Name string `gorm:"not null"` // 课程组 ID
 }
 
 type TeacherCourseLink struct {
 	TeacherID     int `gorm:"primaryKey;autoIncrement:false"`
-	CourseGroupID int `gorm:"primaryKey;autoIncrement:false"` // 课程组类型
+	CourseGroupID int `gorm:"primaryKey;autoIncrement:false"` // 课程组编号
 }
 
 func AppendUnique[T comparable](slice []T, elems ...T) []T {

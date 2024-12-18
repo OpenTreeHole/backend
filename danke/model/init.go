@@ -40,6 +40,7 @@ func Init() {
 	err = DB.AutoMigrate(
 		&CourseGroup{},
 		&Course{},
+		&Teacher{},
 		&Review{},
 		&ReviewHistory{},
 		&Achievement{},
