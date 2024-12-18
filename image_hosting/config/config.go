@@ -9,7 +9,7 @@ const (
 )
 
 var defaultConfig = map[string]string{
-	EnvHostName: "localhost:8081",
+	EnvHostName: "localhost:8000",
 }
 
 func init() {
