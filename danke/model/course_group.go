@@ -25,7 +25,7 @@ type CourseGroup struct {
 	CourseCount int        `json:"course_count" gorm:"not null;default:0"` // 课程数量
 	ReviewCount int        `json:"review_count" gorm:"not null;default:0"` // 评价数量
 	Courses     CourseList `json:"courses"`
-	Teachers []*Teacher    `gorm:"many2many:teacher_course_link;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Teachers []*Teacher    `gorm:"many2many:teacher_course_groups;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 var CourseCodeRegexp = regexp.MustCompile(`^([A-Z]{3,})([0-9]{2,})`)

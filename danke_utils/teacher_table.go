@@ -87,7 +87,7 @@ func GenerateTeacherTable(DB *gorm.DB) {
 			fmt.Printf("Inserted %d teachers\n", index)
 
 			// Avoid insertion failure due to duplication
-			DB.Clauses(clause.OnConflict{DoNothing: true}).Table("teacher_courses").Create(links)
+			DB.Clauses(clause.OnConflict{DoNothing: true}).Table("teacher_course_groups").Create(links)
 			links = nil
 		}
 	}
