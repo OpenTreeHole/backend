@@ -68,7 +68,7 @@ func UploadImage(c *fiber.Ctx) error {
 		if bytes.Equal(image.ImageFileData, imageData) && strings.EqualFold(image.ImageType, fileExtension) {
 			slog.LogAttrs(context.Background(), slog.LevelInfo, "The file has been uploaded before")
 			imageIdentifier = image.ImageIdentifier
-			imageUrl := viper.GetString(EnvHostName) + "/api/i/" + time.Now().Format("2006/01/02/") + imageIdentifier + "." + fileExtension
+			imageUrl := viper.GetString(EnvHostName) + "/api/i/" + image.CreatedAt.Format("2006/01/02/") + imageIdentifier + "." + fileExtension
 			response.StatusCode = 200
 			response.StatusTxt = "The image has been uploaded before"
 			response.Image = CheveretoImageInfo{
