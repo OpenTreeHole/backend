@@ -56,5 +56,5 @@ func Init() {
 func main() {
 	Init()
 	// Call any script as needed
-	// GenerateTeacherTabele(DB)
+	// GenerateTeacherTable(DB)
 }
