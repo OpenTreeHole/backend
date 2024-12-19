@@ -63,7 +63,7 @@ func UploadImage(c *fiber.Ctx) error {
 
 	var image ImageTable
 	originalFileName := file.Filename
-	result := DB.First(&image, "base_name = ?", originalFileName)
+	result := DB.First(&image, "original_file_name = ?", originalFileName)
 	if result.Error == nil {
 		if bytes.Equal(image.ImageFileData, imageData) && strings.EqualFold(image.ImageType, fileExtension) {
 			slog.LogAttrs(context.Background(), slog.LevelInfo, "The file has been uploaded before")
