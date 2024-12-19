@@ -103,3 +103,5 @@ require (
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.29.10 // indirect
 )
+
+replace github.com/yidun/yidun-golang-sdk => github.com/jingyijun/yidun-golang-sdk v1.0.13-0.20240709102803-aaae270a5671
