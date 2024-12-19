@@ -250,6 +250,9 @@ func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err err
 		for _, result := range *response.Result {
 			if result.Antispam != nil && result.Antispam.Labels != nil {
 				for _, label := range *result.Antispam.Labels {
+					if label.Label == nil || label.SubLabels == nil {
+						continue
+					}
 
 					labelNumber := *label.Label
 					if sensitiveLabelMap.data[labelNumber] != nil {
@@ -355,7 +358,6 @@ func InitSensitiveLabelMap() {
 
 	// 实例化Client，入参需要传入易盾内容安全分配的AccessKeyId，AccessKeySecret
 	labelClient := label.NewLabelClientWithAccessKey(viper.GetString(common.EnvYiDunAccessKeyId), viper.GetString(common.EnvYiDunAccessKeySecret))
-	
 
 	// 传入请求参数
 	//设置返回标签的最大层级
