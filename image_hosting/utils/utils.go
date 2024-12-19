@@ -8,7 +8,7 @@ import (
 )
 
 func GenerateIdentifier() (string, error) {
-	now := time.Now().UnixMicro()
+	now := time.Now().Unix()
 	nowStr := fmt.Sprintf("%x", now)[:8] // first 8 characters of the timestamp
 	// Generate a random 6 character string, 14 characters in total (different from the original image proxy (13 characters) )
 	randomBytes := make([]byte, 3)
