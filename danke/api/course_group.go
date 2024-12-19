@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+
 	"github.com/gofiber/fiber/v2"
 	. "github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/danke/model"
@@ -148,7 +149,12 @@ func SearchCourseGroupV3(c *fiber.Ctx) (err error) {
 	if CourseCodeRegexp.MatchString(query) {
 		querySet = querySet.Where("code LIKE ?", query+"%")
 	} else {
-		querySet = querySet.Where("name LIKE ?", "%"+query+"%")
+		queryWord :="%"+query+"%"
+		querySet = querySet.
+			Joins("JOIN teacher_course_groups tcg ON course_group.id = tcg.course_group_id").
+			Joins("JOIN teacher t ON tc.teacher_id = t.id").
+			Where("t.name like ? OR course_group.name LIKE ?", queryWord, queryWord).
+			Group("id")
 	}
 	if page > 0 {
 		if pageSize == 0 {
