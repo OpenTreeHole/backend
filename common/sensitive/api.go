@@ -100,12 +100,12 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 	request := single.NewTextCheckRequest(viper.GetString(common.EnvYiDunBusinessIdText))
 	var textCheckClient *v5.TextClient
 	if viper.GetString(common.EnvProxyUrl) != "" {
-		var url *url.URL
-		url, err := url.Parse(viper.GetString(common.EnvProxyUrl))
+		var proxyUrl *url.URL
+		proxyUrl, err := url.Parse(viper.GetString(common.EnvProxyUrl))
 		if err != nil {
 			return nil, err
 		}
-		textCheckClient = v5.NewTextClientWithAccessKeyWithProxy(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey), http.ProxyURL(url))
+		textCheckClient = v5.NewTextClientWithAccessKeyWithProxy(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey), http.ProxyURL(proxyUrl))
 	} else {
 		textCheckClient = v5.NewTextClientWithAccessKey(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey))
 	}
@@ -193,25 +193,25 @@ func CheckSensitiveText(params ParamsForCheck) (resp *ResponseForCheck, err erro
 
 func checkSensitiveImage(params ParamsForCheck) (resp *ResponseForCheck, err error) {
 	// 设置易盾内容安全分配的businessId
-	url := params.Content
+	imgUrl := params.Content
 
 	request := check.NewImageV5CheckRequest(viper.GetString(common.EnvYiDunBusinessIdImage))
 
 	// 实例化一个textClient，入参需要传入易盾内容安全分配的secretId，secretKey
 	var imageCheckClient *image.ImageClient
 	if viper.GetString(common.EnvProxyUrl) != "" {
-		var url *url.URL
-		url, err := url.Parse(viper.GetString(common.EnvProxyUrl))
+		var proxyUrl *url.URL
+		proxyUrl, err := url.Parse(viper.GetString(common.EnvProxyUrl))
 		if err != nil {
 			return nil, err
 		}
-		imageCheckClient = image.NewImageClientWithAccessKeyWithProxy(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey), http.ProxyURL(url))
+		imageCheckClient = image.NewImageClientWithAccessKeyWithProxy(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey), http.ProxyURL(proxyUrl))
 	} else {
 		imageCheckClient = image.NewImageClientWithAccessKey(viper.GetString(common.EnvYiDunSecretId), viper.GetString(common.EnvYiDunSecretKey))
 	}
 
 	imageInst := check.NewImageBeanRequest()
-	imageInst.SetData(url)
+	imageInst.SetData(imgUrl)
 	imageInst.SetName(strconv.FormatInt(params.Id, 10) + "_" + params.TypeName)
 	// 设置图片数据的类型，1：图片URL，2:图片BASE64
 	imageInst.SetType(1)
