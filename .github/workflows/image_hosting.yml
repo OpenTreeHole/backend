@@ -1,0 +1,20 @@
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'image_hosting/**'
+      - 'common/**'
+      - '.github/workflows/image_hosting.yml'
+      - '.github/workflows/common.yml'
+      - '.github/workflows/main.yml'
+      - 'Dockerfile'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  docker-build-image-hosting:
+    uses: ./.github/workflows/main.yml
+    with:
+      service_name: image_hosting
+    secrets: inherit
