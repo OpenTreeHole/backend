@@ -22,6 +22,10 @@ const (
 	EnvYiDunSecretKey       = "YI_DUN_SECRET_KEY"
 	EnvValidImageUrl        = "VALID_IMAGE_URL"
 	EnvUrlHostnameWhitelist = "URL_HOSTNAME_WHITELIST"
+	EnvExternalImageHost    = "EXTERNAL_IMAGE_HOST"
+	EnvProxyUrl             = "PROXY_URL"
+	EnvYiDunAccessKeyId     = "YI_DUN_ACCESS_KEY_ID"
+	EnvYiDunAccessKeySecret = "YI_DUN_ACCESS_KEY_SECRET"
 )
 
 var defaultConfig = map[string]string{
@@ -37,6 +41,10 @@ var defaultConfig = map[string]string{
 	EnvYiDunSecretKey:       "",
 	EnvValidImageUrl:        "",
 	EnvUrlHostnameWhitelist: "",
+	EnvExternalImageHost:    "",
+	EnvProxyUrl:             "",
+	EnvYiDunAccessKeyId:     "",
+	EnvYiDunAccessKeySecret: "",
 }
 
 var GormConfig = &gorm.Config{

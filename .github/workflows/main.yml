@@ -48,6 +48,8 @@ jobs:
         with:
           push: true
           tags: |
+            registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ inputs.service_name }}_backend:latest
+            registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ inputs.service_name }}_backend:master
             registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ inputs.service_name }}:latest
             registry.cn-shanghai.aliyuncs.com/${{ secrets.ACR_NAMESPACE }}/${{ inputs.service_name }}:master
           build-args: |
