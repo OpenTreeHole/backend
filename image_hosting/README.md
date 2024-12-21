@@ -17,5 +17,8 @@ To retrieve an image, use the `GET` method with the following endpoint: `{hostna
 
 ## System Environment Variables
 - DB_URL
-- HOST_NAME (optional)
+      - root:`PASSWORD`@tcp(localhost:`PORT`)/`YOUR_DATABASE`?parseTime=true&loc=Asia%2fShanghai
+- HOST_NAME (change it to your own host, which directly exports to users)
+      - http://localhost:8000
+      - https://image.fduhole.com
 ---
