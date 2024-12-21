@@ -32,9 +32,10 @@ func main() {
 	// will catch every HTTP request
 	// app.Use(MiddlewareCustomLogger)
 	Init()
-	router := app.Group("/api")
-	router.Post("/uploadImage", UploadImage)
-	router.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
+	// router := app.Group("/") // Compatible with the previous API.
+	app.Post("/api/uploadImage", UploadImage)
+	app.Post("/api/json", UploadImage)                    // Compatible with the previous API.
+	app.Get("/i/:year/:month/:day/:identifier", GetImage) // get images based on the identifier(excluding the extension)
 
 	go func() {
 		slog.LogAttrs(context.Background(), slog.LevelInfo, "Service started.")
