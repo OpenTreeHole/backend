@@ -152,7 +152,7 @@ func SearchCourseGroupV3(c *fiber.Ctx) (err error) {
 		queryWord :="%"+query+"%"
 		querySet = querySet.
 			Joins("JOIN teacher_course_groups tcg ON course_group.id = tcg.course_group_id").
-			Joins("JOIN teacher t ON tc.teacher_id = t.id").
+			Joins("JOIN teacher t ON tcg.teacher_id = t.id").
 			Where("t.name like ? OR course_group.name LIKE ?", queryWord, queryWord).
 			Group("id")
 	}
