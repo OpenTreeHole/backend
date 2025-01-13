@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	. "github.com/opentreehole/backend/common"
 	. "github.com/opentreehole/backend/image_hosting/api"
 	. "github.com/opentreehole/backend/image_hosting/model"
+	"github.com/spf13/viper"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -26,6 +28,11 @@ func main() {
 	app.Use(recover.New(recover.Config{
 		EnableStackTrace: true,
 	}))
+	app.Use(MiddlewareGetUserID)
+	if viper.GetString(EnvMode) != "bench" {
+		app.Use(MiddlewareCustomLogger)
+	}
+	app.Use(pprof.New())
 
 	// app.Use(common.MiddlewareGetUserID)
 
