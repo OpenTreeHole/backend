@@ -255,8 +255,35 @@ func DeleteReviewV1(c *fiber.Ctx) (err error) {
 		return Forbidden("没有权限")
 	}
 
-	// 删除评论
-	err = DB.Delete(review).Error
+	// 在事务中删除评论并更新计数
+	err = DB.Transaction(func(tx *gorm.DB) error {
+		// 删除评论
+		if err := tx.Delete(review).Error; err != nil {
+			return err
+		}
+
+		// 更新课程评教数量
+		if err := tx.Model(&Course{ID: review.CourseID}).
+			Update("review_count", gorm.Expr("review_count - 1")).Error; err != nil {
+			return err
+		}
+
+		// 获取课程组ID
+		var courseGroupID int
+		if err := tx.Model(&Course{}).Select("course_group_id").
+			Where("id = ?", review.CourseID).Scan(&courseGroupID).Error; err != nil {
+			return err
+		}
+
+		// 更新课程组评教数量
+		if err := tx.Model(&CourseGroup{ID: courseGroupID}).
+			Update("review_count", gorm.Expr("review_count - 1")).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return
 	}
