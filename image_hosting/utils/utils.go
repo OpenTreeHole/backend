@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -22,7 +23,8 @@ func GenerateIdentifier() (string, error) {
 }
 
 func IsAllowedExtension(ext string) bool {
-	allowedExtensions := []string{"jpg", "jpeg", "png", "gif", "webp", "bmp"}
+	ext = strings.ToLower(strings.TrimPrefix(ext, "."))
+	allowedExtensions := []string{"jpg", "jpeg", "png", "gif", "webp", "bmp", "heic"}
 	for _, allowedExt := range allowedExtensions {
 		if ext == allowedExt {
 			return true
