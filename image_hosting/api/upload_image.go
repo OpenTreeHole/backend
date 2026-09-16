@@ -36,7 +36,7 @@ func UploadImage(c *fiber.Ctx) error {
 		return common.BadRequest("File size is too large")
 	}
 
-	fileExtension := strings.TrimPrefix(filepath.Ext(file.Filename), ".")
+	fileExtension := strings.ToLower(strings.TrimPrefix(filepath.Ext(file.Filename), "."))
 
 	if !IsAllowedExtension(fileExtension) {
 		slog.LogAttrs(context.Background(), slog.LevelError, "File type not allowed.")
@@ -48,6 +48,7 @@ func UploadImage(c *fiber.Ctx) error {
 		slog.LogAttrs(context.Background(), slog.LevelError, "The uploaded file has some problems", slog.String("err", err.Error()))
 		return common.BadRequest("The uploaded file has some problems")
 	}
+	defer fileContent.Close()
 
 	imageData, err := io.ReadAll(fileContent)
 	if err != nil {
